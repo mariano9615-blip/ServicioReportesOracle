@@ -49,7 +49,7 @@ namespace ServicioOracleReportes
 
             string token = GetXmlVal(body, "UserToken");
             if (string.IsNullOrEmpty(token))
-                throw new Exception("No se pudo obtener el token de sesión.");
+                throw new Exception($"No se pudo obtener el token de sesión. Respuesta del servidor:\n{body}");
 
             return token;
         }
