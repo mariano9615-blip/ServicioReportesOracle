@@ -116,7 +116,8 @@ namespace TestSoap
                 if (fMlogis.Status != null) 
                     fStr += BuildFilterIn("STATUS", fMlogis.Status.ToString());
 
-                Log($"   Consultando movimientos desde {desde} hasta {hasta} (Overlay: {overlay} días, EstadoLog: {fMlogis.EstadoLog}, Status: {fMlogis.Status})...");
+                Log($"   Consultando movimientos desde {desde} hasta {hasta} (Overlay: {overlay} días)...");
+                Log($"   [DEBUG] Query Final: {fStr}");
                 string resultXml = await client.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
                 
                 List<string> ids = new List<string>();
