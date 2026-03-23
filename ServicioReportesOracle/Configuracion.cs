@@ -27,9 +27,9 @@ namespace ServicioOracleReportes
         public string Dominio { get; set; }
         public string UrlAutentificacion { get; set; }
         public string UrlWS { get; set; }
-        public int FrecuenciaComparacionMlogisMinutos { get; set; }
-        public string MlogisOracleQuery { get; set; }
+        public int FrecuenciaSoapMinutos { get; set; }
+        public int DelayComparacionMinutos { get; set; }
 
-        public DateTime? UltimaEjecucionMlogis { get; set; }
+        public DateTime? UltimaEjecucionSoap { get; set; }
     }
 }

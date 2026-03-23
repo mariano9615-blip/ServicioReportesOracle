@@ -73,32 +73,24 @@ namespace ServicioOracleReportes
                     if (writeTimeActual != ultimoWriteTimeConsultas)
                     {
                         EscribirLog("🔄 Se detectó un cambio en consultas.json. Recargando...");
-
                         consultas = JsonConvert.DeserializeObject<List<ConsultaSQL>>(File.ReadAllText(consultasPath));
-
                         ultimoWriteTimeConsultas = writeTimeActual;
-
                         EscribirLog("✔️ consultas.json recargado correctamente.");
-                    }
-
-                    foreach (var c in consultas)
-                    {
-                        EscribirLog($"Consulta detectada → Nombre: {c.Nombre}, FrecuenciaMinutos: {c.FrecuenciaMinutos}");
                     }
                 }
 
                 // ================================
-                //   EJECUTA CONSULTAS
+                //   EJECUTA CONSULTAS (INCLUYE COMPARACIÓN)
                 // ================================
                 EjecutarConsultasSegunFrecuencia();
 
                 // ================================
-                //   COMPARACIÓN MLOGIS (NUEVO)
+                //   INVOCACIÓN SOAP (BACKGROUND)
                 // ================================
-                ProcesarComparacionMlogis();
+                Task.Run(() => InvocacionSoapMlogis());
 
                 // ================================
-                //   LIMPIEZA AUTOMÁTICA (NUEVO)
+                //   LIMPIEZA AUTOMÁTICA
                 // ================================
                 EjecutarLimpiezaAutomatica();
             }
@@ -115,141 +107,66 @@ namespace ServicioOracleReportes
             }
         }
 
-        private async void ProcesarComparacionMlogis()
+        private async Task InvocacionSoapMlogis()
         {
             try
             {
-                // Verificar frecuencia
-                if (configuracion.FrecuenciaComparacionMlogisMinutos > 0)
+                if (configuracion.FrecuenciaSoapMinutos <= 0) return;
+
+                if (configuracion.UltimaEjecucionSoap != null &&
+                    (DateTime.Now - configuracion.UltimaEjecucionSoap.Value).TotalMinutes < configuracion.FrecuenciaSoapMinutos)
                 {
-                    if (configuracion.UltimaEjecucionMlogis != null && 
-                        (DateTime.Now - configuracion.UltimaEjecucionMlogis.Value).TotalMinutes < configuracion.FrecuenciaComparacionMlogisMinutos)
-                    {
-                        return;
-                    }
-                }
-
-                EscribirLog("🔍 Iniciando proceso de comparación Mlogis...");
-
-                string basePath = AppDomain.CurrentDomain.BaseDirectory;
-                string filtersPath = Path.Combine(basePath, "filters.json");
-
-                if (!File.Exists(filtersPath))
-                {
-                    EscribirLog("⚠️ No se encontró filters.json. Saltando comparación.");
                     return;
                 }
 
-                var filters = JsonConvert.DeserializeObject<List<dynamic>>(File.ReadAllText(filtersPath));
-                var soapClient = new SoapClient(configuracion.Dominio, configuracion.UrlAutentificacion, configuracion.UrlWS);
-                
-                string token = await soapClient.LoginAsync();
-                EscribirLog("🔐 Autenticación exitosa en el servicio SOAP.");
+                EscribirLog("🌐 Iniciando Invocación SOAP Mlogis...");
 
-                List<string> idsSoap = new List<string>();
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string filtersPath = Path.Combine(basePath, "filters.json");
+                if (!File.Exists(filtersPath)) return;
+
+                var soapClient = new SoapClient(configuracion.Dominio, configuracion.UrlAutentificacion, configuracion.UrlWS);
+                string token = await soapClient.LoginAsync();
+                
+                var filters = JsonConvert.DeserializeObject<List<dynamic>>(File.ReadAllText(filtersPath));
+                HashSet<string> idsActualesSoap = new HashSet<string>();
 
                 foreach (var f in filters)
                 {
-                    string entidad = f.Entidad;
                     string filtroStr = f.Filtro.ToString()
                         .Replace("{FECHA_DESDE}", DateTime.Now.AddDays(-3).ToString("dd/MM/yyyy"))
                         .Replace("{FECHA_HASTA}", DateTime.Now.ToString("dd/MM/yyyy"));
 
-                    string resultXml = await soapClient.ObtenerRegistrosGenericoAsync(token, entidad, filtroStr);
-                    
+                    string resultXml = await soapClient.ObtenerRegistrosGenericoAsync(token, f.Entidad.ToString(), filtroStr);
                     var matches = System.Text.RegularExpressions.Regex.Matches(resultXml, "\"ID\":\\s*\"([^\"]+)\"");
                     foreach (System.Text.RegularExpressions.Match match in matches)
-                    {
-                        if (match.Groups.Count > 1)
-                            idsSoap.Add(match.Groups[1].Value);
-                    }
+                        if (match.Groups.Count > 1) idsActualesSoap.Add(match.Groups[1].Value);
                 }
 
-                if (idsSoap.Count == 0)
+                // Persistir historia de IDs con timestamp
+                string historyPath = Path.Combine(basePath, "ids_history.json");
+                var historia = File.Exists(historyPath)
+                    ? JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(File.ReadAllText(historyPath))
+                    : new Dictionary<string, DateTime>();
+
+                foreach (var id in idsActualesSoap)
                 {
-                    EscribirLog("ℹ️ No se encontraron registros en el SOAP para comparar.");
-                    configuracion.UltimaEjecucionMlogis = DateTime.Now;
-                    return;
+                    if (!historia.ContainsKey(id))
+                        historia[id] = DateTime.Now;
                 }
 
-                EscribirLog($"✅ {idsSoap.Count} IDs obtenidos exitosamente del SOAP.");
+                // Limpiar IDs viejos (ej. más de 5 días)
+                var keysToRemove = historia.Where(kv => (DateTime.Now - kv.Value).TotalDays > 5).Select(kv => kv.Key).ToList();
+                foreach (var k in keysToRemove) historia.Remove(k);
 
-                // Guardar IDs SOAP en un archivo temporal .json
-                string tempPath = Path.Combine(basePath, "ids_soap_temp.json");
-                File.WriteAllText(tempPath, JsonConvert.SerializeObject(idsSoap, Formatting.Indented));
-
-                // Consultar Oracle
-                List<string> idsOracle = new List<string>();
-                using (OracleConnection conexion = new OracleConnection(configuracion.ConnectionString))
-                {
-                    conexion.Open();
-                    string sql = configuracion.MlogisOracleQuery ?? "SELECT id FROM mlogis";
-                    using (var cmd = new OracleCommand(sql, conexion))
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            idsOracle.Add(reader[0].ToString());
-                        }
-                    }
-                }
-
-                // Comparar
-                var faltantes = idsSoap.Except(idsOracle).ToList();
-
-                if (faltantes.Count > 0)
-                {
-                    EscribirLog($"⚠️ Se encontraron {faltantes.Count} IDs faltantes en Oracle!");
-                    EnviarCorreoAlertaMlogis(idsSoap.Count, idsOracle.Count, faltantes);
-                }
-                else
-                {
-                    EscribirLog("✔️ Todos los IDs de SOAP están presentes en Oracle.");
-                }
-
-                configuracion.UltimaEjecucionMlogis = DateTime.Now;
+                File.WriteAllText(historyPath, JsonConvert.SerializeObject(historia, Formatting.Indented));
+                
+                configuracion.UltimaEjecucionSoap = DateTime.Now;
+                EscribirLog($"✅ Invocación SOAP finalizada. {idsActualesSoap.Count} IDs en historia.");
             }
             catch (Exception ex)
             {
-                EscribirLog("❌ Error en ProcesarComparacionMlogis: " + ex.Message);
-            }
-        }
-
-        private void EnviarCorreoAlertaMlogis(int totalSoap, int totalOracle, List<string> faltantes)
-        {
-            try
-            {
-                using (var cliente = new SmtpClient(configuracion.ServidorSMTP, configuracion.PuertoSMTP))
-                {
-                    cliente.Credentials = new NetworkCredential(configuracion.UsuarioSMTP, configuracion.ClaveSMTP);
-                    cliente.EnableSsl = true;
-
-                    using (var mensaje = new MailMessage())
-                    {
-                        mensaje.From = new MailAddress(configuracion.Remitente);
-                        mensaje.Subject = "⚠️ Alerta de Sincronización Mlogis - IDs Faltantes";
-                        
-                        string listaFaltantes = string.Join("\n", faltantes.Select(id => $"- {id}"));
-                        mensaje.Body = $"Hola Mariano,\n\n" +
-                                       $"Se ha detectado una diferencia en la sincronización de IDs:\n\n" +
-                                       $"- IDs en Azure (SOAP): {totalSoap}\n" +
-                                       $"- IDs en Oracle: {totalOracle}\n\n" +
-                                       $"Revisa los siguientes IDs que faltan en Oracle:\n" +
-                                       $"{listaFaltantes}\n\n" +
-                                       $"Atentamente,\n" +
-                                       $"MonitorMlogis Service";
-
-                        foreach (var dest in configuracion.Destinatarios)
-                            mensaje.To.Add(dest);
-
-                        cliente.Send(mensaje);
-                        EscribirLog("📧 Correo de alerta enviado correctamente.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                EscribirLog("⚠️ Error enviando correo de alerta: " + ex.Message);
+                EscribirLog("❌ Error en InvocacionSoapMlogis: " + ex.Message);
             }
         }
         private void EjecutarLimpiezaAutomatica()
@@ -406,7 +323,15 @@ namespace ServicioOracleReportes
                         if (!debeEjecutar)
                             continue;
 
-                        EjecutarConsultaIndividual(conexion, consulta);
+                        if (consulta.Nombre == "ComparacionMlogisOracle")
+                        {
+                            EjecutarComparacionMlogis(conexion, consulta);
+                        }
+                        else
+                        {
+                            EjecutarConsultaIndividual(conexion, consulta);
+                        }
+                        
                         consulta.UltimaEjecucion = DateTime.Now;
                     }
                     catch (Exception ex)
@@ -414,6 +339,69 @@ namespace ServicioOracleReportes
                         EscribirLog($"Error ejecutando consulta {consulta.Nombre}: {ex.Message}");
                     }
                 }
+            }
+        }
+
+        private void EjecutarComparacionMlogis(OracleConnection conexion, ConsultaSQL consulta)
+        {
+            try
+            {
+                EscribirLog("🔍 Ejecutando Comparación Mlogis vs Oracle (con Delay)...");
+
+                string sqlPath = Path.Combine(configuracion.RutaSQL, consulta.Archivo);
+                if (!File.Exists(sqlPath)) throw new FileNotFoundException("No se encontró " + sqlPath);
+                
+                string sql = File.ReadAllText(sqlPath);
+                DataTable tablaOracle = EjecutarConsulta(conexion, sql);
+                var idsOracle = tablaOracle.Rows.Cast<DataRow>()
+                    .Select(r => r[consulta.CampoTrack]?.ToString())
+                    .Where(v => !string.IsNullOrEmpty(v))
+                    .ToHashSet();
+
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string historyPath = Path.Combine(basePath, "ids_history.json");
+                if (!File.Exists(historyPath)) return;
+
+                var historia = JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(File.ReadAllText(historyPath));
+
+                // Identificar IDs faltantes FUERA del delay
+                int delayMin = configuracion.DelayComparacionMinutos;
+                var idsFaltantesEnOracle = historia
+                    .Where(kv => !idsOracle.Contains(kv.Key)) 
+                    .Where(kv => (DateTime.Now - kv.Value).TotalMinutes >= delayMin) 
+                    .Select(kv => kv.Key)
+                    .ToList();
+
+                string statusPath = Path.Combine(basePath, "status.json");
+                var statusGlobal = File.Exists(statusPath)
+                    ? JsonConvert.DeserializeObject<Dictionary<string, ConsultaStatus>>(File.ReadAllText(statusPath)) ?? new()
+                    : new Dictionary<string, ConsultaStatus>();
+
+                if (!statusGlobal.ContainsKey(consulta.Nombre)) statusGlobal[consulta.Nombre] = new ConsultaStatus();
+                var itemsPrevios = statusGlobal[consulta.Nombre].ItemsEnError;
+
+                var nuevosErrores = idsFaltantesEnOracle.Where(id => !itemsPrevios.ContainsKey(id)).ToList();
+                var resueltos = itemsPrevios.Keys.Where(id => idsOracle.Contains(id)).ToList();
+
+                if (!nuevosErrores.Any() && !resueltos.Any())
+                {
+                    EscribirLog("✔️ Comparación Mlogis: Sin novedades.");
+                    return;
+                }
+
+                foreach (var id in nuevosErrores) itemsPrevios[id] = new Dictionary<string, string> { { "ID", id } };
+                foreach (var id in resueltos) itemsPrevios.Remove(id);
+                File.WriteAllText(statusPath, JsonConvert.SerializeObject(statusGlobal, Formatting.Indented));
+
+                consulta.DetallesErrores = idsFaltantesEnOracle.Select(id => new Dictionary<string, string> { { "ID", id } }).ToList();
+                consulta.DetallesResueltos = resueltos.Select(id => new Dictionary<string, string> { { "ID", id } }).ToList();
+
+                if (consulta.EnviarCorreo)
+                    EnviarCorreoTracking(consulta, null, idsFaltantesEnOracle.Count > 0, idsFaltantesEnOracle, resueltos);
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("❌ Error en EjecutarComparacionMlogis: " + ex.Message);
             }
         }
 

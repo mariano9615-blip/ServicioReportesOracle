@@ -13,9 +13,10 @@
   "CuerpoCorreo": "Adjunto reportes de stock y saldos.",
   "ModoDebug": true,
   "EnviarCorreo": false,
+  "RutaSQL": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\sql",
   "Dominio": "TU_DOMINIO",
   "UrlAutentificacion": "https://auth.tu_url.com",
   "UrlWS": "https://ws.tu_url.com",
-  "FrecuenciaComparacionMlogisMinutos": 10,
-  "MlogisOracleQuery": "SELECT id FROM mlogis"
+  "FrecuenciaSoapMinutos": 10,
+  "DelayComparacionMinutos": 10
 }

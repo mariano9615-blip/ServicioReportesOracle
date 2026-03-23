@@ -1,10 +1,24 @@
-﻿[
+[
   {
-    "Nombre": "ControlStock",
-    "Archivo": "ControlStock.sql"
-  },
-  {
-    "Nombre": "ControlSaldos",
-    "Archivo": "ControlSaldos.sql"
+    "Nombre": "ComparacionMlogisOracle",
+    "Archivo": "MlogisOracle.sql",
+    "FrecuenciaMinutos": 3,
+    "Destinatarios": [
+      "mdemichelis@bit.com.ar"
+    ],
+    "EnviarCorreo": true,
+    "Track": true,
+    "CampoTrack": "ID",
+    "ExcluirCampos": ["ID"],
+    "CamposCorreo": {
+      "Errores": ["ID", "CTG"],
+      "Resueltos": ["ID", "CTG"]
+    },
+    "Mail": {
+      "AsuntoConError": "⚠️ IDs Faltantes en Oracle – {Nombre} – {Fecha}",
+      "AsuntoSinError": "✔️ Sincronización OK – {Nombre} – {Fecha}",
+      "CuerpoConError": "Estimados,\n\nSe identificaron {Cantidad} IDs que están en SOAP pero aún no llegan a Oracle (fuera del delay configurado).\n\nDetalle:\n{Lista}\n\nAtentamente,\nMonitorMlogis",
+      "CuerpoSinError": "No se detectaron IDs faltantes.\nÚltima verificación: {Fecha}.\n\nAtentamente,\nMonitorMlogis"
+    }
   }
 ]
