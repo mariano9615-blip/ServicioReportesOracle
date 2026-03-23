@@ -147,6 +147,18 @@ namespace TestSoap
                 }
 
                 Log($"✅ CONSULTA EXITOSA. Se recuperaron {ids.Count} IDs.");
+
+                // NUEVO: Guardar en el JSON para que el usuario pruebe manualmente
+                try
+                {
+                    string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mlogis_soap_ids.json");
+                    File.WriteAllText(jsonPath, JsonConvert.SerializeObject(ids, Formatting.Indented));
+                    Log($"💾 Archivo '{jsonPath}' generado con éxito.");
+                }
+                catch (Exception ex)
+                {
+                    Log($"⚠️ Error al generar mlogis_soap_ids.json: {ex.Message}");
+                }
                 
                 if (ids.Count > 0)
                 {
