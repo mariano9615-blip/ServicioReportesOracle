@@ -27,6 +27,9 @@
         <DataTemplate DataType="{x:Type vm:LogsViewModel}">
             <v:LogsView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ServiceControlViewModel}">
+            <v:ServiceControlView/>
+        </DataTemplate>
 
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </Window.Resources>
@@ -48,6 +51,7 @@
                     <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📋 Tareas SQL (JSON)" Command="{Binding NavTasksCommand}"/>
                     <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="💻 Editor SQL de Pruebas" Command="{Binding NavEditorCommand}"/>
                     <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📜 Logs del Servicio" Command="{Binding NavLogsCommand}"/>
+                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="🔧 Control del Servicio" Command="{Binding NavServiceCommand}"/>
                 </StackPanel>
                 
                 <TextBlock Text="Versión 3.2" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,20" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.5"/>

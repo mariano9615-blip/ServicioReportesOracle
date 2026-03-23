@@ -52,6 +52,7 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.ServiceProcess" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -82,6 +83,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\ServiceControlView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -102,6 +107,9 @@
     <Compile Include="Views\SqlEditorView.xaml.cs">
       <DependentUpon>SqlEditorView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\ServiceControlView.xaml.cs">
+      <DependentUpon>ServiceControlView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\LogsView.xaml.cs">
       <DependentUpon>LogsView.xaml</DependentUpon>
     </Compile>
@@ -116,6 +124,7 @@
     <Compile Include="ViewModels\TasksViewModel.cs" />
     <Compile Include="ViewModels\SqlEditorViewModel.cs" />
     <Compile Include="ViewModels\LogsViewModel.cs" />
+    <Compile Include="ViewModels\ServiceControlViewModel.cs" />
     <Compile Include="Converters\NullToVisibilityConverter.cs" />
     <Compile Include="Converters\StringListConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

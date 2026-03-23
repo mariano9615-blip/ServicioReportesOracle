@@ -41,6 +41,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         public ICommand NavTasksCommand { get; }
         public ICommand NavEditorCommand { get; }
         public ICommand NavLogsCommand { get; }
+        public ICommand NavServiceCommand { get; }
 
         public static MainViewModel Instance { get; private set; }
 
@@ -52,6 +53,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             NavTasksCommand = new RelayCommand(_ => SelectedViewModel = new TasksViewModel());
             NavEditorCommand = new RelayCommand(_ => SelectedViewModel = new SqlEditorViewModel());
             NavLogsCommand = new RelayCommand(_ => SelectedViewModel = new LogsViewModel());
+            NavServiceCommand = new RelayCommand(_ => SelectedViewModel = new ServiceControlViewModel());
 
             // Default view
             SelectedViewModel = new GeneralConfigViewModel();
