@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuracion.cs" />
+    <Compile Include="CryptoHelper.cs" />
     <Compile Include="ConsultaSQL.cs" />
     <Compile Include="ConsultaStatus.cs" />
     <Compile Include="ServicioReportesOracle.cs">

@@ -15,6 +15,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         private ConfigModel _config;
         private readonly ConfigService _service;
         private string _soapStatus;
+        private string _smtpPassword;
 
         public ConfigModel Config
         {
@@ -26,6 +27,13 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             get => _soapStatus;
             set { _soapStatus = value; OnPropertyChanged(); }
+        }
+
+        // Contraseña en texto plano para el PasswordBox (no va al JSON directamente)
+        public string SmtpPassword
+        {
+            get => _smtpPassword;
+            set { _smtpPassword = value; OnPropertyChanged(); }
         }
 
         public ICommand SaveCommand { get; }
@@ -40,8 +48,15 @@ namespace ServicioReportesOracle.UI.ViewModels
             _service = new ConfigService(configPath, consultasPath);
             Config = _service.LoadConfig();
 
+            // Desencriptar ClaveSMTP para mostrarla en el PasswordBox
+            SmtpPassword = CryptoHelper.Decrypt(Config.ClaveSMTP);
+
             SaveCommand = new RelayCommand(_ => {
+                // Encriptar la contraseña antes de guardar al JSON
+                Config.ClaveSMTP = CryptoHelper.Encrypt(SmtpPassword);
                 _service.SaveConfig(Config);
+                // Restaurar en memoria el valor plano (por si se guarda de nuevo sin recargar)
+                Config.ClaveSMTP = SmtpPassword;
                 MainViewModel.Instance.ShowNotification("Configuración guardada correctamente.");
             });
 

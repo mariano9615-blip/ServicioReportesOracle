@@ -59,7 +59,7 @@
                     <TextBox Text="{Binding Config.UsuarioSMTP}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
                     
                     <TextBlock Text="Clave SMTP" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,2"/>
-                    <TextBox Text="{Binding Config.ClaveSMTP}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                    <PasswordBox x:Name="SmtpPasswordBox" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" PasswordChanged="SmtpPasswordBox_PasswordChanged"/>
                 </StackPanel>
             </Border>
 

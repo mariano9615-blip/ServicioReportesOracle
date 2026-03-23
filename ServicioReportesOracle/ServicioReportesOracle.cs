@@ -41,6 +41,18 @@ namespace ServicioOracleReportes
                     throw new FileNotFoundException("No se encontró consultas.json");
 
                 configuracion = JsonConvert.DeserializeObject<Configuracion>(File.ReadAllText(configPath));
+
+                // Auto-migración: encriptar ClaveSMTP si aún está en texto plano
+                if (!string.IsNullOrEmpty(configuracion.ClaveSMTP) && !CryptoHelper.IsEncrypted(configuracion.ClaveSMTP))
+                {
+                    EscribirLog("🔐 ClaveSMTP en texto plano detectada, encriptando...");
+                    configuracion.ClaveSMTP = CryptoHelper.Encrypt(configuracion.ClaveSMTP);
+                    File.WriteAllText(configPath, JsonConvert.SerializeObject(configuracion, Formatting.Indented));
+                    EscribirLog("✅ ClaveSMTP encriptada y guardada en config.json.");
+                }
+                // Desencriptar en memoria para uso interno (SmtpClient siempre recibe texto plano)
+                configuracion.ClaveSMTP = CryptoHelper.Decrypt(configuracion.ClaveSMTP);
+
                 consultas = JsonConvert.DeserializeObject<List<ConsultaSQL>>(File.ReadAllText(consultasPath));
                 ultimoWriteTimeConsultas = File.GetLastWriteTime(consultasPath);
 
