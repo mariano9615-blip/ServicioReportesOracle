@@ -124,21 +124,35 @@ namespace ServicioOracleReportes
 
                 var soapClient = new SoapClient(configuracion.Dominio, configuracion.UrlAutentificacion, configuracion.UrlWS);
                 string token = await soapClient.LoginAsync();
-                
-                var filters = JsonConvert.DeserializeObject<List<dynamic>>(File.ReadAllText(filtersPath));
-                HashSet<string> idsActualesSoap = new HashSet<string>();
+                EscribirLog("🔐 Autenticación exitosa en Mlogis SOAP.");
 
-                foreach (var f in filters)
+                var filtros = JsonConvert.DeserializeObject<List<dynamic>>(File.ReadAllText(filtersPath));
+                var fMlogis = filtros.FirstOrDefault(f => f.Entidad == "Mlogis");
+                if (fMlogis == null) 
                 {
-                    string filtroStr = f.Filtro.ToString()
-                        .Replace("{FECHA_DESDE}", DateTime.Now.AddDays(-3).ToString("dd/MM/yyyy"))
-                        .Replace("{FECHA_HASTA}", DateTime.Now.ToString("dd/MM/yyyy"));
-
-                    string resultXml = await soapClient.ObtenerRegistrosGenericoAsync(token, f.Entidad.ToString(), filtroStr);
-                    var matches = System.Text.RegularExpressions.Regex.Matches(resultXml, "\"ID\":\\s*\"([^\"]+)\"");
-                    foreach (System.Text.RegularExpressions.Match match in matches)
-                        if (match.Groups.Count > 1) idsActualesSoap.Add(match.Groups[1].Value);
+                    EscribirLog("⚠️ No se encontró filtro para entidad 'Mlogis' en filters.json.");
+                    return;
                 }
+
+                string fStr = fMlogis.Filtro.ToString();
+                string desde = DateTime.Now.AddDays(-3).ToString("yyyy-MM-dd");
+                string hasta = DateTime.Now.ToString("yyyy-MM-dd");
+                fStr = fStr.Replace("{FECHA_DESDE}", desde).Replace("{FECHA_HASTA}", hasta);
+
+                string resultXml = await soapClient.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
+                
+                // Extraer IDs
+                var idsActualesSoap = new HashSet<string>();
+                int posId = 0;
+                while ((posId = resultXml.IndexOf("<ID>", posId, StringComparison.OrdinalIgnoreCase)) != -1)
+                {
+                    int start = posId + 4;
+                    int end = resultXml.IndexOf("</ID>", start, StringComparison.OrdinalIgnoreCase);
+                    if (end != -1) idsActualesSoap.Add(resultXml.Substring(start, end - start));
+                    posId = end;
+                }
+
+                EscribirLog($"✅ SOAP: {idsActualesSoap.Count} IDs recuperados correctamente.");
 
                 // Persistir historia de IDs con timestamp
                 string historyPath = Path.Combine(basePath, "ids_history.json");

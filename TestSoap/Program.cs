@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using ServicioOracleReportes;
@@ -10,6 +11,8 @@ namespace TestSoap
 {
     class Program
     {
+        private static StringBuilder _log = new StringBuilder();
+
         static void Main(string[] args)
         {
             try
@@ -18,18 +21,34 @@ namespace TestSoap
             }
             catch (Exception ex)
             {
-                Console.WriteLine("\n❌ ERROR CRÍTICO:");
-                Console.WriteLine(ex.ToString());
+                Log("❌ ERROR CRÍTICO:");
+                Log(ex.ToString());
             }
-            Console.WriteLine("\nPresione una tecla para salir...");
+            finally
+            {
+                try
+                {
+                    File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "testsoap.txt"), _log.ToString());
+                }
+                catch { }
+            }
+            
+            Console.WriteLine("\n[Fin del proceso. El resultado se guardó en testsoap.txt]");
+            Console.WriteLine("Presione una tecla para salir...");
             Console.ReadKey();
+        }
+
+        static void Log(string msg)
+        {
+            Console.WriteLine(msg);
+            _log.AppendLine($"[{DateTime.Now:HH:mm:ss}] {msg}");
         }
 
         static async Task RunTest()
         {
-            Console.WriteLine("========================================");
-            Console.WriteLine("   PRUEBA DE AUTENTICACIÓN SOAP MLOGIS  ");
-            Console.WriteLine("========================================");
+            Log("========================================");
+            Log("   PRUEBA DE AUTENTICACIÓN SOAP MLOGIS  ");
+            Log("========================================");
             
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
             string configPath = Path.Combine(basePath, "config.json");
@@ -37,21 +56,33 @@ namespace TestSoap
 
             if (!File.Exists(configPath))
             {
-                Console.WriteLine($"Error: No se encontró {configPath} en la carpeta actual.");
+                Log($"Error: No se encontró {configPath} en la carpeta actual.");
                 return;
             }
 
-            var json = File.ReadAllText(configPath);
-            var config = JsonConvert.DeserializeObject<Configuracion>(json);
+            Log("Cargando config.json...");
+            Configuracion config;
+            try
+            {
+                var json = File.ReadAllText(configPath);
+                config = JsonConvert.DeserializeObject<Configuracion>(json);
+            }
+            catch (Exception ex)
+            {
+                Log("\n❌ ERROR DE FORMATO EN CONFIG.JSON:");
+                Log("Asegúrate de que no falten comas al final de cada línea (excepto la última).");
+                Log("Detalle: " + ex.Message);
+                return;
+            }
             
-            Console.WriteLine($"[Config] Dominio: {config.Dominio}");
-            Console.WriteLine($"[Config] Auth URL: {config.UrlAutentificacion}");
-            Console.WriteLine($"[Config] WS URL: {config.UrlWS}");
-            Console.WriteLine("\nIntentando Login...");
+            Log($"[Config] Dominio: {config.Dominio}");
+            Log($"[Config] Auth URL: {config.UrlAutentificacion}");
+            Log($"[Config] WS URL: {config.UrlWS}");
+            Log("\nIntentando Login...");
 
             var client = new SoapClient(config.Dominio, config.UrlAutentificacion, config.UrlWS);
             string token = await client.LoginAsync();
-            Console.WriteLine("✅ LOGIN EXITOSO. Token recibido.");
+            Log("✅ LOGIN EXITOSO. Token recibido.");
 
             if (File.Exists(filtersPath))
             {
@@ -64,7 +95,7 @@ namespace TestSoap
                     string hoy = DateTime.Now.ToString("yyyy-MM-dd");
                     fStr = fStr.Replace("{FECHA_DESDE}", hoy).Replace("{FECHA_HASTA}", hoy);
 
-                    Console.WriteLine($"\nConsultando Azure para el día de HOY ({hoy})...");
+                    Log($"\nConsultando Azure para el día de HOY ({hoy})...");
                     string resultXml = await client.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
                     
                     int count = 0;
@@ -75,13 +106,8 @@ namespace TestSoap
                         s += 4;
                     }
 
-                    Console.WriteLine($"✅ CONSULTA EXITOSA. Se encontraron {count} IDs hoy.");
-                    if (count > 0) Console.WriteLine("El servicio SOAP está configurado y respondiendo correctamente.");
+                    Log($"✅ CONSULTA EXITOSA. Se encontraron {count} IDs hoy.");
                 }
-            }
-            else
-            {
-                Console.WriteLine("\n⚠️ Archivo filters.json no encontrado. Saltando prueba de consulta.");
             }
         }
     }
