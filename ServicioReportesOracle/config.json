@@ -15,5 +15,7 @@
   "EnviarCorreo": false,
   "Dominio": "TU_DOMINIO",
   "UrlAutentificacion": "https://auth.tu_url.com",
-  "UrlWS": "https://ws.tu_url.com"
+  "UrlWS": "https://ws.tu_url.com",
+  "FrecuenciaComparacionMlogisMinutos": 10,
+  "MlogisOracleQuery": "SELECT id FROM mlogis"
 }

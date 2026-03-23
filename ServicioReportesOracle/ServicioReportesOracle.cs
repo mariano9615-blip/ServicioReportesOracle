@@ -119,6 +119,16 @@ namespace ServicioOracleReportes
         {
             try
             {
+                // Verificar frecuencia
+                if (configuracion.FrecuenciaComparacionMlogisMinutos > 0)
+                {
+                    if (configuracion.UltimaEjecucionMlogis != null && 
+                        (DateTime.Now - configuracion.UltimaEjecucionMlogis.Value).TotalMinutes < configuracion.FrecuenciaComparacionMlogisMinutos)
+                    {
+                        return;
+                    }
+                }
+
                 EscribirLog("🔍 Iniciando proceso de comparación Mlogis...");
 
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
@@ -134,6 +144,8 @@ namespace ServicioOracleReportes
                 var soapClient = new SoapClient(configuracion.Dominio, configuracion.UrlAutentificacion, configuracion.UrlWS);
                 
                 string token = await soapClient.LoginAsync();
+                EscribirLog("🔐 Autenticación exitosa en el servicio SOAP.");
+
                 List<string> idsSoap = new List<string>();
 
                 foreach (var f in filters)
@@ -145,9 +157,6 @@ namespace ServicioOracleReportes
 
                     string resultXml = await soapClient.ObtenerRegistrosGenericoAsync(token, entidad, filtroStr);
                     
-                    // Extraer IDs del XML/JSON (Basado en el patrón de SoapClient.cs original)
-                    // El XML devuelto por ObtenerRegistrosGenerico contiene un ResultXML que es un JSON string
-                    // Usamos una expresión regular o un buscador simple para sacar los IDs.
                     var matches = System.Text.RegularExpressions.Regex.Matches(resultXml, "\"ID\":\\s*\"([^\"]+)\"");
                     foreach (System.Text.RegularExpressions.Match match in matches)
                     {
@@ -159,20 +168,22 @@ namespace ServicioOracleReportes
                 if (idsSoap.Count == 0)
                 {
                     EscribirLog("ℹ️ No se encontraron registros en el SOAP para comparar.");
+                    configuracion.UltimaEjecucionMlogis = DateTime.Now;
                     return;
                 }
+
+                EscribirLog($"✅ {idsSoap.Count} IDs obtenidos exitosamente del SOAP.");
 
                 // Guardar IDs SOAP en un archivo temporal .json
                 string tempPath = Path.Combine(basePath, "ids_soap_temp.json");
                 File.WriteAllText(tempPath, JsonConvert.SerializeObject(idsSoap, Formatting.Indented));
-                EscribirLog($"✅ {idsSoap.Count} IDs obtenidos del SOAP y guardados en {tempPath}");
 
                 // Consultar Oracle
                 List<string> idsOracle = new List<string>();
                 using (OracleConnection conexion = new OracleConnection(configuracion.ConnectionString))
                 {
                     conexion.Open();
-                    string sql = "SELECT id FROM mlogis"; // Tabla mencionada por el usuario
+                    string sql = configuracion.MlogisOracleQuery ?? "SELECT id FROM mlogis";
                     using (var cmd = new OracleCommand(sql, conexion))
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -195,6 +206,8 @@ namespace ServicioOracleReportes
                 {
                     EscribirLog("✔️ Todos los IDs de SOAP están presentes en Oracle.");
                 }
+
+                configuracion.UltimaEjecucionMlogis = DateTime.Now;
             }
             catch (Exception ex)
             {
