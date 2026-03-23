@@ -31,7 +31,7 @@
                                 <Setter TargetName="border" Property="Opacity" Value="0.7"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Opacity" Value="0.3"/>
+                                <Setter TargetName="border" Property="Opacity" Value="0.25"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -45,11 +45,29 @@
             <TextBlock Text="Control del Servicio" FontSize="24" FontWeight="Bold"
                        Foreground="{StaticResource PrimaryLightBrush}" Margin="0,0,0,20"/>
 
+            <!-- ADMIN WARNING CARD — visible solo si NO es admin -->
+            <Border Background="#1AFF4B4B" CornerRadius="14" Padding="24,20" Margin="0,0,0,20"
+                    BorderBrush="{StaticResource ErrorBrush}" BorderThickness="1"
+                    Visibility="{Binding IsNotAdmin, Converter={StaticResource BoolToVis}}">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="⚠" FontSize="40" HorizontalAlignment="Center"
+                               Foreground="{StaticResource ErrorBrush}" Margin="0,0,0,10"/>
+                    <TextBlock Text="La aplicación no está ejecutándose como Administrador"
+                               FontSize="16" FontWeight="Bold" Foreground="{StaticResource ErrorBrush}"
+                               HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
+                               Margin="0,0,0,8"/>
+                    <TextBlock Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="13"
+                               HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center">
+                        Hacé clic derecho sobre el ejecutable → Ejecutar como administrador
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
             <!-- STATUS CARD -->
             <Border Background="{StaticResource SurfaceBrush}" CornerRadius="16" Padding="40,30" Margin="0,0,0,20">
                 <StackPanel>
 
-                    <!-- Status indicator: colored dot + text -->
+                    <!-- Dot + status text -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,16">
                         <Ellipse Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,14,0">
                             <Ellipse.Style>
@@ -72,11 +90,6 @@
                                         <DataTrigger Binding="{Binding IsRunning}" Value="True">
                                             <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsRunning}" Value="False">
-                                            <DataTrigger.Setters>
-                                                <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
-                                            </DataTrigger.Setters>
-                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TextBlock.Style>
@@ -85,22 +98,23 @@
 
                     <!-- Uptime -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,32">
-                        <TextBlock Text="⏱  Uptime: " Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="⏱  Uptime: " Foreground="{StaticResource OnSurfaceVariantBrush}"
+                                   FontSize="14" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding UptimeText}" Foreground="{StaticResource OnSurfaceBrush}"
                                    FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <Border Height="1" Background="{StaticResource OutlineBrush}" Margin="0,0,0,28"/>
 
-                    <!-- Start / Stop -->
+                    <!-- Iniciar / Detener — deshabilitados si no es admin -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Content="▶  Iniciar" Command="{Binding StartCommand}"
-                                IsEnabled="{Binding IsStopped}"
+                                IsEnabled="{Binding CanStart}"
                                 Style="{StaticResource ServiceButtonStyle}"
                                 Background="{StaticResource SuccessBrush}"
                                 Margin="0,0,16,0"/>
                         <Button Content="■  Detener" Command="{Binding StopCommand}"
-                                IsEnabled="{Binding IsRunning}"
+                                IsEnabled="{Binding CanStop}"
                                 Style="{StaticResource ServiceButtonStyle}"
                                 Background="{StaticResource ErrorBrush}"/>
                     </StackPanel>
@@ -114,7 +128,7 @@
                     <TextBlock Text="Administración del Servicio" FontSize="16" FontWeight="SemiBold"
                                Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,16"/>
 
-                    <!-- Warning banner -->
+                    <!-- Info UAC -->
                     <Border Background="#1AFFC107" CornerRadius="8" Padding="14,10" Margin="0,0,0,24"
                             BorderBrush="#40FFC107" BorderThickness="1">
                         <StackPanel Orientation="Horizontal">
@@ -129,10 +143,12 @@
 
                     <StackPanel Orientation="Horizontal">
                         <Button Content="📦  Instalar servicio" Command="{Binding InstallCommand}"
+                                IsEnabled="{Binding IsAdmin}"
                                 Style="{StaticResource ServiceButtonStyle}"
                                 Background="{StaticResource PrimaryBrush}"
                                 Margin="0,0,16,0"/>
                         <Button Content="🗑  Desinstalar servicio" Command="{Binding UninstallCommand}"
+                                IsEnabled="{Binding IsAdmin}"
                                 Style="{StaticResource ServiceButtonStyle}"
                                 Background="#8B2020"/>
                     </StackPanel>
