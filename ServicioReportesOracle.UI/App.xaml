@@ -3,7 +3,7 @@
              xmlns:local="clr-namespace:ServicioReportesOracle.UI"
              xmlns:converters="clr-namespace:ServicioReportesOracle.UI.Converters"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="MainWindow.xaml">
+             Startup="App_Startup">
     <Application.Resources>
          <ResourceDictionary>
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
