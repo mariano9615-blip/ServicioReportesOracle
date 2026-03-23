@@ -1,11 +1,49 @@
 [
   {
+    "Nombre": "DetMlogisPosse",
+    "Archivo": "DetMlogisPosse.sql",
+    "FrecuenciaMinutos": 3,
+    "Destinatarios": ["mdemichelis@bit.com.ar", "rfernandez@bit.com.ar"],
+    "EnviarCorreo": true,
+    "Track": true,
+    "CampoTrack": "ID",
+    "ExcluirCampos": ["ID"],
+    "CamposCorreo": {
+      "Errores": ["ID", "CTG"],
+      "Resueltos": ["ID", "CTG"]
+    },
+    "Mail": {
+      "AsuntoConError": "⚠️ Movimientos pendientes – {Nombre} – {Fecha}",
+      "AsuntoSinError": "✔️ Sin movimientos pendientes – {Nombre} – {Fecha}",
+      "CuerpoConError": "Estimados,\n\nSe identificaron {Cantidad} movimientos que requieren revisión en la consulta \"{Nombre}\".\n\nDetalle:\n{Lista}",
+      "CuerpoSinError": "No se detectaron movimientos pendientes.\nÚltima verificación: {Fecha}."
+    }
+  },
+  {
+    "Nombre": "DetCuentashijadkPosse",
+    "Archivo": "DetCuentashijadkPosse.sql",
+    "FrecuenciaMinutos": 10,
+    "Destinatarios": ["mdemichelis@bit.com.ar", "rfernandez@bit.com.ar"],
+    "EnviarCorreo": true,
+    "Track": true,
+    "CampoTrack": "IDCUENTAHIJA",
+    "ExcluirCampos": ["IDCUENTAHIJA"],
+    "CamposCorreo": {
+      "Errores": ["IDCUENTAHIJA"],
+      "Resueltos": ["IDCUENTAHIJA"]
+    },
+    "Mail": {
+      "AsuntoConError": "⚠️ Observaciones detectadas en {Nombre} – {Fecha}",
+      "AsuntoSinError": "✔️ Todo OK – {Nombre} – {Fecha}",
+      "CuerpoConError": "Hay {Cantidad} cuentas hija con observaciones:\n\n{Lista}",
+      "CuerpoSinError": "Todas las cuentas hija procesaron correctamente.\nÚltima verificación: {Fecha}."
+    }
+  },
+  {
     "Nombre": "ComparacionMlogisOracle",
     "Archivo": "MlogisOracle.sql",
     "FrecuenciaMinutos": 3,
-    "Destinatarios": [
-      "mdemichelis@bit.com.ar"
-    ],
+    "Destinatarios": ["mdemichelis@bit.com.ar"],
     "EnviarCorreo": true,
     "Track": true,
     "CampoTrack": "ID",
@@ -17,8 +55,8 @@
     "Mail": {
       "AsuntoConError": "⚠️ IDs Faltantes en Oracle – {Nombre} – {Fecha}",
       "AsuntoSinError": "✔️ Sincronización OK – {Nombre} – {Fecha}",
-      "CuerpoConError": "Estimados,\n\nSe identificaron {Cantidad} IDs que están en SOAP pero aún no llegan a Oracle (fuera del delay configurado).\n\nDetalle:\n{Lista}\n\nAtentamente,\nMonitorMlogis",
-      "CuerpoSinError": "No se detectaron IDs faltantes.\nÚltima verificación: {Fecha}.\n\nAtentamente,\nMonitorMlogis"
+      "CuerpoConError": "Estimados,\n\nSe identificaron {Cantidad} IDs en Azure que aún no llegan a Oracle (fuera del delay de 10 min).\n\nDetalle:\n{Lista}",
+      "CuerpoSinError": "No se detectaron discrepancias.\nÚltima verificación: {Fecha}."
     }
   }
 ]

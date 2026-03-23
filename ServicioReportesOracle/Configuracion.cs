@@ -30,6 +30,7 @@ namespace ServicioOracleReportes
         public string UrlWS { get; set; }
         public int FrecuenciaSoapMinutos { get; set; }
         public int DelayComparacionMinutos { get; set; }
+        public bool HabilitarMlogis { get; set; } = true;
 
         public DateTime? UltimaEjecucionSoap { get; set; }
     }

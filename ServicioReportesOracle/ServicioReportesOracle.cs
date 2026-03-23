@@ -112,13 +112,9 @@ namespace ServicioOracleReportes
         {
             try
             {
-                if (configuracion.FrecuenciaSoapMinutos <= 0) return;
-
-                if (configuracion.UltimaEjecucionSoap != null &&
-                    (DateTime.Now - configuracion.UltimaEjecucionSoap.Value).TotalMinutes < configuracion.FrecuenciaSoapMinutos)
-                {
-                    return;
-                }
+                // Las comprobaciones de HabilitarMlogis y FrecuenciaSoapMinutos > 0
+                // ya se realizan antes de llamar a este método en TimerElapsed.
+                // La comprobación de UltimaEjecucionSoap también se realiza allí.
 
                 EscribirLog("🌐 Iniciando Invocación SOAP Mlogis...");
 
@@ -326,7 +322,10 @@ namespace ServicioOracleReportes
 
                         if (consulta.Nombre == "ComparacionMlogisOracle")
                         {
-                            EjecutarComparacionMlogis(conexion, consulta);
+                            if (configuracion.HabilitarMlogis)
+                                EjecutarComparacionMlogis(conexion, consulta);
+                            else
+                                EscribirLog("⚠️ Comparación Mlogis omitida (Módulo deshabilitado en config.json).");
                         }
                         else
                         {
