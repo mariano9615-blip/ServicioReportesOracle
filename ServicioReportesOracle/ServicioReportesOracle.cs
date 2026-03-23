@@ -449,8 +449,25 @@ namespace ServicioOracleReportes
                 consulta.DetallesErrores = idsFaltantesEnOracle.Select(id => new Dictionary<string, string> { { "ID", id } }).ToList();
                 consulta.DetallesResueltos = resueltos.Select(id => new Dictionary<string, string> { { "ID", id } }).ToList();
 
+                string rutaExcelAdjunto = null;
+                if (idsFaltantesEnOracle.Count > 0)
+                {
+                    DataTable dtDiferencias = new DataTable("Diferencias");
+                    dtDiferencias.Columns.Add("ID_Mlogis_Azure", typeof(string));
+                    dtDiferencias.Columns.Add("Fecha_Deteccion", typeof(string));
+
+                    foreach (var id in idsFaltantesEnOracle)
+                        dtDiferencias.Rows.Add(id, DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
+
+                    string nombreArchivo = $"Mlogis_Diferencias_{DateTime.Now:yyyyMMdd_HHmm}.xlsx";
+                    rutaExcelAdjunto = Path.Combine(configuracion.RutaExcel, nombreArchivo);
+                    
+                    GuardarExcel(dtDiferencias, rutaExcelAdjunto, "Mlogis_Diferencias");
+                    EscribirLog($"📦 Reporte de diferencias generado: {nombreArchivo}");
+                }
+
                 if (consulta.EnviarCorreo)
-                    EnviarCorreoTracking(consulta, null, idsFaltantesEnOracle.Count > 0, idsFaltantesEnOracle, resueltos);
+                    EnviarCorreoTracking(consulta, rutaExcelAdjunto, idsFaltantesEnOracle.Count > 0, idsFaltantesEnOracle, resueltos);
             }
             catch (Exception ex)
             {

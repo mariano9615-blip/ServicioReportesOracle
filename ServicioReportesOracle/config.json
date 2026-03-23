@@ -13,12 +13,10 @@
   "MensajeNuevosMovimientos": "Se detectaron nuevos movimientos con error: {nuevos}",
   "MensajeMovimientosResueltos": "Los siguientes movimientos fueron resueltos: {resueltos}",
   "MensajeTodoOK": "Todos los movimientos fueron procesados correctamente.",
-
-  /* CONFIGURACIÓN MLOGIS (NUEVO) */
+  
   "HabilitarMlogis": true,
-  "Dominio": "TU_DOMINIO",
-  "UrlAutentificacion": "https://auth.tu_url.com",
-  "UrlWS": "https://ws.tu_url.com",
-  "FrecuenciaSoapMinutos": 10,
+  "Dominio": "CB30511534492",
+  "UrlAutentificacion": "https://coopbit.bit.com.ar/DkMServer.services/SessionManager.asmx",
+  "UrlSoapSmartFarm": "https://inter-coopbit.bit.com.ar/wsSmartFarm/wsSmartFarm.asmx",
   "DelayComparacionMinutos": 10
 }
