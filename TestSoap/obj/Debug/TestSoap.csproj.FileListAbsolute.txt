@@ -1,9 +1,0 @@
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.csproj.AssemblyReference.cache
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.csproj.CoreCompileInputs.cache
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Debug\TestSoap.exe
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Debug\TestSoap.pdb
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Debug\Newtonsoft.Json.dll
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Debug\Newtonsoft.Json.xml
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.csproj.Up2Date
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.exe
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.pdb

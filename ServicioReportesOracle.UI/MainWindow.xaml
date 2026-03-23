@@ -1,0 +1,88 @@
+<Window x:Class="ServicioReportesOracle.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:ServicioReportesOracle.UI.ViewModels"
+        xmlns:v="clr-namespace:ServicioReportesOracle.UI.Views"
+        mc:Ignorable="d"
+        Title="Servicio Oracle - Consola de Gestión" Height="750" Width="1150"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}">
+    
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:GeneralConfigViewModel}">
+            <v:GeneralConfigView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TasksViewModel}">
+            <v:TasksView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SqlEditorViewModel}">
+            <v:SqlEditorView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LogsViewModel}">
+            <v:LogsView/>
+        </DataTemplate>
+
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <Border Background="{StaticResource SurfaceBrush}" Margin="10" CornerRadius="12">
+            <Grid>
+                <StackPanel Margin="20">
+                    <TextBlock Text="Servicio Oracle" FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,0,0,5"/>
+                    <TextBlock Text="Consola de Gestión" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,30"/>
+
+                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="⚙️ Configuración General" IsChecked="True" Command="{Binding NavGeneralCommand}"/>
+                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📋 Tareas SQL (JSON)" Command="{Binding NavTasksCommand}"/>
+                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="💻 Editor SQL de Pruebas" Command="{Binding NavEditorCommand}"/>
+                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📜 Logs del Servicio" Command="{Binding NavLogsCommand}"/>
+                </StackPanel>
+                
+                <TextBlock Text="Versión 3.2" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,20" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.5"/>
+            </Grid>
+        </Border>
+
+        <!-- Content Area -->
+        <ContentControl Grid.Column="1" Content="{Binding SelectedViewModel}" Margin="0,10,10,10"/>
+
+        <!-- Notification Overlay -->
+        <Border Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,40,0,0" 
+                Padding="20,10" CornerRadius="20" Panel.ZIndex="1000"
+                Visibility="{Binding IsNotificationVisible, Converter={StaticResource BoolToVis}}"
+                MaxWidth="400">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding NotificationType}" Value="Error">
+                            <Setter Property="Background" Value="{StaticResource ErrorBrush}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding NotificationType}" Value="Success">
+                            <Setter Property="Background" Value="{StaticResource SuccessBrush}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="🔔" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="White"/>
+                <TextBlock Grid.Column="1" Text="{Binding NotificationMessage}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

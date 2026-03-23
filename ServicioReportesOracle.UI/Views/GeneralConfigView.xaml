@@ -1,0 +1,133 @@
+<UserControl x:Class="ServicioReportesOracle.UI.Views.GeneralConfigView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
+            <TextBlock Text="Configuración General" FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryLightBrush}" Margin="0,0,0,20"/>
+            
+            <!-- Oracle Section -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Base de Datos Oracle" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,15"/>
+                    <TextBlock Text="Cadena de Conexión" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                    <TextBox Text="{Binding Config.ConnectionString}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Ruta Excel (Reportes)" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                            <TextBox Text="{Binding Config.RutaExcel}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Ruta Scripts SQL" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                            <TextBox Text="{Binding Config.RutaSQL}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- SMTP Section -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Configuración SMTP (Correo)" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,15"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Servidor SMTP" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                            <TextBox Text="{Binding Config.ServidorSMTP}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Puerto" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                            <TextBox Text="{Binding Config.PuertoSMTP}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                        </StackPanel>
+                    </Grid>
+                    
+                    <TextBlock Text="Remitente" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,15,0,2"/>
+                    <TextBox Text="{Binding Config.Remitente}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Usuario SMTP" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,2"/>
+                    <TextBox Text="{Binding Config.UsuarioSMTP}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
+                    
+                    <TextBlock Text="Clave SMTP" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,2"/>
+                    <TextBox Text="{Binding Config.ClaveSMTP}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Mlogis Section -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Integración Mlogis (SOAP)" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,15"/>
+                    <CheckBox IsChecked="{Binding Config.HabilitarMlogis}" Content="Habilitar Integración Mlogis" Foreground="White" Margin="0,0,0,15"/>
+                    
+                    <TextBlock Text="Dominio / Usuario" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                    <TextBox Text="{Binding Config.Dominio}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="URL Autentificación" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                    <TextBox Text="{Binding Config.UrlAutentificacion}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="URL Web Service (WS)" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                    <TextBox Text="{Binding Config.UrlWS}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Frecuencia SOAP (min)" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                            <TextBox Text="{Binding Config.FrecuenciaSoapMinutos}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Delay Comparación (min)" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                            <TextBox Text="{Binding Config.DelayComparacionMinutos}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                        </StackPanel>
+                    </Grid>
+                    
+                    <Button Content="Probar Conexión SOAP" Command="{Binding TestSoapCommand}" HorizontalAlignment="Left" Padding="20,10" Margin="0,20,0,0" Background="{StaticResource PrimaryBrush}" Foreground="White" FontWeight="Bold">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="8"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                    <TextBlock Text="{Binding SoapStatus}" Foreground="{StaticResource PrimaryLightBrush}" FontStyle="Italic" Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- System & Messages Section -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20">
+                <StackPanel>
+                    <TextBlock Text="Sistema y Mensajes" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,15"/>
+                    <CheckBox IsChecked="{Binding Config.ModoDebug}" Content="Modo Debug" Foreground="White" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Msj. Nuevos Movimientos" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                    <TextBox Text="{Binding Config.MensajeNuevosMovimientos}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Msj. Movimientos Resueltos" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                    <TextBox Text="{Binding Config.MensajeMovimientosResueltos}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Msj. Todo OK" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                    <TextBox Text="{Binding Config.MensajeTodoOK}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,5"/>
+                </StackPanel>
+            </Border>
+
+            <Button Content="💾 GUARDAR CONFIGURACIÓN" Command="{Binding SaveCommand}" Height="50" Margin="0,30,0,50" Background="{StaticResource PrimaryBrush}" Foreground="White" FontSize="16" FontWeight="Bold">
+                 <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="10"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
