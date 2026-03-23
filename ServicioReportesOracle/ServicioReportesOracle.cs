@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using Newtonsoft.Json;
 using Oracle.ManagedDataAccess.Client;
 using System;
@@ -93,6 +93,11 @@ namespace ServicioOracleReportes
                 EjecutarConsultasSegunFrecuencia();
 
                 // ================================
+                //   COMPARACIÓN MLOGIS (NUEVO)
+                // ================================
+                ProcesarComparacionMlogis();
+
+                // ================================
                 //   LIMPIEZA AUTOMÁTICA (NUEVO)
                 // ================================
                 EjecutarLimpiezaAutomatica();
@@ -107,6 +112,131 @@ namespace ServicioOracleReportes
                 {
                     enEjecucion = false;
                 }
+            }
+        }
+
+        private async void ProcesarComparacionMlogis()
+        {
+            try
+            {
+                EscribirLog("🔍 Iniciando proceso de comparación Mlogis...");
+
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string filtersPath = Path.Combine(basePath, "filters.json");
+
+                if (!File.Exists(filtersPath))
+                {
+                    EscribirLog("⚠️ No se encontró filters.json. Saltando comparación.");
+                    return;
+                }
+
+                var filters = JsonConvert.DeserializeObject<List<dynamic>>(File.ReadAllText(filtersPath));
+                var soapClient = new SoapClient(configuracion.Dominio, configuracion.UrlAutentificacion, configuracion.UrlWS);
+                
+                string token = await soapClient.LoginAsync();
+                List<string> idsSoap = new List<string>();
+
+                foreach (var f in filters)
+                {
+                    string entidad = f.Entidad;
+                    string filtroStr = f.Filtro.ToString()
+                        .Replace("{FECHA_DESDE}", DateTime.Now.AddDays(-3).ToString("dd/MM/yyyy"))
+                        .Replace("{FECHA_HASTA}", DateTime.Now.ToString("dd/MM/yyyy"));
+
+                    string resultXml = await soapClient.ObtenerRegistrosGenericoAsync(token, entidad, filtroStr);
+                    
+                    // Extraer IDs del XML/JSON (Basado en el patrón de SoapClient.cs original)
+                    // El XML devuelto por ObtenerRegistrosGenerico contiene un ResultXML que es un JSON string
+                    // Usamos una expresión regular o un buscador simple para sacar los IDs.
+                    var matches = System.Text.RegularExpressions.Regex.Matches(resultXml, "\"ID\":\\s*\"([^\"]+)\"");
+                    foreach (System.Text.RegularExpressions.Match match in matches)
+                    {
+                        if (match.Groups.Count > 1)
+                            idsSoap.Add(match.Groups[1].Value);
+                    }
+                }
+
+                if (idsSoap.Count == 0)
+                {
+                    EscribirLog("ℹ️ No se encontraron registros en el SOAP para comparar.");
+                    return;
+                }
+
+                // Guardar IDs SOAP en un archivo temporal .json
+                string tempPath = Path.Combine(basePath, "ids_soap_temp.json");
+                File.WriteAllText(tempPath, JsonConvert.SerializeObject(idsSoap, Formatting.Indented));
+                EscribirLog($"✅ {idsSoap.Count} IDs obtenidos del SOAP y guardados en {tempPath}");
+
+                // Consultar Oracle
+                List<string> idsOracle = new List<string>();
+                using (OracleConnection conexion = new OracleConnection(configuracion.ConnectionString))
+                {
+                    conexion.Open();
+                    string sql = "SELECT id FROM mlogis"; // Tabla mencionada por el usuario
+                    using (var cmd = new OracleCommand(sql, conexion))
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            idsOracle.Add(reader[0].ToString());
+                        }
+                    }
+                }
+
+                // Comparar
+                var faltantes = idsSoap.Except(idsOracle).ToList();
+
+                if (faltantes.Count > 0)
+                {
+                    EscribirLog($"⚠️ Se encontraron {faltantes.Count} IDs faltantes en Oracle!");
+                    EnviarCorreoAlertaMlogis(idsSoap.Count, idsOracle.Count, faltantes);
+                }
+                else
+                {
+                    EscribirLog("✔️ Todos los IDs de SOAP están presentes en Oracle.");
+                }
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("❌ Error en ProcesarComparacionMlogis: " + ex.Message);
+            }
+        }
+
+        private void EnviarCorreoAlertaMlogis(int totalSoap, int totalOracle, List<string> faltantes)
+        {
+            try
+            {
+                using (var cliente = new SmtpClient(configuracion.ServidorSMTP, configuracion.PuertoSMTP))
+                {
+                    cliente.Credentials = new NetworkCredential(configuracion.UsuarioSMTP, configuracion.ClaveSMTP);
+                    cliente.EnableSsl = true;
+
+                    using (var mensaje = new MailMessage())
+                    {
+                        mensaje.From = new MailAddress(configuracion.Remitente);
+                        mensaje.Subject = "⚠️ Alerta de Sincronización Mlogis - IDs Faltantes";
+                        
+                        string listaFaltantes = string.Join("\n", faltantes.Select(id => $"- {id}"));
+                        mensaje.Body = $"Hola Mariano,\n\n" +
+                                       $"Se ha detectado una diferencia en la sincronización de IDs:\n\n" +
+                                       $"- IDs en Azure (SOAP): {totalSoap}\n" +
+                                       $"- IDs en Oracle: {totalOracle}\n\n" +
+                                       $"Revisa los siguientes IDs que faltan en Oracle:\n" +
+                                       $"{listaFaltantes}\n\n" +
+                                       $"Atentamente,\n" +
+                                       $"MonitorMlogis Service";
+
+                        foreach (var dest in configuracion.Destinatarios)
+                            mensaje.To.Add(dest);
+
+                        cliente.Send(mensaje);
+                        EscribirLog("📧 Correo de alerta enviado correctamente.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("⚠️ Error enviando correo de alerta: " + ex.Message);
             }
         }
         private void EjecutarLimpiezaAutomatica()

@@ -1,0 +1,6 @@
+[
+  {
+    "Entidad": "Mlogis",
+    "Filtro": "FECHA >= '{FECHA_DESDE}' AND FECHA <= '{FECHA_HASTA}'"
+  }
+]

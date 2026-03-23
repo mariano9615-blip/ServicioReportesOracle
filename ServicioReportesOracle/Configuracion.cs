@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace ServicioOracleReportes
 {
@@ -19,13 +19,13 @@ namespace ServicioOracleReportes
         public bool ModoDebug { get; set; }
         public bool EnviarCorreo { get; set; }
         public string RutaSQL { get; set; }
-
         public string MensajeNuevosMovimientos { get; set; }
-
-        // {resueltos} = lista de IDs que se resolvieron
         public string MensajeMovimientosResueltos { get; set; }
-
-        // Texto cuando ya no quedan pendientes
         public string MensajeTodoOK { get; set; }
+
+        // SOAP Integration
+        public string Dominio { get; set; }
+        public string UrlAutentificacion { get; set; }
+        public string UrlWS { get; set; }
     }
 }
