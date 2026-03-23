@@ -1,0 +1,16 @@
+﻿{
+  "ConnectionString": "User Id=PRODUCCION;Password=bitss79;Data Source=OCOOPCAS",
+  "DiaEjecucion": 29,
+  "HoraEjecucion": "08:00",
+  "RutaExcel": "C:\\ServicioReportesOracle",
+  "Destinatarios": [ "mdemichelis@bit.com.ar" ],
+  "Remitente": "tu_correo@gmail.com",
+  "ServidorSMTP": "smtp.gmail.com",
+  "PuertoSMTP": 587,
+  "UsuarioSMTP": "tu_correo@gmail.com",
+  "ClaveSMTP": "tu_contraseña_app",
+  "AsuntoCorreo": "Reportes Oracle",
+  "CuerpoCorreo": "Adjunto reportes de stock y saldos.",
+  "ModoDebug": true,
+  "EnviarCorreo": false
+}

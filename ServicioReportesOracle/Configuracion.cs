@@ -1,0 +1,31 @@
+﻿using System.Collections.Generic;
+
+namespace ServicioOracleReportes
+{
+    public class Configuracion
+    {
+        public string ConnectionString { get; set; }
+        public int DiaEjecucion { get; set; }
+        public string HoraEjecucion { get; set; }
+        public string RutaExcel { get; set; }
+        public List<string> Destinatarios { get; set; }
+        public string Remitente { get; set; }
+        public string ServidorSMTP { get; set; }
+        public int PuertoSMTP { get; set; }
+        public string UsuarioSMTP { get; set; }
+        public string ClaveSMTP { get; set; }
+        public string AsuntoCorreo { get; set; }
+        public string CuerpoCorreo { get; set; }
+        public bool ModoDebug { get; set; }
+        public bool EnviarCorreo { get; set; }
+        public string RutaSQL { get; set; }
+
+        public string MensajeNuevosMovimientos { get; set; }
+
+        // {resueltos} = lista de IDs que se resolvieron
+        public string MensajeMovimientosResueltos { get; set; }
+
+        // Texto cuando ya no quedan pendientes
+        public string MensajeTodoOK { get; set; }
+    }
+}

@@ -1,0 +1,10 @@
+﻿[
+  {
+    "Nombre": "ControlStock",
+    "Archivo": "ControlStock.sql"
+  },
+  {
+    "Nombre": "ControlSaldos",
+    "Archivo": "ControlSaldos.sql"
+  }
+]
