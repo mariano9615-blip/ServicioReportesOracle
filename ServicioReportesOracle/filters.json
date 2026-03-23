@@ -1,9 +1,8 @@
 [
   {
     "Entidad": "Mlogis",
-    "Filtro": "FECHA >= '{FECHA_DESDE}' AND FECHA <= '{FECHA_HASTA}'",
     "Overlay": 5,
-    "EstadoLog": 1,
+    "EstadoLog": "1",
     "Status": "A"
   }
 ]
