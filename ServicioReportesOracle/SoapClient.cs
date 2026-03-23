@@ -44,12 +44,16 @@ namespace ServicioOracleReportes
             var response = await _http.PostAsync(_urlAuth, content);
             string body = await response.Content.ReadAsStringAsync();
 
-            if (!response.IsSuccessStatusCode)
-                throw new Exception($"Login HTTP Error {(int)response.StatusCode}: {body}");
+            // El resultado de Bit viene como un XML escapado dentro de LoginServiceWithPackDirectResult
+            string resultInner = GetXmlVal(body, "LoginServiceWithPackDirectResult");
+            if (string.IsNullOrEmpty(resultInner))
+                throw new Exception($"No se encontró LoginServiceWithPackDirectResult. Respuesta:\n{body}");
 
-            string token = GetXmlVal(body, "UserToken");
+            string unescaped = UnescapeXml(resultInner);
+            string token = GetXmlVal(unescaped, "UserToken");
+
             if (string.IsNullOrEmpty(token))
-                throw new Exception($"No se pudo obtener el token de sesión. Respuesta del servidor:\n{body}");
+                throw new Exception($"No se encontró UserToken en el XML decodificado. XML Decodificado:\n{unescaped}");
 
             return token;
         }
@@ -75,14 +79,17 @@ namespace ServicioOracleReportes
             var response = await _http.PostAsync(_urlWs, content);
             string body = await response.Content.ReadAsStringAsync();
 
-            if (!response.IsSuccessStatusCode)
-                throw new Exception($"WS HTTP Error {(int)response.StatusCode}: {body}");
+            string resultInner = GetXmlVal(body, "ObtenerRegistrosGenericoResult");
+            if (string.IsNullOrEmpty(resultInner))
+                throw new Exception($"No se encontró ObtenerRegistrosGenericoResult. Respuesta:\n{body}");
 
-            string codigo = GetXmlVal(body, "CodigoError");
+            string unescaped = UnescapeXml(resultInner);
+
+            string codigo = GetXmlVal(unescaped, "CodigoError");
             if (codigo != "0")
-                throw new Exception($"Error SOAP {codigo}: {GetXmlVal(body, "ResultXML")}");
+                throw new Exception($"Error SOAP {codigo}: {GetXmlVal(unescaped, "ResultXML")}");
 
-            return UnescapeXml(GetXmlVal(body, "ResultXML"));
+            return UnescapeXml(GetXmlVal(unescaped, "ResultXML"));
         }
 
         private string GetXmlVal(string xml, string tag)
