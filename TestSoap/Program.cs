@@ -121,13 +121,29 @@ namespace TestSoap
                 string resultXml = await client.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
                 
                 List<string> ids = new List<string>();
-                int pos = 0;
-                while ((pos = resultXml.IndexOf("<ID>", pos, StringComparison.OrdinalIgnoreCase)) != -1)
+                if (!string.IsNullOrWhiteSpace(resultXml))
                 {
-                    int start = pos + 4;
-                    int end = resultXml.IndexOf("</ID>", start, StringComparison.OrdinalIgnoreCase);
-                    if (end != -1) ids.Add(resultXml.Substring(start, end - start));
-                    pos = end != -1 ? end : start;
+                    // Si es JSON
+                    if (resultXml.Trim().StartsWith("["))
+                    {
+                        var list = JsonConvert.DeserializeObject<List<dynamic>>(resultXml);
+                        foreach (var item in list)
+                        {
+                            if (item.ID != null) ids.Add(item.ID.ToString());
+                            else if (item.Id != null) ids.Add(item.Id.ToString());
+                        }
+                    }
+                    else // Si es XML
+                    {
+                        int pos = 0;
+                        while ((pos = resultXml.IndexOf("<ID>", pos, StringComparison.OrdinalIgnoreCase)) != -1)
+                        {
+                            int start = pos + 4;
+                            int end = resultXml.IndexOf("</ID>", start, StringComparison.OrdinalIgnoreCase);
+                            if (end != -1) ids.Add(resultXml.Substring(start, end - start).Trim());
+                            pos = end != -1 ? end : start;
+                        }
+                    }
                 }
 
                 Log($"✅ CONSULTA EXITOSA. Se recuperaron {ids.Count} IDs.");

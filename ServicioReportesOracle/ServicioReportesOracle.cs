@@ -152,20 +152,46 @@ namespace ServicioOracleReportes
                 
                 EscribirLog($"🔍 Consulta Automática (v2.2): {fMlogis.Entidad} (Overlay: {overlay} días, EstadoLog: {fMlogis.EstadoLog}, Status: {fMlogis.Status})...");
 
-                string resultXml = await soapClient.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
+                string resultInner = await soapClient.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
                 
-                // Extraer IDs
+                // Extraer IDs (Soporte para JSON y XML)
                 var idsActualesSoap = new HashSet<string>();
-                int posId = 0;
-                while ((posId = resultXml.IndexOf("<ID>", posId, StringComparison.OrdinalIgnoreCase)) != -1)
+                
+                if (!string.IsNullOrWhiteSpace(resultInner))
                 {
-                    int start = posId + 4;
-                    int end = resultXml.IndexOf("</ID>", start, StringComparison.OrdinalIgnoreCase);
-                    if (end != -1) idsActualesSoap.Add(resultXml.Substring(start, end - start));
-                    posId = end;
+                    // Si empieza con '[', es JSON (formato común en Bit)
+                    if (resultInner.Trim().StartsWith("["))
+                    {
+                        try
+                        {
+                            var list = JsonConvert.DeserializeObject<List<dynamic>>(resultInner);
+                            foreach (var item in list)
+                            {
+                                if (item.ID != null) idsActualesSoap.Add(item.ID.ToString());
+                                else if (item.Id != null) idsActualesSoap.Add(item.Id.ToString());
+                            }
+                        }
+                        catch (Exception ex) { EscribirLog("Error parseando JSON de Mlogis: " + ex.Message); }
+                    }
+                    else // Si no, intentar como XML
+                    {
+                        int posId = 0;
+                        while ((posId = resultInner.IndexOf("<ID>", posId, StringComparison.OrdinalIgnoreCase)) != -1)
+                        {
+                            int start = posId + 4;
+                            int end = resultInner.IndexOf("</ID>", start, StringComparison.OrdinalIgnoreCase);
+                            if (end != -1)
+                            {
+                                string id = resultInner.Substring(start, end - start).Trim();
+                                if (!string.IsNullOrEmpty(id)) idsActualesSoap.Add(id);
+                                posId = end;
+                            }
+                            else break;
+                        }
+                    }
                 }
-
-                EscribirLog($"✅ SOAP: {idsActualesSoap.Count} IDs recuperados correctamente.");
+                
+                EscribirLog($"✅ SOAP: {idsActualesSoap.Count} movimientos recuperados de Azure.");
 
                 // Persistir historia de IDs con timestamp
                 string historyPath = Path.Combine(basePath, "ids_history.json");
