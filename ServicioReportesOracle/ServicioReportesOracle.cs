@@ -138,11 +138,11 @@ namespace ServicioOracleReportes
                 int overlay = 3;
                 if (fMlogis.Overlay != null) int.TryParse(fMlogis.Overlay.ToString(), out overlay);
 
-                // IMPORTANTE: El servidor SOAP espera formato DD/MM/YYYY
+                // IMPORTANTE: El servidor SOAP espera formato DD/MM/YYYY SIN HORA
                 string desde = DateTime.Today.AddDays(-overlay).ToString("dd/MM/yyyy");
-                string hasta = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+                string hasta = DateTime.Now.ToString("dd/MM/yyyy");
 
-                string fStr = $"FECHA >= '{desde}' AND FECHA <= '{hasta}'";
+                string fStr = $"FECHA>='{desde}' AND FECHA<='{hasta}'";
 
                 if (fMlogis.EstadoLog != null) 
                     fStr += BuildFilterIn("ESTADOLOG", fMlogis.EstadoLog.ToString());
