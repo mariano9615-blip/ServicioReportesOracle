@@ -56,11 +56,11 @@ namespace TestSoap
 
             if (!File.Exists(configPath))
             {
-                Log($"Error: No se encontró {configPath} en la carpeta actual.");
+                Log($"❌ Error: No se encontró {configPath} en la carpeta actual.");
                 return;
             }
 
-            Log("Cargando config.json...");
+            Log("1. Cargando config.json...");
             Configuracion config;
             try
             {
@@ -70,44 +70,74 @@ namespace TestSoap
             catch (Exception ex)
             {
                 Log("\n❌ ERROR DE FORMATO EN CONFIG.JSON:");
-                Log("Asegúrate de que no falten comas al final de cada línea (excepto la última).");
-                Log("Detalle: " + ex.Message);
+                Log(ex.Message);
                 return;
             }
             
-            Log($"[Config] Dominio: {config.Dominio}");
-            Log($"[Config] Auth URL: {config.UrlAutentificacion}");
-            Log($"[Config] WS URL: {config.UrlWS}");
-            Log("\nIntentando Login...");
+            Log($"   Dominio: {config.Dominio}");
+            Log("\n2. Intentando Login...");
 
             var client = new SoapClient(config.Dominio, config.UrlAutentificacion, config.UrlWS);
             string token = await client.LoginAsync();
-            Log("✅ LOGIN EXITOSO. Token recibido.");
+            Log("✅ LOGIN EXITOSO.");
 
-            if (File.Exists(filtersPath))
+            Log("\n3. Cargando filtros para consulta...");
+            if (!File.Exists(filtersPath))
+            {
+                Log($"⚠️ Advertencia: No se encontró {filtersPath} en la carpeta. No se puede probar la consulta de IDs.");
+                return;
+            }
+
+            try
             {
                 var filtros = JsonConvert.DeserializeObject<List<dynamic>>(File.ReadAllText(filtersPath));
-                var fMlogis = filtros.FirstOrDefault(f => f.Entidad == "Mlogis");
+                var fMlogis = filtros.FirstOrDefault(f => f.Entidad.ToString().Equals("Mlogis", StringComparison.OrdinalIgnoreCase));
                 
-                if (fMlogis != null)
+                if (fMlogis == null)
                 {
-                    string fStr = fMlogis.Filtro.ToString();
-                    string hoy = DateTime.Now.ToString("yyyy-MM-dd");
-                    fStr = fStr.Replace("{FECHA_DESDE}", hoy).Replace("{FECHA_HASTA}", hoy);
-
-                    Log($"\nConsultando Azure para el día de HOY ({hoy})...");
-                    string resultXml = await client.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
-                    
-                    int count = 0;
-                    int s = 0;
-                    while ((s = resultXml.IndexOf("<ID>", s, StringComparison.OrdinalIgnoreCase)) != -1)
-                    {
-                        count++;
-                        s += 4;
-                    }
-
-                    Log($"✅ CONSULTA EXITOSA. Se encontraron {count} IDs hoy.");
+                    Log("⚠️ No se encontró una entidad 'Mlogis' en filters.json.");
+                    Log("Entidades encontradas: " + string.Join(", ", filtros.Select(f => f.Entidad.ToString())));
+                    return;
                 }
+
+                string fStr = fMlogis.Filtro.ToString();
+                // Por defecto probamos con los últimos 3 días para asegurar traer algo
+                string desde = DateTime.Now.AddDays(-3).ToString("yyyy-MM-dd");
+                string hasta = DateTime.Now.ToString("yyyy-MM-dd");
+                fStr = fStr.Replace("{FECHA_DESDE}", desde).Replace("{FECHA_HASTA}", hasta);
+
+                Log($"   Consultando movimientos desde {desde} hasta {hasta}...");
+                string resultXml = await client.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
+                
+                List<string> ids = new List<string>();
+                int pos = 0;
+                while ((pos = resultXml.IndexOf("<ID>", pos, StringComparison.OrdinalIgnoreCase)) != -1)
+                {
+                    int start = pos + 4;
+                    int end = resultXml.IndexOf("</ID>", start, StringComparison.OrdinalIgnoreCase);
+                    if (end != -1) ids.Add(resultXml.Substring(start, end - start));
+                    pos = end != -1 ? end : start;
+                }
+
+                Log($"✅ CONSULTA EXITOSA. Se recuperaron {ids.Count} IDs.");
+                
+                if (ids.Count > 0)
+                {
+                    Log("\n--- MUESTRA DE IDs (Primeros 5) ---");
+                    foreach (var id in ids.Take(5))
+                    {
+                        Log($"   - ID: {id}");
+                    }
+                    Log("-----------------------------------");
+                }
+                else
+                {
+                    Log("⚠️ No se encontraron movimientos en este rango de fecha para esta empresa.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("❌ Error durante la consulta: " + ex.Message);
             }
         }
     }
