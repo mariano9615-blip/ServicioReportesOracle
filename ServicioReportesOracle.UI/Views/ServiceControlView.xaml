@@ -132,9 +132,9 @@
                     <Border Background="#1AFFC107" CornerRadius="8" Padding="14,10" Margin="0,0,0,24"
                             BorderBrush="#40FFC107" BorderThickness="1">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⚠" FontSize="16" Foreground="#FFC107"
+                            <TextBlock Text="⚠" FontSize="16" Foreground="{StaticResource WarningBrush}"
                                        Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Foreground="#FFC107" FontSize="13" VerticalAlignment="Center">
+                            <TextBlock Foreground="{StaticResource WarningBrush}" FontSize="13" VerticalAlignment="Center">
                                 <Run FontWeight="SemiBold">Requiere permisos de administrador.</Run>
                                 <Run>Se solicitará elevación UAC al ejecutar.</Run>
                             </TextBlock>

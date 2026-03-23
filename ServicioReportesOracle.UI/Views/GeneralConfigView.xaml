@@ -59,7 +59,31 @@
                     <TextBox Text="{Binding Config.UsuarioSMTP}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,15"/>
                     
                     <TextBlock Text="Clave SMTP" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,2"/>
-                    <PasswordBox x:Name="SmtpPasswordBox" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" PasswordChanged="SmtpPasswordBox_PasswordChanged"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <PasswordBox x:Name="SmtpPasswordBox" Grid.Column="0"
+                                     Background="{StaticResource BackgroundBrush}" Foreground="White"
+                                     BorderThickness="0" Padding="8"
+                                     PasswordChanged="SmtpPasswordBox_PasswordChanged"/>
+                        <Border Grid.Column="1" CornerRadius="4" Padding="6,3" Margin="8,0,0,0"
+                                VerticalAlignment="Center">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{StaticResource SuccessBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SmtpEncryptionIsEncrypted}" Value="False">
+                                            <Setter Property="Background" Value="{StaticResource WarningBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding SmtpEncryptionLabel}" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{StaticResource BackgroundBrush}"/>
+                        </Border>
+                    </Grid>
                 </StackPanel>
             </Border>
 
@@ -118,6 +142,35 @@
 
                     <TextBlock Text="Msj. Todo OK" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
                     <TextBox Text="{Binding Config.MensajeTodoOK}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8" Margin="0,0,0,5"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Panel de confirmación: backup fallido -->
+            <Border Visibility="{Binding PendingBackupFail, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Background="#1AFFC107" BorderBrush="{StaticResource WarningBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,20,0,0">
+                <StackPanel>
+                    <TextBlock Text="⚠ No se pudo crear el backup del config. ¿Deseás continuar guardando?"
+                               Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap"
+                               FontWeight="SemiBold" Margin="0,0,0,12"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Continuar guardando" Command="{Binding ConfirmSaveCommand}"
+                                Padding="14,8" Margin="0,0,10,0"
+                                Background="{StaticResource WarningBrush}"
+                                Foreground="{StaticResource BackgroundBrush}" FontWeight="Bold">
+                            <Button.Resources>
+                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                            </Button.Resources>
+                        </Button>
+                        <Button Content="Cancelar" Command="{Binding CancelSaveCommand}"
+                                Padding="14,8"
+                                Background="{StaticResource SurfaceContainerHighBrush}"
+                                Foreground="{StaticResource OnSurfaceBrush}" FontWeight="Bold">
+                            <Button.Resources>
+                                <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                            </Button.Resources>
+                        </Button>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

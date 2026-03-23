@@ -20,6 +20,7 @@
             <Color x:Key="OutlineRaw">#444444</Color>
             <Color x:Key="ErrorRaw">#FF4B4B</Color>
             <Color x:Key="SuccessRaw">#4CAF50</Color>
+            <Color x:Key="WarningRaw">#FFC107</Color>
 
             <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundRaw}"/>
             <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceRaw}"/>
@@ -31,6 +32,9 @@
             <SolidColorBrush x:Key="OutlineBrush" Color="{StaticResource OutlineRaw}"/>
             <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorRaw}"/>
             <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessRaw}"/>
+            <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningRaw}"/>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
             <!-- Modern ScrollBar Style -->
             <Style TargetType="{x:Type ScrollBar}">
@@ -79,6 +83,42 @@
                                 <Trigger Property="IsFocused" Value="True">
                                     <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
                                     <Setter TargetName="border" Property="BorderThickness" Value="1"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- PasswordBox Style (dark theme — evita texto invisible en fondo oscuro) -->
+            <Style TargetType="PasswordBox">
+                <Setter Property="Background" Value="{StaticResource SurfaceContainerHighBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource OnSurfaceBrush}"/>
+                <Setter Property="CaretBrush" Value="{StaticResource OnSurfaceBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{StaticResource OutlineBrush}"/>
+                <Setter Property="Padding" Value="8,6"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="PasswordBox">
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6">
+                                <ScrollViewer x:Name="PART_ContentHost"
+                                              Focusable="false"
+                                              Background="Transparent"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLightBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsFocused" Value="True">
+                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>

@@ -168,13 +168,42 @@
                         </TabItem>
                     </TabControl>
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                        <Button Content="💾 GUARDAR CAMBIOS" Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                    <!-- Panel de confirmación de eliminación -->
+                    <Border Margin="0,20,0,0" CornerRadius="8" Padding="14,12"
+                            Background="#22FF4B4B" BorderBrush="{StaticResource ErrorBrush}" BorderThickness="1"
+                            Visibility="{Binding DataContext.PendingDeleteTask, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NullToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"
+                                       Foreground="{StaticResource ErrorBrush}" Margin="0,0,0,10">
+                                <Run Text="¿Eliminás la tarea '"/>
+                                <Run Text="{Binding DataContext.PendingDeleteTask.Nombre, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
+                                <Run Text="'? Esta acción no se puede deshacer."/>
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Sí, eliminar"
+                                        Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Background="{StaticResource ErrorBrush}" Foreground="White"
+                                        FontWeight="Bold" Padding="14,8" Margin="0,0,10,0">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                </Button>
+                                <Button Content="Cancelar"
+                                        Command="{Binding DataContext.CancelDeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Background="{StaticResource SurfaceContainerHighBrush}" Foreground="{StaticResource OnSurfaceBrush}"
+                                        FontWeight="Bold" Padding="14,8">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                        <Button Content="💾 GUARDAR CAMBIOS" Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 Background="{StaticResource PrimaryBrush}" Foreground="White" Padding="25,12" FontWeight="Bold" Margin="0,0,10,0">
                              <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                         </Button>
-                        <Button Content="🗑 ELIMINAR" Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                CommandParameter="{Binding}" Background="#33FF0000" Foreground="Red" Padding="15,12">
+                        <Button Content="🗑 ELIMINAR" Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" Background="{StaticResource ErrorBrush}" Foreground="White"
+                                Opacity="0.6" Padding="15,12">
                              <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                         </Button>
                     </StackPanel>

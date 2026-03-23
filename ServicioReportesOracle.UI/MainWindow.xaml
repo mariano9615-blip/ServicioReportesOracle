@@ -8,11 +8,12 @@
         mc:Ignorable="d"
         Title="Servicio Oracle - Consola de Gestión" Height="750" Width="1150"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundBrush}">
-    
-    <Window.DataContext>
-        <vm:MainViewModel/>
-    </Window.DataContext>
+        Icon="Assets/app.ico"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        ResizeMode="CanResizeWithGrip"
+        Background="{StaticResource BackgroundBrush}"
+        StateChanged="Window_StateChanged">
 
     <Window.Resources>
         <DataTemplate DataType="{x:Type vm:GeneralConfigViewModel}">
@@ -32,61 +33,161 @@
         </DataTemplate>
 
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style x:Key="TitleBarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource OnSurfaceVariantBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#22FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#33FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TitleBarCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarButtonStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource ErrorBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#CC0000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="260"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <!-- Sidebar -->
-        <Border Background="{StaticResource SurfaceBrush}" Margin="10" CornerRadius="12">
-            <Grid>
-                <StackPanel Margin="20">
-                    <TextBlock Text="Servicio Oracle" FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,0,0,5"/>
-                    <TextBlock Text="Consola de Gestión" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,30"/>
-
-                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="⚙️ Configuración General" IsChecked="True" Command="{Binding NavGeneralCommand}"/>
-                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📋 Tareas SQL (JSON)" Command="{Binding NavTasksCommand}"/>
-                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="💻 Editor SQL de Pruebas" Command="{Binding NavEditorCommand}"/>
-                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📜 Logs del Servicio" Command="{Binding NavLogsCommand}"/>
-                    <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="🔧 Control del Servicio" Command="{Binding NavServiceCommand}"/>
-                </StackPanel>
-                
-                <TextBlock Text="Versión 3.2" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,20" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.5"/>
-            </Grid>
-        </Border>
-
-        <!-- Content Area -->
-        <ContentControl Grid.Column="1" Content="{Binding SelectedViewModel}" Margin="0,10,10,10"/>
-
-        <!-- Notification Overlay -->
-        <Border Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,40,0,0" 
-                Padding="20,10" CornerRadius="20" Panel.ZIndex="1000"
-                Visibility="{Binding IsNotificationVisible, Converter={StaticResource BoolToVis}}"
-                MaxWidth="400">
-            <Border.Style>
-                <Style TargetType="Border">
-                    <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding NotificationType}" Value="Error">
-                            <Setter Property="Background" Value="{StaticResource ErrorBrush}"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding NotificationType}" Value="Success">
-                            <Setter Property="Background" Value="{StaticResource SuccessBrush}"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}"
+                MouseDown="TitleBar_MouseDown">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="🔔" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="White"/>
-                <TextBlock Grid.Column="1" Text="{Binding NotificationMessage}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+
+                <!-- Left: icon + title -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <Image Source="Assets/app.ico" Width="16" Height="16" Margin="0,0,8,0"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <TextBlock Text="Servicio Oracle — Consola de Gestión"
+                               Foreground="{StaticResource OnSurfaceBrush}"
+                               FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Right: window control buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Style="{StaticResource TitleBarButtonStyle}"
+                            Click="MinimizeButton_Click"
+                            ToolTip="Minimizar">
+                        <TextBlock Text="&#x2013;" FontSize="16" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button x:Name="MaxRestoreButton"
+                            Style="{StaticResource TitleBarButtonStyle}"
+                            Click="MaximizeRestoreButton_Click"
+                            ToolTip="Maximizar">
+                        <TextBlock x:Name="MaxRestoreIcon" Text="&#x25A1;" FontSize="13" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Style="{StaticResource TitleBarCloseButtonStyle}"
+                            Click="TitleBarCloseButton_Click"
+                            ToolTip="Cerrar">
+                        <TextBlock Text="&#x2715;" FontSize="13" VerticalAlignment="Center"/>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
+
+        <!-- Main content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar -->
+            <Border Background="{StaticResource SurfaceBrush}" Margin="10" CornerRadius="12">
+                <Grid>
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Servicio Oracle" FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,0,0,5"/>
+                        <TextBlock Text="Consola de Gestión" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,30"/>
+
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="⚙️ Configuración General" IsChecked="True" Command="{Binding NavGeneralCommand}"/>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📋 Tareas SQL (JSON)" Command="{Binding NavTasksCommand}"/>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="💻 Editor SQL de Pruebas" Command="{Binding NavEditorCommand}"/>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📜 Logs del Servicio" Command="{Binding NavLogsCommand}"/>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="🔧 Control del Servicio" Command="{Binding NavServiceCommand}"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Versión 3.7" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,20" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.5"/>
+                </Grid>
+            </Border>
+
+            <!-- Content Area -->
+            <ContentControl Grid.Column="1" Content="{Binding SelectedViewModel}" Margin="0,10,10,10"/>
+
+            <!-- Notification Overlay -->
+            <Border Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,20,0,0"
+                    Padding="20,10" CornerRadius="20" Panel.ZIndex="1000"
+                    Visibility="{Binding IsNotificationVisible, Converter={StaticResource BoolToVis}}"
+                    MaxWidth="400">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding NotificationType}" Value="Error">
+                                <Setter Property="Background" Value="{StaticResource ErrorBrush}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding NotificationType}" Value="Success">
+                                <Setter Property="Background" Value="{StaticResource SuccessBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="🔔" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="White"/>
+                    <TextBlock Grid.Column="1" Text="{Binding NotificationMessage}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

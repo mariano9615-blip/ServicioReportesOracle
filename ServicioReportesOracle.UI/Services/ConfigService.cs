@@ -20,8 +20,21 @@ namespace ServicioReportesOracle.UI.Services
         public ConfigModel LoadConfig()
         {
             if (!File.Exists(_configPath)) return new ConfigModel();
-            var json = File.ReadAllText(_configPath);
-            return JsonConvert.DeserializeObject<ConfigModel>(json);
+            try
+            {
+                var json = File.ReadAllText(_configPath);
+                return JsonConvert.DeserializeObject<ConfigModel>(json) ?? new ConfigModel();
+            }
+            catch
+            {
+                return new ConfigModel();
+            }
+        }
+
+        public void BackupConfig()
+        {
+            if (!File.Exists(_configPath)) return;
+            File.Copy(_configPath, _configPath + ".bak", overwrite: true);
         }
 
         public void SaveConfig(ConfigModel config)

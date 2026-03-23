@@ -6,6 +6,8 @@ namespace ServicioReportesOracle.UI
     public partial class LoginWindow : Window
     {
         private const string CorrectPassword = "Logistica2026";
+        private const int MaxAttempts = 3;
+        private int _failedAttempts = 0;
 
         public bool Authenticated { get; private set; } = false;
 
@@ -44,11 +46,23 @@ namespace ServicioReportesOracle.UI
             if (PasswordBox.Password == CorrectPassword)
             {
                 Authenticated = true;
-                Close();
+                DialogResult = true;
+                return;
+            }
+
+            _failedAttempts++;
+            int remaining = MaxAttempts - _failedAttempts;
+
+            if (remaining <= 0)
+            {
+                PasswordBox.IsEnabled = false;
+                LoginButton.IsEnabled = false;
+                ErrorText.Visibility = Visibility.Collapsed;
+                BlockedPanel.Visibility = Visibility.Visible;
             }
             else
             {
-                ErrorText.Text = "Contraseña incorrecta. Intentá de nuevo.";
+                ErrorText.Text = $"Contraseña incorrecta. Intentos restantes: {remaining}";
                 ErrorText.Visibility = Visibility.Visible;
                 PasswordBox.Clear();
                 PasswordBox.Focus();
@@ -58,7 +72,7 @@ namespace ServicioReportesOracle.UI
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Authenticated = false;
-            Close();
+            DialogResult = false;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)

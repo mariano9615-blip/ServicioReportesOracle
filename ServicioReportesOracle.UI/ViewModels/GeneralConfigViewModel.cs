@@ -7,6 +7,7 @@ using ServicioReportesOracle.UI.Models;
 using ServicioReportesOracle.UI.Services;
 using ServicioOracleReportes;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace ServicioReportesOracle.UI.ViewModels
 {
@@ -16,6 +17,9 @@ namespace ServicioReportesOracle.UI.ViewModels
         private readonly ConfigService _service;
         private string _soapStatus;
         private string _smtpPassword;
+        private bool _smtpEncryptionIsEncrypted;
+        private string _smtpEncryptionLabel;
+        private bool _pendingBackupFail;
 
         public ConfigModel Config
         {
@@ -36,7 +40,27 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _smtpPassword = value; OnPropertyChanged(); }
         }
 
+        public bool SmtpEncryptionIsEncrypted
+        {
+            get => _smtpEncryptionIsEncrypted;
+            set { _smtpEncryptionIsEncrypted = value; OnPropertyChanged(); }
+        }
+
+        public string SmtpEncryptionLabel
+        {
+            get => _smtpEncryptionLabel;
+            set { _smtpEncryptionLabel = value; OnPropertyChanged(); }
+        }
+
+        public bool PendingBackupFail
+        {
+            get => _pendingBackupFail;
+            set { _pendingBackupFail = value; OnPropertyChanged(); }
+        }
+
         public ICommand SaveCommand { get; }
+        public ICommand ConfirmSaveCommand { get; }
+        public ICommand CancelSaveCommand { get; }
         public ICommand TestSoapCommand { get; }
 
         public GeneralConfigViewModel()
@@ -46,19 +70,28 @@ namespace ServicioReportesOracle.UI.ViewModels
             string consultasPath = Path.Combine(basePath, "..\\ServicioReportesOracle\\Consultas.json");
 
             _service = new ConfigService(configPath, consultasPath);
+
+            bool configMissing = !File.Exists(configPath);
             Config = _service.LoadConfig();
+
+            // Si config.json no existía, mostrar Toast una vez que la ventana esté visible
+            if (configMissing)
+            {
+                Application.Current.Dispatcher.BeginInvoke(
+                    new Action(() => MainViewModel.Instance?.ShowNotification(
+                        "config.json no encontrado. Configurá los datos y guardá para crearlo.", "Error")),
+                    DispatcherPriority.ApplicationIdle);
+            }
+
+            // Inicializar indicador de encriptación basado en el valor del JSON
+            UpdateEncryptionStatus(Config.ClaveSMTP?.StartsWith("ENC:") == true);
 
             // Desencriptar ClaveSMTP para mostrarla en el PasswordBox
             SmtpPassword = CryptoHelper.Decrypt(Config.ClaveSMTP);
 
-            SaveCommand = new RelayCommand(_ => {
-                // Encriptar la contraseña antes de guardar al JSON
-                Config.ClaveSMTP = CryptoHelper.Encrypt(SmtpPassword);
-                _service.SaveConfig(Config);
-                // Restaurar en memoria el valor plano (por si se guarda de nuevo sin recargar)
-                Config.ClaveSMTP = SmtpPassword;
-                MainViewModel.Instance.ShowNotification("Configuración guardada correctamente.");
-            });
+            SaveCommand = new RelayCommand(_ => ExecuteSave());
+            ConfirmSaveCommand = new RelayCommand(_ => ExecuteSave(skipBackup: true));
+            CancelSaveCommand = new RelayCommand(_ => PendingBackupFail = false);
 
             TestSoapCommand = new RelayCommand(async _ => {
                 SoapStatus = "Probando conexión...";
@@ -72,6 +105,33 @@ namespace ServicioReportesOracle.UI.ViewModels
                     MainViewModel.Instance.ShowNotification("Error en prueba SOAP.", "Error");
                 }
             });
+        }
+
+        private void ExecuteSave(bool skipBackup = false)
+        {
+            if (!skipBackup)
+            {
+                try { _service.BackupConfig(); }
+                catch
+                {
+                    PendingBackupFail = true;
+                    return;
+                }
+            }
+
+            PendingBackupFail = false;
+            Config.ClaveSMTP = CryptoHelper.Encrypt(SmtpPassword);
+            _service.SaveConfig(Config);
+            // Restaurar en memoria el valor plano (por si se guarda de nuevo sin recargar)
+            Config.ClaveSMTP = SmtpPassword;
+            UpdateEncryptionStatus(true);
+            MainViewModel.Instance.ShowNotification("Configuración guardada correctamente.");
+        }
+
+        private void UpdateEncryptionStatus(bool isEncrypted)
+        {
+            SmtpEncryptionIsEncrypted = isEncrypted;
+            SmtpEncryptionLabel = isEncrypted ? "Encriptada ✓" : "Sin encriptar ⚠";
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

@@ -7,7 +7,6 @@ using System.Windows.Input;
 using System.IO;
 using ServicioReportesOracle.UI.Models;
 using ServicioReportesOracle.UI.Services;
-using System.Windows;
 
 namespace ServicioReportesOracle.UI.ViewModels
 {
@@ -15,6 +14,7 @@ namespace ServicioReportesOracle.UI.ViewModels
     {
         private ObservableCollection<ConsultaTaskModel> _tasks;
         private ConsultaTaskModel _selectedTask;
+        private ConsultaTaskModel _pendingDeleteTask;
         private readonly ConfigService _service;
 
         public ObservableCollection<ConsultaTaskModel> Tasks
@@ -29,9 +29,17 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _selectedTask = value; OnPropertyChanged(); }
         }
 
+        public ConsultaTaskModel PendingDeleteTask
+        {
+            get => _pendingDeleteTask;
+            set { _pendingDeleteTask = value; OnPropertyChanged(); }
+        }
+
         public ICommand SaveCommand { get; }
         public ICommand AddTaskCommand { get; }
         public ICommand DeleteTaskCommand { get; }
+        public ICommand ConfirmDeleteCommand { get; }
+        public ICommand CancelDeleteCommand { get; }
 
         public TasksViewModel()
         {
@@ -57,15 +65,20 @@ namespace ServicioReportesOracle.UI.ViewModels
             });
 
             DeleteTaskCommand = new RelayCommand(p => {
-                if (p is ConsultaTaskModel task) {
-                    var result = MessageBox.Show($"¿Deseas eliminar la tarea '{task.Nombre}'?", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                    if (result == MessageBoxResult.Yes) {
-                        Tasks.Remove(task);
-                        if (SelectedTask == task) SelectedTask = Tasks.FirstOrDefault();
-                        MainViewModel.Instance.ShowNotification("Tarea eliminada.", "Success");
-                    }
-                }
+                if (p is ConsultaTaskModel task)
+                    PendingDeleteTask = task;
             });
+
+            ConfirmDeleteCommand = new RelayCommand(_ => {
+                if (PendingDeleteTask == null) return;
+                var task = PendingDeleteTask;
+                PendingDeleteTask = null;
+                Tasks.Remove(task);
+                if (SelectedTask == task) SelectedTask = Tasks.FirstOrDefault();
+                MainViewModel.Instance.ShowNotification("Tarea eliminada.", "Success");
+            });
+
+            CancelDeleteCommand = new RelayCommand(_ => PendingDeleteTask = null);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
