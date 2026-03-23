@@ -4,6 +4,7 @@ Este archivo ayuda a Antigravity (tu asistente) a entender la estructura y regla
 
 ## 🚀 Resumen del Proyecto
 **Nombre**: ServicioReportesOracle
+**Versión Actual**: v3.0 (Estable SOAP)
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Servicio de Windows que ejecuta consultas SQL en Oracle, genera reportes Excel (ClosedXML) y los envía por SMTP. Incluye un módulo de comparación con Mlogis (SOAP Bit/Azure).
 
