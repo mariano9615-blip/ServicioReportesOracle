@@ -101,12 +101,19 @@ namespace TestSoap
                 }
 
                 string fStr = fMlogis.Filtro.ToString();
-                // Por defecto probamos con los últimos 3 días para asegurar traer algo
-                string desde = DateTime.Now.AddDays(-3).ToString("yyyy-MM-dd");
-                string hasta = DateTime.Now.ToString("yyyy-MM-dd");
+                
+                // Lógica de Overlay (días hacia atrás)
+                int overlay = 3; // Valor por defecto
+                if (fMlogis.Overlay != null) int.TryParse(fMlogis.Overlay.ToString(), out overlay);
+
+                string desde = DateTime.Today.AddDays(-overlay).ToString("yyyy-MM-dd");
+                string hasta = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 fStr = fStr.Replace("{FECHA_DESDE}", desde).Replace("{FECHA_HASTA}", hasta);
 
-                Log($"   Consultando movimientos desde {desde} hasta {hasta}...");
+                if (fMlogis.EstadoLog != null) fStr += $" AND ESTADOLOG = {fMlogis.EstadoLog}";
+                if (fMlogis.Status != null) fStr += $" AND STATUS = '{fMlogis.Status}'";
+
+                Log($"   Consultando movimientos desde {desde} hasta {hasta} (Overlay: {overlay} días, EstadoLog: {fMlogis.EstadoLog}, Status: {fMlogis.Status})...");
                 string resultXml = await client.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
                 
                 List<string> ids = new List<string>();
