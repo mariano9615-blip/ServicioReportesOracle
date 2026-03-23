@@ -18,11 +18,7 @@ namespace ServicioOracleReportes
             _dominio = dominio;
             _urlAuth = urlAuth;
             _urlWs = urlWs;
-            _http = new HttpClient(new SocketsHttpHandler
-            {
-                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate,
-                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-            })
+            _http = new HttpClient
             {
                 Timeout = TimeSpan.FromMinutes(5)
             };

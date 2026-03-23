@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Mail;
 using System.ServiceProcess;
 using System.Timers;
+using System.Threading.Tasks;
 
 namespace ServicioOracleReportes
 {
@@ -374,7 +375,7 @@ namespace ServicioOracleReportes
 
                 string statusPath = Path.Combine(basePath, "status.json");
                 var statusGlobal = File.Exists(statusPath)
-                    ? JsonConvert.DeserializeObject<Dictionary<string, ConsultaStatus>>(File.ReadAllText(statusPath)) ?? new()
+                    ? JsonConvert.DeserializeObject<Dictionary<string, ConsultaStatus>>(File.ReadAllText(statusPath)) ?? new Dictionary<string, ConsultaStatus>()
                     : new Dictionary<string, ConsultaStatus>();
 
                 if (!statusGlobal.ContainsKey(consulta.Nombre)) statusGlobal[consulta.Nombre] = new ConsultaStatus();
