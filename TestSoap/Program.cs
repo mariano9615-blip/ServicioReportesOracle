@@ -104,16 +104,17 @@ namespace TestSoap
                 int overlay = 3;
                 if (fMlogis.Overlay != null) int.TryParse(fMlogis.Overlay.ToString(), out overlay);
 
-                string desde = DateTime.Today.AddDays(-overlay).ToString("yyyy-MM-dd");
-                string hasta = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                // IMPORTANTE: El servidor SOAP espera formato DD/MM/YYYY
+                string desde = DateTime.Today.AddDays(-overlay).ToString("dd/MM/yyyy");
+                string hasta = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
 
                 string fStr = $"FECHA >= '{desde}' AND FECHA <= '{hasta}'";
 
                 if (fMlogis.EstadoLog != null) 
-                    fStr += $" AND ESTADOLOG = '{fMlogis.EstadoLog}'";
+                    fStr += BuildFilterIn("ESTADOLOG", fMlogis.EstadoLog.ToString());
                 
                 if (fMlogis.Status != null) 
-                    fStr += $" AND STATUS = '{fMlogis.Status}'";
+                    fStr += BuildFilterIn("STATUS", fMlogis.Status.ToString());
 
                 Log($"   Consultando movimientos desde {desde} hasta {hasta} (Overlay: {overlay} días, EstadoLog: {fMlogis.EstadoLog}, Status: {fMlogis.Status})...");
                 string resultXml = await client.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
@@ -148,6 +149,14 @@ namespace TestSoap
             {
                 Log("❌ Error durante la consulta: " + ex.Message);
             }
+        }
+
+        private static string BuildFilterIn(string column, string values)
+        {
+            if (string.IsNullOrWhiteSpace(values)) return "";
+            var list = values.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                             .Select(v => $"'{v.Trim()}'");
+            return $" AND {column} IN ({string.Join(",", list)})";
         }
     }
 }
