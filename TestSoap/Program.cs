@@ -104,6 +104,14 @@ namespace TestSoap
                 int overlay = 3;
                 if (fMlogis.Overlay != null) int.TryParse(fMlogis.Overlay.ToString(), out overlay);
 
+                // NUEVO: Pedir por consola para ser más inteligente
+                Console.Write($"\nIngrese cantidad de días de Overlay (presione Enter para usar {overlay}): ");
+                string input = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(input) && int.TryParse(input, out int customOverlay))
+                {
+                    overlay = customOverlay;
+                }
+
                 // IMPORTANTE: El servidor SOAP espera formato DD/MM/YYYY SIN HORA
                 string desde = DateTime.Today.AddDays(-overlay).ToString("dd/MM/yyyy");
                 string hasta = DateTime.Now.ToString("dd/MM/yyyy");
@@ -151,13 +159,13 @@ namespace TestSoap
                 // NUEVO: Guardar en el JSON para que el usuario pruebe manualmente
                 try
                 {
-                    string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mlogis_soap_ids.json");
+                    string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test_mlogis_soap_ids.json");
                     File.WriteAllText(jsonPath, JsonConvert.SerializeObject(ids, Formatting.Indented));
                     Log($"💾 Archivo '{jsonPath}' generado con éxito.");
                 }
                 catch (Exception ex)
                 {
-                    Log($"⚠️ Error al generar mlogis_soap_ids.json: {ex.Message}");
+                    Log($"⚠️ Error al generar test_mlogis_soap_ids.json: {ex.Message}");
                 }
                 
                 if (ids.Count > 0)
