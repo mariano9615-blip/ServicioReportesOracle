@@ -193,7 +193,11 @@ namespace ServicioOracleReportes
                 
                 EscribirLog($"✅ SOAP: {idsActualesSoap.Count} movimientos recuperados de Azure.");
 
-                // Persistir historia de IDs con timestamp
+                // Guardar los IDs actuales en un archivo para visibilidad del usuario (Pisar siempre)
+                string soapIdsPath = Path.Combine(basePath, "mlogis_soap_ids.json");
+                File.WriteAllText(soapIdsPath, JsonConvert.SerializeObject(idsActualesSoap.ToList(), Formatting.Indented));
+
+                // Persistir historia de IDs con timestamp (para el Delay de 10 min)
                 string historyPath = Path.Combine(basePath, "ids_history.json");
                 var historia = File.Exists(historyPath)
                     ? JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(File.ReadAllText(historyPath))
@@ -212,7 +216,7 @@ namespace ServicioOracleReportes
                 File.WriteAllText(historyPath, JsonConvert.SerializeObject(historia, Formatting.Indented));
                 
                 configuracion.UltimaEjecucionSoap = DateTime.Now;
-                EscribirLog($"✅ Invocación SOAP finalizada. {idsActualesSoap.Count} IDs en historia.");
+                EscribirLog($"✅ Invocación SOAP finalizada. {idsActualesSoap.Count} IDs actuales en mlogis_soap_ids.json.");
             }
             catch (Exception ex)
             {
@@ -412,6 +416,10 @@ namespace ServicioOracleReportes
                     .ToHashSet();
 
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
+
+                // Guardar IDs de Oracle encontrados actualmente (para visibilidad)
+                string oracleIdsPath = Path.Combine(basePath, "mlogis_oracle_ids.json");
+                File.WriteAllText(oracleIdsPath, JsonConvert.SerializeObject(idsOracle.ToList(), Formatting.Indented));
                 string historyPath = Path.Combine(basePath, "ids_history.json");
                 if (!File.Exists(historyPath)) return;
 
