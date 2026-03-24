@@ -10,6 +10,7 @@
 
     <Window.Resources>
         <Style x:Key="LoginPasswordBoxStyle" TargetType="PasswordBox">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
             <Setter Property="Background" Value="#2a2a2a"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CaretBrush" Value="White"/>
@@ -144,7 +145,13 @@
                 <Grid>
                     <PasswordBox x:Name="PasswordBox" Style="{StaticResource LoginPasswordBoxStyle}"
                                  Height="44" PasswordChanged="PasswordBox_PasswordChanged"
-                                 KeyDown="PasswordBox_KeyDown"/>
+                                 KeyDown="PasswordBox_KeyDown">
+                        <!-- Overrides el color de sistema que usa PasswordBoxPresenter para dibujar los bullets -->
+                        <PasswordBox.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="White"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}" Color="White"/>
+                        </PasswordBox.Resources>
+                    </PasswordBox>
                     <TextBlock x:Name="Placeholder" Text="Contraseña" VerticalAlignment="Center"
                                Foreground="#555" FontSize="14" Margin="14,0,0,0"
                                IsHitTestVisible="False"/>
