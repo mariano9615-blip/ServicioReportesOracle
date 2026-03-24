@@ -5,6 +5,7 @@ namespace ServicioReportesOracle.UI.Models
 {
     public class ConfigModel
     {
+        public string Empresa { get; set; } = "";
         public string ConnectionString { get; set; }
         public string RutaExcel { get; set; }
         public string RutaSQL { get; set; }

@@ -5,6 +5,7 @@ namespace ServicioOracleReportes
 {
     public class Configuracion
     {
+        public string Empresa { get; set; } = "";
         public string ConnectionString { get; set; }
         public int DiaEjecucion { get; set; }
         public string HoraEjecucion { get; set; }

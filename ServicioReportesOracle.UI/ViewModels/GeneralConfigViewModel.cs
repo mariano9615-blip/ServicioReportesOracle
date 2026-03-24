@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ServicioReportesOracle.UI.Models;
 using ServicioReportesOracle.UI.Services;
 using ServicioOracleReportes;
@@ -83,6 +86,21 @@ namespace ServicioReportesOracle.UI.ViewModels
                     DispatcherPriority.ApplicationIdle);
             }
 
+            // Auto-migración de atributos faltantes en config.json
+            if (!configMissing && File.Exists(configPath))
+            {
+                var migrados = MigrarConfigSiFaltan(configPath);
+                if (migrados.Count > 0)
+                {
+                    Config = _service.LoadConfig();
+                    string lista = string.Join(", ", migrados);
+                    Application.Current.Dispatcher.BeginInvoke(
+                        new Action(() => MainViewModel.Instance?.ShowNotification(
+                            $"Config.json actualizado: se agregaron nuevos atributos: {lista}")),
+                        DispatcherPriority.ApplicationIdle);
+                }
+            }
+
             // Inicializar indicador de encriptación basado en el valor del JSON
             UpdateEncryptionStatus(Config.ClaveSMTP?.StartsWith("ENC:") == true);
 
@@ -125,7 +143,31 @@ namespace ServicioReportesOracle.UI.ViewModels
             // Restaurar en memoria el valor plano (por si se guarda de nuevo sin recargar)
             Config.ClaveSMTP = SmtpPassword;
             UpdateEncryptionStatus(true);
-            MainViewModel.Instance.ShowNotification("Configuración guardada correctamente.");
+            MainViewModel.Instance.ShowNotification("Configuración guardada. El servicio recargará automáticamente sin reiniciarse.");
+        }
+
+        private List<string> MigrarConfigSiFaltan(string configPath)
+        {
+            var agregados = new List<string>();
+            try
+            {
+                var defaults = JObject.FromObject(new ConfigModel());
+                var actual = JObject.Parse(File.ReadAllText(configPath));
+
+                foreach (var prop in defaults.Properties())
+                {
+                    if (!actual.ContainsKey(prop.Name))
+                    {
+                        actual[prop.Name] = prop.Value;
+                        agregados.Add(prop.Name);
+                    }
+                }
+
+                if (agregados.Count > 0)
+                    File.WriteAllText(configPath, actual.ToString(Newtonsoft.Json.Formatting.Indented));
+            }
+            catch { /* no interrumpir carga de UI */ }
+            return agregados;
         }
 
         private void UpdateEncryptionStatus(bool isEncrypted)

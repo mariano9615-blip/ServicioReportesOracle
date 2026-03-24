@@ -55,7 +55,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
             SaveCommand = new RelayCommand(_ => {
                 _service.SaveConsultas(Tasks.ToList());
-                MainViewModel.Instance.ShowNotification("Tareas guardadas correctamente.", "Success");
+                MainViewModel.Instance.ShowNotification("Configuración guardada. El servicio recargará automáticamente sin reiniciarse.", "Success");
             });
 
             AddTaskCommand = new RelayCommand(_ => {

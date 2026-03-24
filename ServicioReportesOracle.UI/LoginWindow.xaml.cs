@@ -57,8 +57,9 @@ namespace ServicioReportesOracle.UI
             {
                 PasswordBox.IsEnabled = false;
                 LoginButton.IsEnabled = false;
-                ErrorText.Visibility = Visibility.Collapsed;
-                BlockedPanel.Visibility = Visibility.Visible;
+                ErrorText.Text = "Inicio de sesión bloqueado. Cerrá y reabrí la aplicación.";
+                ErrorText.Visibility = Visibility.Visible;
+                BlockedPanel.Visibility = Visibility.Collapsed;
             }
             else
             {

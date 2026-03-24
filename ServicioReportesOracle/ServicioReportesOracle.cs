@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
@@ -24,6 +25,13 @@ namespace ServicioOracleReportes
         private bool enEjecucion = false;
         private DateTime ultimoWriteTimeConsultas = DateTime.MinValue;
 
+        // Hot-reload
+        private FileSystemWatcher _fileWatcher;
+        private System.Threading.Timer _debounceConfig;
+        private System.Threading.Timer _debounceConsultas;
+        private string _configPath;
+        private string _consultasPath;
+
 
         protected override void OnStart(string[] args)
         {
@@ -42,6 +50,9 @@ namespace ServicioOracleReportes
 
                 configuracion = JsonConvert.DeserializeObject<Configuracion>(File.ReadAllText(configPath));
 
+                // Auto-migración: atributos faltantes en config.json
+                MigrarConfigSiFaltan(configPath);
+
                 // Auto-migración: encriptar ClaveSMTP si aún está en texto plano
                 if (!string.IsNullOrEmpty(configuracion.ClaveSMTP) && !CryptoHelper.IsEncrypted(configuracion.ClaveSMTP))
                 {
@@ -55,6 +66,10 @@ namespace ServicioOracleReportes
 
                 consultas = JsonConvert.DeserializeObject<List<ConsultaSQL>>(File.ReadAllText(consultasPath));
                 ultimoWriteTimeConsultas = File.GetLastWriteTime(consultasPath);
+
+                _configPath = configPath;
+                _consultasPath = consultasPath;
+                IniciarFileWatcher(basePath);
 
                 timer = new Timer(60000); // Cada 60 segundos
                 timer.Elapsed += TimerElapsed;
@@ -747,7 +762,7 @@ namespace ServicioOracleReportes
                     using (var mensaje = new MailMessage())
                     {
                         mensaje.From = new MailAddress(configuracion.Remitente);
-                        mensaje.Subject = configuracion.AsuntoCorreo;
+                        mensaje.Subject = AgregarPrefixEmpresa(configuracion.AsuntoCorreo);
                         mensaje.Body = GenerarCuerpoCorreo();
                         mensaje.IsBodyHtml = false;
 
@@ -805,7 +820,7 @@ namespace ServicioOracleReportes
                     using (var mensaje = new MailMessage())
                     {
                         mensaje.From = new MailAddress(configuracion.Remitente);
-                        mensaje.Subject = $"Reporte automático: {consulta.Nombre}";
+                        mensaje.Subject = AgregarPrefixEmpresa($"Reporte automático: {consulta.Nombre}");
                         mensaje.Body = $"Se adjunta reporte correspondiente a {consulta.Nombre}.";
                         mensaje.IsBodyHtml = false;
 
@@ -825,6 +840,12 @@ namespace ServicioOracleReportes
                 EscribirLog($"[ENVÍO INDIVIDUAL] ERROR al enviar consulta {consulta.Nombre}: {ex.Message}");
             }
         }
+        private string AgregarPrefixEmpresa(string asunto)
+        {
+            if (string.IsNullOrWhiteSpace(configuracion?.Empresa)) return asunto;
+            return $"[{configuracion.Empresa}] {asunto}";
+        }
+
         private string NormalizarSaltos(string s)
         {
             if (string.IsNullOrEmpty(s))
@@ -867,9 +888,9 @@ namespace ServicioOracleReportes
                                 : $"✔️ Sin novedades – {consulta.Nombre} – {DateTime.Now:dd/MM/yyyy HH:mm}";
                         }
 
-                        mensaje.Subject = asunto
+                        mensaje.Subject = AgregarPrefixEmpresa(asunto
                             .Replace("{Nombre}", consulta.Nombre)
-                            .Replace("{Fecha}", DateTime.Now.ToString("dd/MM/yyyy HH:mm"));
+                            .Replace("{Fecha}", DateTime.Now.ToString("dd/MM/yyyy HH:mm")));
 
                         // ======================
                         //  DETALLES (JSON)
@@ -1033,10 +1054,116 @@ namespace ServicioOracleReportes
             catch { }
         }
 
+        private void MigrarConfigSiFaltan(string configPath)
+        {
+            try
+            {
+                var defaults = JObject.FromObject(new Configuracion());
+                var actual = JObject.Parse(File.ReadAllText(configPath));
+                var agregados = new List<string>();
+
+                foreach (var prop in defaults.Properties())
+                {
+                    if (!actual.ContainsKey(prop.Name))
+                    {
+                        actual[prop.Name] = prop.Value;
+                        agregados.Add(prop.Name);
+                    }
+                }
+
+                if (agregados.Count > 0)
+                {
+                    File.WriteAllText(configPath, actual.ToString(Formatting.Indented));
+                    EscribirLog($"🔧 Config.json migrado: atributos agregados: {string.Join(", ", agregados)}");
+                    // Recargar con los nuevos valores
+                    configuracion = JsonConvert.DeserializeObject<Configuracion>(File.ReadAllText(configPath));
+                }
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("⚠️ Error en migración de Config.json: " + ex.Message);
+            }
+        }
+
+        private void IniciarFileWatcher(string carpeta)
+        {
+            try
+            {
+                _fileWatcher = new FileSystemWatcher(carpeta)
+                {
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+                    EnableRaisingEvents = true
+                };
+                _fileWatcher.Changed += OnArchivoModificado;
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("⚠️ No se pudo iniciar FileSystemWatcher: " + ex.Message);
+            }
+        }
+
+        private void OnArchivoModificado(object sender, FileSystemEventArgs e)
+        {
+            string nombre = Path.GetFileName(e.Name);
+
+            if (string.Equals(nombre, "config.json", StringComparison.OrdinalIgnoreCase))
+            {
+                _debounceConfig?.Dispose();
+                _debounceConfig = new System.Threading.Timer(_ => RecargarConfig(), null, 500, System.Threading.Timeout.Infinite);
+            }
+            else if (string.Equals(nombre, "consultas.json", StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(nombre, "Consultas.json", StringComparison.OrdinalIgnoreCase))
+            {
+                _debounceConsultas?.Dispose();
+                _debounceConsultas = new System.Threading.Timer(_ => RecargarConsultas(), null, 500, System.Threading.Timeout.Infinite);
+            }
+        }
+
+        private void RecargarConfig()
+        {
+            try
+            {
+                var nueva = JsonConvert.DeserializeObject<Configuracion>(File.ReadAllText(_configPath));
+                if (nueva == null) return;
+                nueva.ClaveSMTP = CryptoHelper.Decrypt(nueva.ClaveSMTP);
+                lock (lockObj)
+                {
+                    configuracion = nueva;
+                }
+                EscribirLog("🔄 Config.json recargado en caliente.");
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("⚠️ Error al recargar Config.json: " + ex.Message);
+            }
+        }
+
+        private void RecargarConsultas()
+        {
+            try
+            {
+                var nuevas = JsonConvert.DeserializeObject<List<ConsultaSQL>>(File.ReadAllText(_consultasPath));
+                if (nuevas == null) return;
+                lock (lockObj)
+                {
+                    consultas = nuevas;
+                    ultimoWriteTimeConsultas = File.GetLastWriteTime(_consultasPath);
+                }
+                EscribirLog("🔄 Consultas.json recargado en caliente.");
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("⚠️ Error al recargar Consultas.json: " + ex.Message);
+            }
+        }
+
         protected override void OnStop()
         {
             timer?.Stop();
             timer?.Dispose();
+            _fileWatcher?.Dispose();
+            _debounceConfig?.Dispose();
+            _debounceConsultas?.Dispose();
             EscribirLog("Servicio detenido.");
         }
         private string BuildFilterIn(string column, string values)

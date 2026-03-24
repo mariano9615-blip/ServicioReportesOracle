@@ -33,6 +33,21 @@
                 </StackPanel>
             </Border>
 
+            <!-- Empresa Section -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Identificación" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,15"/>
+                    <TextBlock Text="Empresa / Cliente" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,2"/>
+                    <TextBox Text="{Binding Config.Empresa, UpdateSourceTrigger=PropertyChanged}"
+                             Background="{StaticResource BackgroundBrush}" Foreground="White"
+                             BorderThickness="0" Padding="8"
+                             Tag="Ej: Posse, ACA, Carabelas..."/>
+                    <TextBlock Text="Se antepone como [Empresa] en el asunto de los correos enviados."
+                               Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="11"
+                               Margin="0,4,0,0" Opacity="0.7"/>
+                </StackPanel>
+            </Border>
+
             <!-- SMTP Section -->
             <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="20" Margin="0,0,0,20">
                 <StackPanel>
