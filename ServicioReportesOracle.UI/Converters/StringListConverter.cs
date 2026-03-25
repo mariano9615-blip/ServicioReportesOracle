@@ -21,8 +21,9 @@ namespace ServicioReportesOracle.UI.Converters
         {
             if (value is string s)
             {
-                return s.Split(new[] { Environment.NewLine, ",", ";" }, StringSplitOptions.RemoveEmptyEntries)
+                return s.Split(new[] { "\r\n", "\r", "\n", ",", ";" }, StringSplitOptions.RemoveEmptyEntries)
                         .Select(x => x.Trim())
+                        .Where(x => x.Length > 0)
                         .ToList();
             }
             return new List<string>();

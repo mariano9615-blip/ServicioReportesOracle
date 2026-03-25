@@ -1851,6 +1851,34 @@ namespace ServicioOracleReportes
 
             bool wsDisponible = await Task.Run(() =>
             {
+                // Paso 1: verificar UrlAutentificacion (si está configurada)
+                if (!string.IsNullOrWhiteSpace(configuracion.UrlAutentificacion))
+                {
+                    try
+                    {
+                        var reqAuth = (HttpWebRequest)WebRequest.Create(configuracion.UrlAutentificacion);
+                        reqAuth.Method  = "HEAD";
+                        reqAuth.Timeout = 60000;
+                        using (reqAuth.GetResponse()) { /* responde → continuar */ }
+                    }
+                    catch (WebException ex)
+                    {
+                        // Sin respuesta HTTP → servidor no disponible
+                        if (!(ex.Response is HttpWebResponse))
+                        {
+                            EscribirLog($"⚠️ [WS] UrlAutentificacion no responde: {configuracion.UrlAutentificacion}");
+                            return false;
+                        }
+                        // Con respuesta HTTP (4xx/5xx) → el servidor responde, seguir al paso 2
+                    }
+                    catch
+                    {
+                        EscribirLog($"⚠️ [WS] Error al verificar UrlAutentificacion: {configuracion.UrlAutentificacion}");
+                        return false;
+                    }
+                }
+
+                // Paso 2: verificar UrlWS
                 try
                 {
                     var req = (HttpWebRequest)WebRequest.Create(configuracion.UrlWS);

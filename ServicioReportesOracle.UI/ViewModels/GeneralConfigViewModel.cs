@@ -11,6 +11,7 @@ using ServicioReportesOracle.UI.Models;
 using ServicioReportesOracle.UI.Services;
 using ServicioReportesOracle.UI;
 using ServicioOracleReportes;
+using Oracle.ManagedDataAccess.Client;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -22,6 +23,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         private readonly ConfigService _service;
         private readonly string _configPath;
         private string _soapStatus;
+        private string _oracleStatus;
         private string _smtpPassword;
         private bool _smtpEncryptionIsEncrypted;
         private string _smtpEncryptionLabel;
@@ -39,13 +41,25 @@ namespace ServicioReportesOracle.UI.ViewModels
         public ConfigModel Config
         {
             get => _config;
-            set { _config = value; OnPropertyChanged(); }
+            set
+            {
+                _config = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(UltimaEjecucionSoapDisplay));
+                OnPropertyChanged(nameof(UltimaReconciliacionDisplay));
+            }
         }
 
         public string SoapStatus
         {
             get => _soapStatus;
             set { _soapStatus = value; OnPropertyChanged(); }
+        }
+
+        public string OracleStatus
+        {
+            get => _oracleStatus;
+            set { _oracleStatus = value; OnPropertyChanged(); }
         }
 
         public string SmtpPassword
@@ -131,9 +145,12 @@ namespace ServicioReportesOracle.UI.ViewModels
         public ICommand ConfirmSaveCommand { get; }
         public ICommand CancelSaveCommand { get; }
         public ICommand TestSoapCommand { get; }
+        public ICommand TestOracleCommand { get; }
         public ICommand RefreshWsStateCommand { get; }
         public ICommand SaveHealthCheckCommand { get; }
         public ICommand ShowSmtpPasswordCommand { get; }
+        public ICommand BrowseExcelFolderCommand { get; }
+        public ICommand BrowseSqlFolderCommand { get; }
 
         public GeneralConfigViewModel()
         {
@@ -163,11 +180,43 @@ namespace ServicioReportesOracle.UI.ViewModels
                 }
             }, _ => IsNotBusy);
 
+            TestOracleCommand = new RelayCommand(async _ => {
+                OracleStatus = "Probando conexión...";
+                try {
+                    await Task.Run(() => {
+                        using (var conn = new OracleConnection(Config.ConnectionString))
+                        {
+                            conn.Open();
+                            conn.Close();
+                        }
+                    });
+                    OracleStatus = "✅ ¡Conexión Exitosa!";
+                    MainViewModel.Instance.ShowNotification("Conexión Oracle exitosa.");
+                } catch (Exception ex) {
+                    OracleStatus = "❌ Error: " + ex.Message;
+                    MainViewModel.Instance.ShowNotification("Error en conexión Oracle.", "Error");
+                }
+            }, _ => IsNotBusy);
+
             RefreshWsStateCommand = new RelayCommand(_ => LoadWsEstado());
             SaveHealthCheckCommand = new RelayCommand(_ => ExecuteSaveHealthCheck());
             ShowSmtpPasswordCommand = new RelayCommand(_ => ExecuteShowSmtpPassword());
 
+            BrowseExcelFolderCommand = new RelayCommand(_ => BrowseFolder(path => Config.RutaExcel = path));
+            BrowseSqlFolderCommand   = new RelayCommand(_ => BrowseFolder(path => Config.RutaSQL = path));
+
             _ = LoadConfigAsync();
+        }
+
+        private void BrowseFolder(Action<string> onSelected)
+        {
+            var dialog = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description = "Seleccionar carpeta",
+                ShowNewFolderButton = true
+            };
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                onSelected(dialog.SelectedPath);
         }
 
         private async Task LoadConfigAsync()
@@ -195,6 +244,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     Config = cfg;
                     SmtpPassword = smtpPlain;
                     UpdateEncryptionStatus(isEncrypted);
+                    CommandManager.InvalidateRequerySuggested();
 
                     if (configMissing)
                     {

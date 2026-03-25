@@ -51,35 +51,181 @@ namespace ServicioReportesOracle.UI.Models
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
-    public class ConfigModel
+    public class ConfigModel : INotifyPropertyChanged
     {
-        public string Empresa { get; set; } = "";
-        public string ConnectionString { get; set; }
-        public string RutaExcel { get; set; }
-        public string RutaSQL { get; set; }
-        public string Remitente { get; set; }
-        public string ServidorSMTP { get; set; }
-        public int PuertoSMTP { get; set; }
-        public string UsuarioSMTP { get; set; }
-        public string ClaveSMTP { get; set; }
-        public bool ModoDebug { get; set; }
-        public string MensajeNuevosMovimientos { get; set; }
-        public string MensajeMovimientosResueltos { get; set; }
-        public string MensajeTodoOK { get; set; }
-        public bool HabilitarMlogis { get; set; }
-        public string Dominio { get; set; }
-        public string UrlAutentificacion { get; set; }
-        public string UrlWS { get; set; }
-        public int FrecuenciaSoapMinutos { get; set; }
-        public int DelayComparacionMinutos { get; set; }
-        public DateTime? UltimaEjecucionSoap { get; set; }
-        public DateTime? UltimaReconciliacion { get; set; }
-        public int IntervaloReconciliacionHoras { get; set; } = 2;
+        private string _empresa = "";
+        private string _connectionString;
+        private string _rutaExcel;
+        private string _rutaSQL;
+        private string _remitente;
+        private string _servidorSMTP;
+        private int _puertoSMTP;
+        private string _usuarioSMTP;
+        private string _claveSMTP;
+        private bool _modoDebug;
+        private string _mensajeNuevosMovimientos;
+        private string _mensajeMovimientosResueltos;
+        private string _mensajeTodoOK;
+        private bool _habilitarMlogis;
+        private string _dominio;
+        private string _urlAutentificacion;
+        private string _urlWS;
+        private int _frecuenciaSoapMinutos;
+        private int _delayComparacionMinutos;
+        private DateTime? _ultimaEjecucionSoap;
+        private DateTime? _ultimaReconciliacion;
+        private int _intervaloReconciliacionHoras = 2;
+        private string _claveUI;
+        private HealthCheckSoapModel _healthCheckSoap = new HealthCheckSoapModel();
+
+        public string Empresa
+        {
+            get => _empresa;
+            set { _empresa = value; OnPropertyChanged(); }
+        }
+
+        public string ConnectionString
+        {
+            get => _connectionString;
+            set { _connectionString = value; OnPropertyChanged(); }
+        }
+
+        public string RutaExcel
+        {
+            get => _rutaExcel;
+            set { _rutaExcel = value; OnPropertyChanged(); }
+        }
+
+        public string RutaSQL
+        {
+            get => _rutaSQL;
+            set { _rutaSQL = value; OnPropertyChanged(); }
+        }
+
+        public string Remitente
+        {
+            get => _remitente;
+            set { _remitente = value; OnPropertyChanged(); }
+        }
+
+        public string ServidorSMTP
+        {
+            get => _servidorSMTP;
+            set { _servidorSMTP = value; OnPropertyChanged(); }
+        }
+
+        public int PuertoSMTP
+        {
+            get => _puertoSMTP;
+            set { _puertoSMTP = value; OnPropertyChanged(); }
+        }
+
+        public string UsuarioSMTP
+        {
+            get => _usuarioSMTP;
+            set { _usuarioSMTP = value; OnPropertyChanged(); }
+        }
+
+        public string ClaveSMTP
+        {
+            get => _claveSMTP;
+            set { _claveSMTP = value; OnPropertyChanged(); }
+        }
+
+        public bool ModoDebug
+        {
+            get => _modoDebug;
+            set { _modoDebug = value; OnPropertyChanged(); }
+        }
+
+        public string MensajeNuevosMovimientos
+        {
+            get => _mensajeNuevosMovimientos;
+            set { _mensajeNuevosMovimientos = value; OnPropertyChanged(); }
+        }
+
+        public string MensajeMovimientosResueltos
+        {
+            get => _mensajeMovimientosResueltos;
+            set { _mensajeMovimientosResueltos = value; OnPropertyChanged(); }
+        }
+
+        public string MensajeTodoOK
+        {
+            get => _mensajeTodoOK;
+            set { _mensajeTodoOK = value; OnPropertyChanged(); }
+        }
+
+        public bool HabilitarMlogis
+        {
+            get => _habilitarMlogis;
+            set { _habilitarMlogis = value; OnPropertyChanged(); }
+        }
+
+        public string Dominio
+        {
+            get => _dominio;
+            set { _dominio = value; OnPropertyChanged(); }
+        }
+
+        public string UrlAutentificacion
+        {
+            get => _urlAutentificacion;
+            set { _urlAutentificacion = value; OnPropertyChanged(); }
+        }
+
+        public string UrlWS
+        {
+            get => _urlWS;
+            set { _urlWS = value; OnPropertyChanged(); }
+        }
+
+        public int FrecuenciaSoapMinutos
+        {
+            get => _frecuenciaSoapMinutos;
+            set { _frecuenciaSoapMinutos = value; OnPropertyChanged(); }
+        }
+
+        public int DelayComparacionMinutos
+        {
+            get => _delayComparacionMinutos;
+            set { _delayComparacionMinutos = value; OnPropertyChanged(); }
+        }
+
+        public DateTime? UltimaEjecucionSoap
+        {
+            get => _ultimaEjecucionSoap;
+            set { _ultimaEjecucionSoap = value; OnPropertyChanged(); }
+        }
+
+        public DateTime? UltimaReconciliacion
+        {
+            get => _ultimaReconciliacion;
+            set { _ultimaReconciliacion = value; OnPropertyChanged(); }
+        }
+
+        public int IntervaloReconciliacionHoras
+        {
+            get => _intervaloReconciliacionHoras;
+            set { _intervaloReconciliacionHoras = value; OnPropertyChanged(); }
+        }
 
         // Contraseña de acceso a la UI (almacenada encriptada con CryptoHelper)
-        public string ClaveUI { get; set; }
+        public string ClaveUI
+        {
+            get => _claveUI;
+            set { _claveUI = value; OnPropertyChanged(); }
+        }
 
         // Health Check del WebService SOAP
-        public HealthCheckSoapModel HealthCheckSoap { get; set; } = new HealthCheckSoapModel();
+        public HealthCheckSoapModel HealthCheckSoap
+        {
+            get => _healthCheckSoap;
+            set { _healthCheckSoap = value; OnPropertyChanged(); }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
