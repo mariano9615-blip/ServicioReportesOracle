@@ -42,6 +42,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         public ICommand NavEditorCommand { get; }
         public ICommand NavLogsCommand { get; }
         public ICommand NavServiceCommand { get; }
+        public ICommand NavChangePasswordCommand { get; }
 
         public static MainViewModel Instance { get; private set; }
 
@@ -54,6 +55,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             NavEditorCommand = new RelayCommand(_ => SelectedViewModel = new SqlEditorViewModel());
             NavLogsCommand = new RelayCommand(_ => SelectedViewModel = new LogsViewModel());
             NavServiceCommand = new RelayCommand(_ => SelectedViewModel = new ServiceControlViewModel());
+            NavChangePasswordCommand = new RelayCommand(_ => SelectedViewModel = new ChangePasswordViewModel());
 
             // Default view
             SelectedViewModel = new GeneralConfigViewModel();
@@ -83,9 +85,21 @@ namespace ServicioReportesOracle.UI.ViewModels
     public class RelayCommand : ICommand
     {
         private readonly Action<object> _execute;
-        public RelayCommand(Action<object> execute) => _execute = execute;
-        public bool CanExecute(object parameter) => true;
+        private readonly Func<object, bool> _canExecute;
+
+        public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
+        {
+            _execute = execute;
+            _canExecute = canExecute;
+        }
+
+        public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
         public void Execute(object parameter) => _execute(parameter);
-        public event EventHandler CanExecuteChanged;
+
+        public event EventHandler CanExecuteChanged
+        {
+            add { System.Windows.Input.CommandManager.RequerySuggested += value; }
+            remove { System.Windows.Input.CommandManager.RequerySuggested -= value; }
+        }
     }
 }

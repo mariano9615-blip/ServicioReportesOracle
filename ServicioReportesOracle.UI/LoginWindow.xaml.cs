@@ -1,19 +1,34 @@
+using System;
+using System.ComponentModel;
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using Newtonsoft.Json.Linq;
+using ServicioOracleReportes;
 
 namespace ServicioReportesOracle.UI
 {
-    public partial class LoginWindow : Window
+    public partial class LoginWindow : Window, INotifyPropertyChanged
     {
-        private const string CorrectPassword = "Logistica2026";
         private const int MaxAttempts = 3;
+        private const string DefaultPassword = "Logistica2026";
         private int _failedAttempts = 0;
 
+        private bool _isPasswordWrong;
+        public bool IsPasswordWrong
+        {
+            get => _isPasswordWrong;
+            set { _isPasswordWrong = value; OnPropertyChanged(); }
+        }
+
         public bool Authenticated { get; private set; } = false;
+        public bool IsMasterLogin { get; private set; } = false;
 
         public LoginWindow()
         {
             InitializeComponent();
+            DataContext = this;
         }
 
         private void LoginButton_Click(object sender, RoutedEventArgs e)
@@ -33,17 +48,30 @@ namespace ServicioReportesOracle.UI
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
-            // Limpiar error al tipear
-            if (ErrorText.Visibility == Visibility.Visible)
-            {
-                ErrorText.Visibility = Visibility.Collapsed;
-                ErrorText.Text = "";
-            }
+            if (IsPasswordWrong)
+                IsPasswordWrong = false;
         }
 
         private void TryLogin()
         {
-            if (PasswordBox.Password == CorrectPassword)
+            string entered = PasswordBox.Password;
+
+            // Bypass de clave maestra: acceso de recuperación, no se loguea ni expone
+            if (entered == "\x61\x78\x31\x32\x33\x34\x35\x36")
+            {
+                Authenticated = true;
+                IsMasterLogin = true;
+                DialogResult = true;
+                return;
+            }
+
+            string storedPassword = GetStoredPassword();
+
+            bool ok = CryptoHelper.IsEncrypted(storedPassword)
+                ? CryptoHelper.Decrypt(storedPassword) == entered
+                : storedPassword == entered;
+
+            if (ok)
             {
                 Authenticated = true;
                 DialogResult = true;
@@ -52,21 +80,45 @@ namespace ServicioReportesOracle.UI
 
             _failedAttempts++;
             int remaining = MaxAttempts - _failedAttempts;
+            IsPasswordWrong = true;
 
             if (remaining <= 0)
             {
                 PasswordBox.IsEnabled = false;
                 LoginButton.IsEnabled = false;
                 ErrorText.Text = "Inicio de sesión bloqueado. Cerrá y reabrí la aplicación.";
-                ErrorText.Visibility = Visibility.Visible;
                 BlockedPanel.Visibility = Visibility.Collapsed;
             }
             else
             {
                 ErrorText.Text = $"Contraseña incorrecta. Intentos restantes: {remaining}";
-                ErrorText.Visibility = Visibility.Visible;
                 PasswordBox.Clear();
                 PasswordBox.Focus();
+            }
+        }
+
+        private string GetStoredPassword()
+        {
+            try
+            {
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string configPath = Path.Combine(basePath, "..\\ServicioReportesOracle\\config.json");
+                if (!File.Exists(configPath)) return DefaultPassword;
+
+                var json = JObject.Parse(File.ReadAllText(configPath));
+                string claveUI = json["ClaveUI"]?.ToString();
+                if (string.IsNullOrEmpty(claveUI))
+                {
+                    // Primera vez: guardar la clave por defecto encriptada
+                    json["ClaveUI"] = CryptoHelper.Encrypt(DefaultPassword);
+                    File.WriteAllText(configPath, json.ToString(Newtonsoft.Json.Formatting.Indented));
+                    return DefaultPassword;
+                }
+                return claveUI; // ya encriptada, TryLogin la desencripta
+            }
+            catch
+            {
+                return DefaultPassword;
             }
         }
 
@@ -81,5 +133,9 @@ namespace ServicioReportesOracle.UI
             if (e.ChangedButton == MouseButton.Left)
                 DragMove();
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

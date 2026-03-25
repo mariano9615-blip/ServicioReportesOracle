@@ -151,7 +151,13 @@
                                 </StackPanel>
                             </Border>
                         </TabItem>
-                        <TabItem Header="✅ Plantilla SIN ERROR">
+                        <TabItem>
+                            <TabItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="✅" FontFamily="Segoe UI Emoji" FontSize="12" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBlock Text="SIN ERROR" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </TabItem.Header>
                             <Border Background="#252525" Padding="15">
                                 <StackPanel>
                                     <TextBlock Text="Asunto" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,5"/>
@@ -197,14 +203,57 @@
                     </Border>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                        <Button Content="💾 GUARDAR CAMBIOS" Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                Background="{StaticResource PrimaryBrush}" Foreground="White" Padding="25,12" FontWeight="Bold" Margin="0,0,10,0">
-                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                        <Button Content="📧 TEST CORREO"
+                                Command="{Binding DataContext.TestEmailCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                IsEnabled="{Binding DataContext.IsNotBusy, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                Background="#1F5C2E" Foreground="White" Padding="18,12" FontWeight="Bold" Margin="0,0,10,0"
+                                ToolTip="Envía un correo de prueba usando la plantilla CON ERROR de esta tarea">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#1B6B35"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="8"
+                                                        Opacity="{TemplateBinding Opacity}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                      Margin="{TemplateBinding Padding}"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="bd" Property="Background" Value="#27923F"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="bd" Property="Background" Value="#145228"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="bd" Property="Opacity" Value="0.4"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
                         </Button>
-                        <Button Content="🗑 ELIMINAR" Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        <Button Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                Background="{StaticResource PrimaryBrush}" Foreground="White" Padding="25,12" FontWeight="Bold" Margin="0,0,10,0">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="💾" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="GUARDAR CAMBIOS" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" Background="{StaticResource ErrorBrush}" Foreground="White"
                                 Opacity="0.6" Padding="15,12">
-                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🗑" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="ELIMINAR" VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Button>
                     </StackPanel>
                 </StackPanel>

@@ -9,6 +9,7 @@
         ResizeMode="NoResize">
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style x:Key="LoginPasswordBoxStyle" TargetType="PasswordBox">
             <Setter Property="OverridesDefaultStyle" Value="True"/>
             <Setter Property="Background" Value="#2a2a2a"/>
@@ -180,14 +181,15 @@
                                IsHitTestVisible="False"/>
                 </Grid>
 
-                <!-- Error message inline -->
+                <!-- Error message inline (visibilidad controlada via Binding) -->
                 <TextBlock x:Name="ErrorText"
                            Foreground="#FF6B6B"
                            FontSize="12"
+                           FontWeight="SemiBold"
                            Margin="0,8,0,0"
                            TextWrapping="Wrap"
                            HorizontalAlignment="Center"
-                           Visibility="Collapsed"/>
+                           Visibility="{Binding IsPasswordWrong, Converter={StaticResource BoolToVis}}"/>
 
                 <!-- Login button -->
                 <Button x:Name="LoginButton" Content="Ingresar"

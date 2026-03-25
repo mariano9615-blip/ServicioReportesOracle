@@ -31,6 +31,9 @@
         <DataTemplate DataType="{x:Type vm:ServiceControlViewModel}">
             <v:ServiceControlView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ChangePasswordViewModel}">
+            <v:ChangePasswordView/>
+        </DataTemplate>
 
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
@@ -147,14 +150,45 @@
                         <TextBlock Text="Servicio Oracle" FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,0,0,5"/>
                         <TextBlock Text="Consola de Gestión" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,30"/>
 
-                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="⚙️ Configuración General" IsChecked="True" Command="{Binding NavGeneralCommand}"/>
-                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📋 Tareas SQL (JSON)" Command="{Binding NavTasksCommand}"/>
-                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="💻 Editor SQL de Pruebas" Command="{Binding NavEditorCommand}"/>
-                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="📜 Logs del Servicio" Command="{Binding NavLogsCommand}"/>
-                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Content="🔧 Control del Servicio" Command="{Binding NavServiceCommand}"/>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" IsChecked="True" Command="{Binding NavGeneralCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Configuración General" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavTasksCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📋" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Tareas SQL (JSON)" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavEditorCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="💻" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Editor SQL de Pruebas" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavLogsCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📜" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Logs del Servicio" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavServiceCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔧" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Control del Servicio" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavChangePasswordCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔑" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Cambiar Contraseña" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
                     </StackPanel>
 
-                    <TextBlock Text="Versión 3.7" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,20" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.5"/>
+                    <TextBlock Text="Versión 4.0" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,20" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.5"/>
                 </Grid>
             </Border>
 
@@ -184,7 +218,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="🔔" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="White"/>
+                    <TextBlock Text="🔔" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="White"/>
                     <TextBlock Grid.Column="1" Text="{Binding NotificationMessage}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
                 </Grid>
             </Border>

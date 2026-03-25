@@ -36,14 +36,15 @@
 
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
-            <!-- Modern ScrollBar Style -->
+            <!-- Modern ScrollBar Style (dark theme, vertical + horizontal) -->
             <Style TargetType="{x:Type ScrollBar}">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="Width" Value="8"/>
+                <Setter Property="MinWidth" Value="8"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type ScrollBar}">
-                            <Grid x:Name="Bg" Background="Transparent" SnapsToDevicePixels="true">
+                            <Grid Background="Transparent" SnapsToDevicePixels="true">
                                 <Track x:Name="PART_Track" IsDirectionReversed="true">
                                     <Track.Thumb>
                                         <Thumb>
@@ -59,6 +60,33 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <!-- Horizontal scrollbar: usa Height en vez de Width, sin inversión de dirección -->
+                    <Trigger Property="Orientation" Value="Horizontal">
+                        <Setter Property="Width" Value="Auto"/>
+                        <Setter Property="Height" Value="8"/>
+                        <Setter Property="MinHeight" Value="8"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                    <Grid Background="Transparent" SnapsToDevicePixels="true">
+                                        <Track x:Name="PART_Track" IsDirectionReversed="false">
+                                            <Track.Thumb>
+                                                <Thumb>
+                                                    <Thumb.Template>
+                                                        <ControlTemplate TargetType="{x:Type Thumb}">
+                                                            <Border Background="#555" CornerRadius="4" Margin="0,2"/>
+                                                        </ControlTemplate>
+                                                    </Thumb.Template>
+                                                </Thumb>
+                                            </Track.Thumb>
+                                        </Track>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
 
             <!-- TextBox Style -->

@@ -1,0 +1,60 @@
+using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+
+namespace ServicioOracleReportes
+{
+    public class MlogisHistorial
+    {
+        [JsonProperty("corridas")]
+        public List<MlogisCorrida> Corridas { get; set; } = new List<MlogisCorrida>();
+    }
+
+    public class MlogisCorrida
+    {
+        [JsonProperty("fecha_ejecucion")]
+        public DateTime FechaEjecucion { get; set; }
+
+        [JsonProperty("tipo")]
+        public string Tipo { get; set; } = "";
+
+        [JsonProperty("registros")]
+        public List<MlogisRegistro> Registros { get; set; } = new List<MlogisRegistro>();
+    }
+
+    public class MlogisRegistro
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; } = "";
+
+        [JsonProperty("nrocomprobante")]
+        public string NroComprobante { get; set; } = "";
+
+        [JsonProperty("ctg")]
+        public string Ctg { get; set; } = "";
+
+        [JsonProperty("primera_vez_visto")]
+        public DateTime PrimeraVezVisto { get; set; }
+
+        [JsonProperty("ultima_vez_visto")]
+        public DateTime UltimaVezVisto { get; set; }
+
+        [JsonProperty("cambios_detectados")]
+        public List<MlogisCambio> CambiosDetectados { get; set; } = new List<MlogisCambio>();
+    }
+
+    public class MlogisCambio
+    {
+        [JsonProperty("campo")]
+        public string Campo { get; set; } = "";
+
+        [JsonProperty("valor_anterior")]
+        public string ValorAnterior { get; set; } = "";
+
+        [JsonProperty("valor_nuevo")]
+        public string ValorNuevo { get; set; } = "";
+
+        [JsonProperty("detectado")]
+        public DateTime Detectado { get; set; }
+    }
+}

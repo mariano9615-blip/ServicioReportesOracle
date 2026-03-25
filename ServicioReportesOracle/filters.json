@@ -1,8 +1,10 @@
 [
   {
     "Entidad": "Mlogis",
-    "Overlay": 5,
-    "EstadoLog": "4,6",
-    "Status": "1,2"
+    "Overlay": 1,
+    "Condiciones": [
+      { "EstadoLog": "6", "Status": "2" },
+      { "EstadoLog": "4", "Status": "1" }
+    ]
   }
 ]

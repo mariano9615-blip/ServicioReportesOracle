@@ -1,0 +1,8 @@
+{
+  "alertas_cambios": {
+    "destinatarios": [],
+    "asunto": "⚠️ Cambio detectado en Mlogis — {Campo} — ID {ID}",
+    "cuerpo_template": "Se detectó un cambio en el movimiento MLOGIS.\n\nID: {ID}\nCampo modificado: {Campo}\nValor anterior: {ValorAnterior}\nValor nuevo: {ValorNuevo}\nDetectado: {Timestamp}\nTipo de corrida: {Tipo}",
+    "query_oracle": "SELECT id, nrocomprobante FROM mlogis WHERE id IN ({IDS})"
+  }
+}

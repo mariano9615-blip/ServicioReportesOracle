@@ -78,7 +78,10 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
+
+                        <!-- Contraseña enmascarada (estado por defecto) -->
                         <PasswordBox x:Name="SmtpPasswordBox" Grid.Column="0"
                                      Background="{StaticResource BackgroundBrush}" Foreground="White"
                                      CaretBrush="White" BorderThickness="0" Padding="8"
@@ -87,8 +90,61 @@
                                 <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="White"/>
                                 <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}" Color="White"/>
                             </PasswordBox.Resources>
+                            <PasswordBox.Style>
+                                <Style TargetType="PasswordBox">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SmtpPasswordVisible}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </PasswordBox.Style>
                         </PasswordBox>
-                        <Border Grid.Column="1" CornerRadius="4" Padding="6,3" Margin="8,0,0,0"
+
+                        <!-- Contraseña en texto plano (solo visible con clave maestra) -->
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding SmtpPasswordPlainText, Mode=OneWay}"
+                                 IsReadOnly="True"
+                                 Background="{StaticResource BackgroundBrush}"
+                                 Foreground="{StaticResource PrimaryLightBrush}"
+                                 BorderThickness="0" Padding="8" FontFamily="Consolas">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SmtpPasswordVisible}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+
+                        <!-- Botón ojo (toggle: 👁 para revelar, 🙈 para ocultar) -->
+                        <Button Grid.Column="1"
+                                Command="{Binding ShowSmtpPasswordCommand}"
+                                ToolTip="Ver / ocultar contraseña (requiere clave maestra)"
+                                Background="Transparent" BorderThickness="0"
+                                Padding="6,0" Margin="4,0,0,0"
+                                VerticalAlignment="Center" Cursor="Hand">
+                            <!-- Icono 👁 cuando la clave está enmascarada -->
+                            <TextBlock FontFamily="Segoe UI Emoji" FontSize="15" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="👁"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SmtpPasswordVisible}" Value="True">
+                                                <Setter Property="Text" Value="🙈"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Button>
+
+                        <!-- Indicador de encriptación -->
+                        <Border Grid.Column="2" CornerRadius="4" Padding="6,3" Margin="8,0,0,0"
                                 VerticalAlignment="Center">
                             <Border.Style>
                                 <Style TargetType="Border">
@@ -126,18 +182,45 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
                             <TextBlock Text="Frecuencia SOAP (min)" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
-                            <TextBox Text="{Binding Config.FrecuenciaSoapMinutos}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                            <TextBox Text="{Binding Config.FrecuenciaSoapMinutos, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="1">
+                        <StackPanel Grid.Column="1" Margin="0,0,10,0">
                             <TextBlock Text="Delay Comparación (min)" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
-                            <TextBox Text="{Binding Config.DelayComparacionMinutos}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                            <TextBox Text="{Binding Config.DelayComparacionMinutos, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Intervalo Reconciliación (h)" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,5,0,2"/>
+                            <TextBox Text="{Binding Config.IntervaloReconciliacionHoras, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource BackgroundBrush}" Foreground="White" BorderThickness="0" Padding="8"/>
                         </StackPanel>
                     </Grid>
-                    
-                    <Button Content="Probar Conexión SOAP" Command="{Binding TestSoapCommand}" HorizontalAlignment="Left" Padding="20,10" Margin="0,20,0,0" Background="{StaticResource PrimaryBrush}" Foreground="White" FontWeight="Bold">
+
+                    <!-- Última Ejecución SOAP / Última Reconciliación (solo lectura) -->
+                    <Border Background="{StaticResource BackgroundBrush}" CornerRadius="6" Padding="10,8" Margin="0,15,0,0">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Última Ejecución SOAP:" Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Grid.Column="1" Text="{Binding UltimaEjecucionSoapDisplay}" Foreground="{StaticResource PrimaryLightBrush}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Última Reconciliación Full:" Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Grid.Column="1" Text="{Binding UltimaReconciliacionDisplay}" Foreground="{StaticResource PrimaryLightBrush}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Content="Probar Conexión SOAP" Command="{Binding TestSoapCommand}" HorizontalAlignment="Left" Padding="20,10" Margin="0,15,0,0" Background="{StaticResource PrimaryBrush}" Foreground="White" FontWeight="Bold">
                         <Button.Resources>
                             <Style TargetType="Border">
                                 <Setter Property="CornerRadius" Value="8"/>
@@ -145,6 +228,137 @@
                         </Button.Resources>
                     </Button>
                     <TextBlock Text="{Binding SoapStatus}" Foreground="{StaticResource PrimaryLightBrush}" FontStyle="Italic" Margin="0,10,0,0"/>
+
+                    <Border Height="1" Background="{StaticResource OutlineBrush}" Margin="0,20,0,0"/>
+
+                    <!-- Sección A: Estado actual del WebService -->
+                    <Border Background="{StaticResource BackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,15,0,0">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Estado actual del WebService" FontWeight="SemiBold"
+                                           Foreground="{StaticResource OnSurfaceBrush}" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Command="{Binding RefreshWsStateCommand}"
+                                        Padding="10,5" Background="{StaticResource SurfaceContainerHighBrush}"
+                                        Foreground="{StaticResource OnSurfaceBrush}" FontSize="12">
+                                    <Button.Resources>
+                                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                                    </Button.Resources>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="🔄" FontFamily="Segoe UI Emoji" FontSize="12" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <TextBlock Text="Actualizar" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <!-- Indicador visual -->
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,8,0">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding WsStatusEsOk}" Value="False">
+                                                    <Setter Property="Fill" Value="{StaticResource ErrorBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <TextBlock Text="{Binding WsStatusText}" Foreground="{StaticResource OnSurfaceBrush}"
+                                           FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Fechas -->
+                            <StackPanel Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Última vez caído: " Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding WsUltimaVezCaido}" Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="12" Opacity="0.7"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                    <TextBlock Text="Última vez recuperado: " Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="12"/>
+                                    <TextBlock Text="{Binding WsUltimaVezRecuperado}" Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="12" Opacity="0.7"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Sección B: Configuración de alertas del Health Check -->
+                    <Border Background="{StaticResource BackgroundBrush}" CornerRadius="6" Padding="12" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Configuración de Alertas Health Check" FontWeight="SemiBold"
+                                       Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Destinatarios (uno por línea o separados por coma)"
+                                       Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Config.HealthCheckSoap.Destinatarios,
+                                             Converter={StaticResource StringListConverter},
+                                             UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True" Height="60"
+                                     Background="#1a1a1a" Foreground="White" Padding="8"
+                                     BorderThickness="0" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Plantillas de alertas" FontWeight="SemiBold"
+                                       Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,8"/>
+                            <TabControl>
+                                <TabItem>
+                                    <TabItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="🔴" FontFamily="Segoe UI Emoji" FontSize="12" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                            <TextBlock Text="CAÍDO" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TabItem.Header>
+                                    <Border Background="#252525" Padding="12">
+                                        <StackPanel>
+                                            <TextBlock Text="Asunto" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,5"/>
+                                            <TextBox Text="{Binding Config.HealthCheckSoap.AsuntoCaido, UpdateSourceTrigger=PropertyChanged}"
+                                                     Background="#1a1a1a" Foreground="White" Padding="8" BorderThickness="0" Margin="0,0,0,12"/>
+                                            <TextBlock Text="Cuerpo" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,5"/>
+                                            <TextBox Text="{Binding Config.HealthCheckSoap.CuerpoCaido, UpdateSourceTrigger=PropertyChanged}"
+                                                     AcceptsReturn="True" Height="100"
+                                                     Background="#1a1a1a" Foreground="White" Padding="8"
+                                                     BorderThickness="0" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </TabItem>
+                                <TabItem>
+                                    <TabItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="✅" FontFamily="Segoe UI Emoji" FontSize="12" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                            <TextBlock Text="RECUPERADO" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TabItem.Header>
+                                    <Border Background="#252525" Padding="12">
+                                        <StackPanel>
+                                            <TextBlock Text="Asunto" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,5"/>
+                                            <TextBox Text="{Binding Config.HealthCheckSoap.AsuntoRecuperado, UpdateSourceTrigger=PropertyChanged}"
+                                                     Background="#1a1a1a" Foreground="White" Padding="8" BorderThickness="0" Margin="0,0,0,12"/>
+                                            <TextBlock Text="Cuerpo" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,5"/>
+                                            <TextBox Text="{Binding Config.HealthCheckSoap.CuerpoRecuperado, UpdateSourceTrigger=PropertyChanged}"
+                                                     AcceptsReturn="True" Height="100"
+                                                     Background="#1a1a1a" Foreground="White" Padding="8"
+                                                     BorderThickness="0" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </TabItem>
+                            </TabControl>
+
+                            <Button Command="{Binding SaveHealthCheckCommand}"
+                                    HorizontalAlignment="Left" Padding="16,9" Margin="0,12,0,0"
+                                    Background="{StaticResource PrimaryBrush}" Foreground="White" FontWeight="Bold">
+                                <Button.Resources>
+                                    <Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style>
+                                </Button.Resources>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="💾" FontFamily="Segoe UI Emoji" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Guardar Alertas Health Check" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 
@@ -170,7 +384,7 @@
                     Background="#1AFFC107" BorderBrush="{StaticResource WarningBrush}"
                     BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,20,0,0">
                 <StackPanel>
-                    <TextBlock Text="⚠ No se pudo crear el backup del config. ¿Deseás continuar guardando?"
+                    <TextBlock Text="No se pudo crear el backup del config. ¿Deseás continuar guardando?"
                                Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap"
                                FontWeight="SemiBold" Margin="0,0,0,12"/>
                     <StackPanel Orientation="Horizontal">
@@ -194,12 +408,16 @@
                 </StackPanel>
             </Border>
 
-            <Button Content="💾 GUARDAR CONFIGURACIÓN" Command="{Binding SaveCommand}" Height="50" Margin="0,30,0,50" Background="{StaticResource PrimaryBrush}" Foreground="White" FontSize="16" FontWeight="Bold">
+            <Button Command="{Binding SaveCommand}" Height="50" Margin="0,30,0,50" Background="{StaticResource PrimaryBrush}" Foreground="White" FontSize="16" FontWeight="Bold">
                  <Button.Resources>
                     <Style TargetType="Border">
                         <Setter Property="CornerRadius" Value="10"/>
                     </Style>
                 </Button.Resources>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="💾" FontFamily="Segoe UI Emoji" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="GUARDAR CONFIGURACIÓN" VerticalAlignment="Center"/>
+                </StackPanel>
             </Button>
         </StackPanel>
     </ScrollViewer>

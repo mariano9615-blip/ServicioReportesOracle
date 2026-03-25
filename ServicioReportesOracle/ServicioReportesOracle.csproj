@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuracion.cs" />
+    <Compile Include="MlogisHistorial.cs" />
     <Compile Include="CryptoHelper.cs" />
     <Compile Include="ConsultaSQL.cs" />
     <Compile Include="ConsultaStatus.cs" />
@@ -125,6 +126,7 @@
     <None Include="config.json" />
     <None Include="filters.json" />
     <None Include="Consultas.json" />
+    <None Include="consultas_soap.json" />
     <None Include="Oracle.DataAccess.Common.Configuration.Section.xsd">
       <SubType>Designer</SubType>
     </None>

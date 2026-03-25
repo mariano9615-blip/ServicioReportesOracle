@@ -51,8 +51,8 @@
                     BorderBrush="{StaticResource ErrorBrush}" BorderThickness="1"
                     Visibility="{Binding IsNotAdmin, Converter={StaticResource BoolToVis}}">
                 <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="⚠" FontSize="40" HorizontalAlignment="Center"
-                               Foreground="{StaticResource ErrorBrush}" Margin="0,0,0,10"/>
+                    <TextBlock Text="!" FontSize="40" HorizontalAlignment="Center"
+                               Foreground="{StaticResource ErrorBrush}" Margin="0,0,0,10" FontWeight="Bold"/>
                     <TextBlock Text="La aplicación no está ejecutándose como Administrador"
                                FontSize="16" FontWeight="Bold" Foreground="{StaticResource ErrorBrush}"
                                HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
@@ -99,7 +99,7 @@
 
                     <!-- Uptime -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,32">
-                        <TextBlock Text="⏱  Uptime: " Foreground="{StaticResource OnSurfaceVariantBrush}"
+                        <TextBlock Text="Uptime: " Foreground="{StaticResource OnSurfaceVariantBrush}"
                                    FontSize="14" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding UptimeText}" Foreground="{StaticResource OnSurfaceBrush}"
                                    FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -133,8 +133,8 @@
                     <Border Background="#1AFFC107" CornerRadius="8" Padding="14,10" Margin="0,0,0,24"
                             BorderBrush="#40FFC107" BorderThickness="1">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⚠" FontSize="16" Foreground="{StaticResource WarningBrush}"
-                                       Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="!" FontSize="16" Foreground="{StaticResource WarningBrush}"
+                                       Margin="0,0,10,0" VerticalAlignment="Center" FontWeight="Bold"/>
                             <TextBlock Foreground="{StaticResource WarningBrush}" FontSize="13" VerticalAlignment="Center">
                                 <Run FontWeight="SemiBold">Requiere permisos de administrador.</Run>
                                 <Run>Se solicitará elevación UAC al ejecutar.</Run>
@@ -143,15 +143,25 @@
                     </Border>
 
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="📦  Instalar servicio" Command="{Binding InstallCommand}"
+                        <Button Command="{Binding InstallCommand}"
                                 IsEnabled="{Binding IsAdmin}"
                                 Style="{StaticResource ServiceButtonStyle}"
                                 Background="{StaticResource PrimaryBrush}"
-                                Margin="0,0,16,0"/>
-                        <Button Content="🗑  Desinstalar servicio" Command="{Binding UninstallCommand}"
+                                Margin="0,0,16,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📦" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Instalar servicio" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding UninstallCommand}"
                                 IsEnabled="{Binding IsAdmin}"
                                 Style="{StaticResource ServiceButtonStyle}"
-                                Background="#8B2020"/>
+                                Background="#8B2020">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🗑" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Desinstalar servicio" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
                     <TextBlock Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="12"
