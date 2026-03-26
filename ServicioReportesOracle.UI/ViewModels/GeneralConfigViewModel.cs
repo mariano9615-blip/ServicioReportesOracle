@@ -294,13 +294,22 @@ namespace ServicioReportesOracle.UI.ViewModels
 
                 var jobj = JObject.Parse(File.ReadAllText(wsPath));
                 string estado = jobj["ultimo_estado"]?.ToString() ?? "ok";
-                bool esOk = !string.Equals(estado, "caido", StringComparison.OrdinalIgnoreCase);
+                string detalleError = jobj["detalle_error"]?.ToString();
+                bool esOk = string.Equals(estado, "ok", StringComparison.OrdinalIgnoreCase);
+                bool esAuthError = string.Equals(estado, "auth_error", StringComparison.OrdinalIgnoreCase);
 
                 string caido = jobj["ultima_vez_caido"]?.ToString();
                 string recuperado = jobj["ultima_vez_recuperado"]?.ToString();
 
                 WsStatusEsOk = esOk;
-                WsStatusText = esOk ? "✅ WebService operativo" : "⚠️ WebService no disponible";
+                if (esOk)
+                    WsStatusText = "✅ WebService operativo";
+                else if (esAuthError)
+                    WsStatusText = string.IsNullOrEmpty(detalleError)
+                        ? "⚠️ Error de autenticación SOAP"
+                        : $"⚠️ Error de autenticación: {detalleError}";
+                else
+                    WsStatusText = "⚠️ WebService no disponible";
                 WsUltimaVezCaido = ParseFechaWs(caido);
                 WsUltimaVezRecuperado = ParseFechaWs(recuperado);
             }

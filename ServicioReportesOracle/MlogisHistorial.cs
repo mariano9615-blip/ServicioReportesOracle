@@ -39,6 +39,15 @@ namespace ServicioOracleReportes
         [JsonProperty("ultima_vez_visto")]
         public DateTime UltimaVezVisto { get; set; }
 
+        [JsonProperty("fecupd")]
+        public string FecUpd { get; set; } = "";
+
+        [JsonProperty("anulado")]
+        public bool Anulado { get; set; } = false;
+
+        [JsonProperty("id_anulado_oracle")]
+        public string IdAnuladoOracle { get; set; } = "";
+
         [JsonProperty("cambios_detectados")]
         public List<MlogisCambio> CambiosDetectados { get; set; } = new List<MlogisCambio>();
     }

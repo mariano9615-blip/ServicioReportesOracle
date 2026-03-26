@@ -169,7 +169,8 @@
                 </Grid.RowDefinitions>
 
                 <!-- Lista de líneas con virtualización -->
-                <ListBox Grid.Row="0"
+                <ListBox x:Name="LogsListBox"
+                         Grid.Row="0"
                          ItemsSource="{Binding Lines}"
                          Background="Transparent"
                          BorderThickness="0"

@@ -149,6 +149,7 @@ namespace ServicioOracleReportes
 
         private async Task InvocacionSoapMlogis()
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 EscribirLog("🌐 Iniciando Invocación SOAP Mlogis...");
@@ -224,7 +225,7 @@ namespace ServicioOracleReportes
                 string resultInner = await soapClient.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
 
                 // ── Parsear registros MLOGIS (ID + NROCOMPROBANTE) ────────────
-                var mlogisRecords = new List<(string Id, string NroComprobante)>();
+                var mlogisRecords = new List<(string Id, string NroComprobante, string FecUpd)>();
 
                 if (!string.IsNullOrWhiteSpace(resultInner))
                 {
@@ -235,16 +236,17 @@ namespace ServicioOracleReportes
                             var list = JsonConvert.DeserializeObject<List<dynamic>>(resultInner);
                             foreach (var item in list)
                             {
-                                string id  = item.ID?.ToString() ?? item.Id?.ToString() ?? "";
-                                string nro = item.NROCOMPROBANTE?.ToString() ?? item.NroComprobante?.ToString() ?? "";
-                                if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, nro));
+                                string id     = item.ID?.ToString()           ?? item.Id?.ToString()           ?? "";
+                                string nro    = item.NROCOMPROBANTE?.ToString() ?? item.NroComprobante?.ToString() ?? "";
+                                string fecupd = item.FECUPD?.ToString()        ?? item.FecUpd?.ToString()        ?? "";
+                                if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, nro, fecupd));
                             }
                         }
                         catch (Exception ex) { EscribirLog("Error parseando JSON de Mlogis: " + ex.Message); }
                     }
                     else
                     {
-                        // Fallback XML: extraer ID (NROCOMPROBANTE queda vacío en XML sin parser completo)
+                        // Fallback XML: extraer ID y FECUPD
                         int posId = 0;
                         while ((posId = resultInner.IndexOf("<ID>", posId, StringComparison.OrdinalIgnoreCase)) != -1)
                         {
@@ -252,7 +254,15 @@ namespace ServicioOracleReportes
                             int end = resultInner.IndexOf("</ID>", start, StringComparison.OrdinalIgnoreCase);
                             if (end == -1) break;
                             string id = resultInner.Substring(start, end - start).Trim();
-                            if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, ""));
+
+                            // Intentar extraer FECUPD cercano al tag ID
+                            string fecupd = "";
+                            int fecStart = resultInner.IndexOf("<FECUPD>", end, StringComparison.OrdinalIgnoreCase);
+                            int fecEnd   = fecStart >= 0 ? resultInner.IndexOf("</FECUPD>", fecStart + 8, StringComparison.OrdinalIgnoreCase) : -1;
+                            if (fecStart >= 0 && fecEnd >= 0)
+                                fecupd = resultInner.Substring(fecStart + 8, fecEnd - fecStart - 8).Trim();
+
+                            if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, "", fecupd));
                             posId = end;
                         }
                     }
@@ -334,10 +344,16 @@ namespace ServicioOracleReportes
                     historial = new MlogisHistorial();
                 }
 
-                // Para corrida FULL: conservar la última corrida como referencia de comparación
-                // ANTES de limpiar el historial, para que la detección de cambios intra-SOAP funcione.
-                MlogisCorrida corridaRefFull = esFull ? historial.Corridas.LastOrDefault() : null;
-                if (esFull) historial.Corridas.Clear();
+                // Para corrida FULL: construir lookup plano del estado más reciente de cada ID
+                // desde TODO el historial antes de limpiar — permite comparación inteligente con fecupd.
+                var estadoPrevio = new Dictionary<string, MlogisRegistro>(StringComparer.OrdinalIgnoreCase);
+                if (esFull)
+                {
+                    foreach (var corrida in historial.Corridas)
+                        foreach (var reg in corrida.Registros)
+                            estadoPrevio[reg.Id] = reg; // la última corrida vista "gana"
+                    historial.Corridas.Clear();
+                }
 
                 DateTime fechaEjecucion = hasta;
                 var nuevaCorrida = new MlogisCorrida
@@ -347,20 +363,20 @@ namespace ServicioOracleReportes
                     Registros      = new List<MlogisRegistro>()
                 };
 
-                // ── Cambio 4: Detectar cambios comparando con corrida previa ──
-                var alertas = new List<(MlogisRegistro Registro, MlogisCambio Cambio)>();
+                // ── Detectar cambios comparando con estado previo ──
+                var alertas                 = new List<(MlogisRegistro Registro, MlogisCambio Cambio)>();
+                var registrosParaPendientes = new List<MlogisRegistro>();
+                int cntNuevos = 0, cntActualizados = 0, cntSinCambios = 0;
 
-                foreach (var (mlogisId, nroComprobante) in mlogisRecords)
+                foreach (var (mlogisId, nroComprobante, fecUpd) in mlogisRecords)
                 {
                     ctgPorMlogisId.TryGetValue(mlogisId, out string ctg);
                     ctg = ctg ?? "";
 
-                    // Buscar el estado más reciente de este ID en corridas previas.
-                    // En corrida FULL: usar la corrida guardada antes del Clear() como referencia.
-                    // En corrida DELTA: buscar hacia atrás en el historial acumulado.
+                    // Buscar estado previo del ID
                     MlogisRegistro previo = null;
-                    if (esFull && corridaRefFull != null)
-                        previo = corridaRefFull.Registros.Find(r => r.Id == mlogisId);
+                    if (esFull)
+                        estadoPrevio.TryGetValue(mlogisId, out previo);
                     else
                         for (int i = historial.Corridas.Count - 1; i >= 0 && previo == null; i--)
                             previo = historial.Corridas[i].Registros.Find(r => r.Id == mlogisId);
@@ -370,6 +386,7 @@ namespace ServicioOracleReportes
                         Id              = mlogisId,
                         NroComprobante  = nroComprobante,
                         Ctg             = ctg,
+                        FecUpd          = fecUpd,
                         PrimeraVezVisto = previo?.PrimeraVezVisto ?? fechaEjecucion,
                         UltimaVezVisto  = fechaEjecucion,
                         CambiosDetectados = previo?.CambiosDetectados != null
@@ -377,8 +394,26 @@ namespace ServicioOracleReportes
                             : new List<MlogisCambio>()
                     };
 
-                    if (previo != null)
+                    bool irAPendientes = true;
+
+                    if (previo == null)
                     {
+                        // ID nunca visto → nuevo
+                        cntNuevos++;
+                    }
+                    else if (esFull
+                             && DateTime.TryParse(fecUpd, out DateTime fecUpdDt)
+                             && fecUpdDt <= previo.PrimeraVezVisto)
+                    {
+                        // fecupd <= primera_vez_visto → el registro no cambió desde que lo vimos
+                        cntSinCambios++;
+                        irAPendientes = false;
+                    }
+                    else
+                    {
+                        // Comparar datos (FULL con fecupd > pvz, o cualquier DELTA)
+                        bool datoCambiado = false;
+
                         // Auditar CTG
                         if (!string.Equals(ctg, previo.Ctg, StringComparison.Ordinal)
                             && !(string.IsNullOrEmpty(ctg) && string.IsNullOrEmpty(previo.Ctg)))
@@ -392,6 +427,7 @@ namespace ServicioOracleReportes
                             };
                             registro.CambiosDetectados.Add(cambio);
                             alertas.Add((registro, cambio));
+                            datoCambiado = true;
                         }
 
                         // Auditar NROCOMPROBANTE
@@ -407,8 +443,20 @@ namespace ServicioOracleReportes
                             };
                             registro.CambiosDetectados.Add(cambio);
                             alertas.Add((registro, cambio));
+                            datoCambiado = true;
+                        }
+
+                        if (datoCambiado)
+                            cntActualizados++;
+                        else
+                        {
+                            cntSinCambios++;
+                            if (esFull) irAPendientes = false; // FULL sin cambio real → no contaminar pendientes
                         }
                     }
+
+                    if (irAPendientes)
+                        registrosParaPendientes.Add(registro);
 
                     nuevaCorrida.Registros.Add(registro);
                 }
@@ -448,10 +496,11 @@ namespace ServicioOracleReportes
 
                 // ── Buffer de comparaciones pendientes ────────────────────────
                 string pendientesPath = Path.Combine(_rutaLogs, "comparaciones_pendientes.json");
-                ActualizarComparacionesPendientes(pendientesPath, nuevaCorrida.Registros, tipo, esFull, fechaEjecucion);
+                var regsParaPendientes = esFull ? registrosParaPendientes : nuevaCorrida.Registros;
+                ActualizarComparacionesPendientes(pendientesPath, regsParaPendientes, tipo, esFull, fechaEjecucion);
 
                 // ── Comparación contra Oracle (query_oracle de consultas_soap.json) ──
-                CompararConOracle(pendientesPath, soapConfigPath, tipo, fechaEjecucion);
+                int cntAnulados = CompararConOracle(pendientesPath, soapConfigPath, tipo, fechaEjecucion, historialPath);
 
                 // ── Persistir timestamps en config.json ───────────────────────
                 configuracion.UltimaEjecucionSoap = fechaEjecucion;
@@ -466,7 +515,9 @@ namespace ServicioOracleReportes
                 }
                 catch (Exception exSave) { EscribirLog("⚠️ No se pudo persistir timestamps: " + exSave.Message); }
 
-                EscribirLog($"✅ Invocación SOAP finalizada. Tipo: {tipo}. {nuevaCorrida.Registros.Count} registros procesados.");
+                EscribirLog($"Run {tipo.ToUpper()}: {mlogisRecords.Count} IDs | " +
+                            $"N:{cntNuevos} U:{cntActualizados} A:{cntAnulados} S:{cntSinCambios} | " +
+                            $"{sw.Elapsed.TotalSeconds:F1}s");
             }
             catch (Exception ex)
             {
@@ -563,15 +614,16 @@ namespace ServicioOracleReportes
             }
         }
         // ── Comparación Oracle vs buffer de comparaciones pendientes ─────────
-        private void CompararConOracle(
+        private int CompararConOracle(
             string pendientesPath,
             string soapConfigPath,
             string tipo,
-            DateTime fechaEjecucion)
+            DateTime fechaEjecucion,
+            string historialPath)
         {
             try
             {
-                if (!File.Exists(soapConfigPath)) return;
+                if (!File.Exists(soapConfigPath)) return 0;
 
                 string queryTemplate;
                 try
@@ -582,13 +634,13 @@ namespace ServicioOracleReportes
                 catch (Exception ex)
                 {
                     EscribirLog("⚠️ Error leyendo query_oracle de consultas_soap.json: " + ex.Message);
-                    return;
+                    return 0;
                 }
 
                 if (string.IsNullOrWhiteSpace(queryTemplate))
                 {
                     EscribirLog("⚠️ query_oracle no configurado en consultas_soap.json. Comparación Oracle omitida.");
-                    return;
+                    return 0;
                 }
 
                 // Cargar buffer de comparaciones pendientes
@@ -604,7 +656,7 @@ namespace ServicioOracleReportes
                 if (pendientesArr.Count == 0)
                 {
                     EscribirLog("ℹ️ [Oracle] Sin IDs en buffer de comparaciones pendientes.");
-                    return;
+                    return 0;
                 }
 
                 // Filtrar por DelayComparacionMinutos
@@ -629,14 +681,13 @@ namespace ServicioOracleReportes
                     else
                     {
                         postergados.Add(entry);
-                        EscribirLog($"⏳ [Oracle] ID={idStr} pendiente (visto hace {(int)minutosPasados} min, delay: {delay} min)");
                     }
                 }
 
                 if (listos.Count == 0)
                 {
                     EscribirLog("⏳ [Oracle] Sin IDs que cumplan el delay. Comparación postergada.");
-                    return;
+                    return 0;
                 }
 
                 EscribirLog($"🔍 Comparando {listos.Count} IDs contra Oracle (delay OK, {postergados.Count} postergados)...");
@@ -713,7 +764,6 @@ namespace ServicioOracleReportes
                         && !(string.IsNullOrEmpty(nroOracle) && string.IsNullOrEmpty(nroMlogis)))
                     {
                         var reg = new MlogisRegistro { Id = idOracle, NroComprobante = nroMlogis };
-                        EscribirLog($"⚠️ [Oracle] Diferencia nrocomprobante — ID={idOracle} | Oracle={nroOracle} | Mlogis={nroMlogis}");
                         alertasOracle.Add(new AlertaOracleItem
                         {
                             TipoCaso    = "A",
@@ -726,7 +776,10 @@ namespace ServicioOracleReportes
                 }
 
                 // Caso B: ID Mlogis no encontrado ni directo ni como anulado (fuzzy-match AN%)
-                var idsEncontradosEnOracle = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var idsEncontradosEnOracle  = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var anuladosDetectados      = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                int cntAnulados             = 0;
+
                 foreach (var id in ids)
                 {
                     bool existeOriginalOAnulado = registrosOracle.Any(ora =>
@@ -737,17 +790,18 @@ namespace ServicioOracleReportes
                     if (existeOriginalOAnulado)
                     {
                         idsEncontradosEnOracle.Add(id);
-                        // Log solo para anulados (los directos son ruido innecesario)
                         var anulado = registrosOracle.FirstOrDefault(ora =>
                             ora.Id.StartsWith("AN", StringComparison.OrdinalIgnoreCase) &&
                             ora.Id.IndexOf(id, StringComparison.OrdinalIgnoreCase) >= 0);
                         if (anulado.Id != null)
-                            EscribirLog($"✅ [Oracle] ID={id} → Anulado en Oracle ({anulado.Id}). Marcado como Encontrado (OK).");
+                        {
+                            cntAnulados++;
+                            anuladosDetectados[id] = anulado.Id;
+                        }
                     }
                     else
                     {
                         var reg = new MlogisRegistro { Id = id, NroComprobante = mlogisNro[id] };
-                        EscribirLog($"⚠️ [Oracle] ID={id} existe en Logística (Mlogis) pero NO en ADMIS (Oracle).");
                         alertasOracle.Add(new AlertaOracleItem
                         {
                             TipoCaso    = "B",
@@ -778,16 +832,39 @@ namespace ServicioOracleReportes
                 }
                 catch (Exception ex) { EscribirLog("⚠️ Error guardando comparaciones_pendientes.json: " + ex.Message); }
 
+                // Marcar anulados en historial (batch, una sola escritura)
+                if (anuladosDetectados.Count > 0)
+                {
+                    try
+                    {
+                        var hist = File.Exists(historialPath)
+                            ? JsonConvert.DeserializeObject<MlogisHistorial>(File.ReadAllText(historialPath)) ?? new MlogisHistorial()
+                            : new MlogisHistorial();
+                        var ultimaCorrida = hist.Corridas.LastOrDefault();
+                        if (ultimaCorrida != null)
+                        {
+                            foreach (var reg in ultimaCorrida.Registros)
+                                if (anuladosDetectados.TryGetValue(reg.Id, out string idAN))
+                                { reg.Anulado = true; reg.IdAnuladoOracle = idAN; }
+                            File.WriteAllText(historialPath, JsonConvert.SerializeObject(hist, Formatting.Indented));
+                        }
+                    }
+                    catch (Exception ex) { EscribirLog("⚠️ Error marcando anulados en historial: " + ex.Message); }
+                }
+
                 // Enviar alertas consolidadas con deduplicación
                 if (alertasOracle.Count > 0)
                 {
                     string dedupPath = Path.Combine(_rutaLogs, "alertas_oracle_enviadas.json");
                     EnviarAlertaOracleConsolidada(alertasOracle, soapConfigPath, tipo, fechaEjecucion, dedupPath);
                 }
+
+                return cntAnulados;
             }
             catch (Exception ex)
             {
                 EscribirLog("❌ Error en CompararConOracle: " + ex.Message);
+                return 0;
             }
         }
 

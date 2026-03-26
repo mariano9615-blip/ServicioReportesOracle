@@ -12,7 +12,7 @@ using System.Windows.Input;
 
 namespace ServicioReportesOracle.UI.ViewModels
 {
-    public class LogsViewModel : INotifyPropertyChanged
+    public class LogsViewModel : INotifyPropertyChanged, IDisposable
     {
         private string _selectedDay;
         private readonly string _logsFolder;
@@ -24,6 +24,10 @@ namespace ServicioReportesOracle.UI.ViewModels
         private FileSystemWatcher _watcher;
         private Timer _debounceTimer;
         private const int DebounceMs = 400;
+
+        // Evita ejecuciones concurrentes de IncrementalRefreshAsync
+        private readonly SemaphoreSlim _refreshLock = new SemaphoreSlim(1, 1);
+        private bool _disposed;
 
         private static readonly string[] DiasOrden   = { "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo" };
         private static readonly string[] DiasNombres = { "Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado" };
@@ -144,32 +148,38 @@ namespace ServicioReportesOracle.UI.ViewModels
         // ── Append-only: solo líneas nuevas, sin IsBusy ──────────────────────
         // Usado por FileSystemWatcher (async void requerido por el dispatcher)
         private async void AppendNuevasLineasAsync()
-            => await IncrementalRefreshAsync();
+        {
+            if (_disposed) return;
+            await IncrementalRefreshAsync();
+        }
 
         // ── Carga incremental reutilizable (RefreshCommand + watcher) ─────────
         internal async Task IncrementalRefreshAsync()
         {
-            string path = GetCurrentLogPath();
-            if (string.IsNullOrEmpty(path)) return;
-
-            if (!File.Exists(path))
-            {
-                Lines.Clear();
-                Lines.Add($"Sin logs para {_selectedDay} — el archivo se creará automáticamente cuando el servicio escriba.");
-                LineInfo = "";
-                _lastReadPosition = 0;
-                _totalLines = 0;
-                return;
-            }
-
+            // Skip si ya hay un refresh en curso (evita corrupción de Lines por concurrencia)
+            if (!await _refreshLock.WaitAsync(0)) return;
             try
             {
+                string path = GetCurrentLogPath();
+                if (string.IsNullOrEmpty(path)) return;
+
+                if (!File.Exists(path))
+                {
+                    Lines.Clear();
+                    Lines.Add($"Sin logs para {_selectedDay} — el archivo se creará automáticamente cuando el servicio escriba.");
+                    LineInfo = "";
+                    _lastReadPosition = 0;
+                    _totalLines = 0;
+                    return;
+                }
+
                 long fileLen;
                 try { fileLen = new FileInfo(path).Length; } catch { return; }
 
                 if (fileLen < _lastReadPosition)
                 {
                     // Archivo rotado/truncado → recarga completa con spinner
+                    // Mantenemos el lock durante la recarga para evitar interleaving
                     await CargarLogInicialAsync();
                     return;
                 }
@@ -194,7 +204,11 @@ namespace ServicioReportesOracle.UI.ViewModels
                     ? $"Mostrando últimas 1.000 líneas de {_totalLines:N0} totales"
                     : $"Mostrando {_totalLines} líneas";
             }
-            catch { /* archivo momentáneamente bloqueado por el servicio */ }
+            catch { /* absorber cualquier excepción para no propagar al hilo UI */ }
+            finally
+            {
+                _refreshLock.Release();
+            }
         }
 
         // ── FileSystemWatcher + debounce ──────────────────────────────────────
@@ -210,6 +224,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
             _debounceTimer = new Timer(_ =>
             {
+                if (_disposed) return;
                 Application.Current?.Dispatcher.BeginInvoke(new Action(AppendNuevasLineasAsync));
             }, null, Timeout.Infinite, Timeout.Infinite);
 
@@ -256,6 +271,16 @@ namespace ServicioReportesOracle.UI.ViewModels
                 Lines.Clear();
                 Lines.Add("Error al limpiar logs: " + ex.Message);
             }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            try { _watcher?.Dispose(); } catch { }
+            try { _debounceTimer?.Dispose(); } catch { }
+            _watcher       = null;
+            _debounceTimer = null;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

@@ -1,10 +1,10 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.6)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.7)
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
 ## 🚀 Resumen del Proyecto (v6.6.1)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v6.6.1 (UI v4.2)
+**Versión Actual**: v6.7 (UI v4.3)
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -13,8 +13,9 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Lógica**: Manejo de cronogramas, ejecución SQL (Oracle), generación Excel (ClosedXML) y envío de mails.
 - **Mlogis**: Integración SOAP para comparación de registros. El timer respeta `FrecuenciaSoapMinutos` de `config.json`.
   - **`EjecutarComparacionMlogis()` (legacy)**: Se invoca desde `EjecutarConsultasSegunFrecuencia()` cuando la consulta se llama `"ComparacionMlogisOracle"`. Usa `ids_history.json` (IDs históricos vistos por SOAP) y ejecuta un SQL desde archivo (`.sql`) contra Oracle. Compara *presencia/ausencia* de IDs. Envía mail via `EnviarCorreoTracking()`. **Se mantiene por compatibilidad.**
-  - **`CompararConOracle()` (activo, v6.6)**: Se invoca al final de cada `InvocacionSoapMlogis()`. Ejecuta `query_oracle` de `consultas_soap.json` contra Oracle. Compara *nrocomprobante* (Caso A) y *presencia* (Caso B). Envía mail via `EnviarAlertaCambioSoap()`. **Este es el mecanismo principal activo.**
-    - **v6.6.1 — Anulados (Fuzzy Match)**: La query usa `OR (id LIKE 'AN%' AND (id LIKE '%SIL-%' OR id LIKE '%-%'))` — Index Range Scan en `AN%` + filtro de formato. En C#, todos los rows Oracle se recolectan primero; el Caso B usa `Any(ora => ora.id == idMlogis || (ora.id.StartsWith("AN") && ora.id.Contains(idMlogis)))`. Cubre IDs tipo `AN-SIL-8353914`, `ANSIL8353914`, GUIDs con prefijo AN, etc. Anulados nunca generan Caso A ni Caso B.
+  - **`CompararConOracle()` (activo, v6.7)**: Se invoca al final de cada `InvocacionSoapMlogis()`. Ejecuta `query_oracle` de `consultas_soap.json` contra Oracle. Compara *nrocomprobante* (Caso A) y *presencia* (Caso B). Envía mail via `EnviarAlertaCambioSoap()`. **Este es el mecanismo principal activo.**
+    - **v6.7 — Anulados refactorizado**: La query usa `SUBSTR(id,3) IN ({IDS})` para anulados (reemplaza el LIKE AN% anterior). En C#: si el match es via `AN%`, se marca `anulado=true` en `MlogisRegistro` y en el historial — no genera Caso B ni alerta. `MlogisRegistro` incorpora los campos `FecUpd`, `Anulado` (bool) e `IdAnuladoOracle` (string) para trazabilidad completa.
+    - **v6.6.1 — Anulados (Fuzzy Match, reemplazado)**: Query con `OR (id LIKE 'AN%' AND ...)`. Reemplazado por SUBSTR en v6.7.
   - Ambos métodos coexisten: el legacy cubre IDs históricos acumulados en `ids_history.json`; el nuevo cubre la corrida actual con validación de datos, no solo presencia.
 - **Configs**: `config.json` (Global) y `Consultas.json` (Tareas).
 - **Auto-heal**: Al iniciar, `MigrarConfigSiFaltan()` inyecta atributos faltantes en `config.json` sin pisar valores existentes.
@@ -116,7 +117,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 ```
 - **Lógica**:
   - Corrida DELTA: los IDs nuevos se agregan con `primera_vez_visto`. Los existentes actualizan `nrocomprobante` si cambió.
-  - Corrida FULL: el buffer se limpia antes de repoblarse con los IDs de la corrida actual.
+  - Corrida FULL inteligente (v6.7): ya no limpia ciegamente el buffer. Compara `fecupd` de Mlogis vs `primera_vez_visto` del buffer antes de actualizar el historial. Solo los IDs verdaderamente nuevos o actualizados (fecupd posterior a `primera_vez_visto`) van a `comparaciones_pendientes.json`; el resto se descarta sin generar alerta.
   - `CompararConOracle()` solo incluye en la query Oracle los IDs donde `primera_vez_visto + DelayComparacionMinutos <= DateTime.Now`. Los IDs comparados (OK, Caso A o Caso B) se remueven del buffer.
 
 ### consultas_soap.json
@@ -160,6 +161,8 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Logging**: El servicio core loguea en `Logs/Log_<DiaSemana>.txt` (ej: `Log_Lunes.txt`). Rotación semanal automática. La UI lee estos archivos con selector de día. La vista de Logs carga las últimas 1.000 líneas (ListBox virtualizado) y muestra el total real del archivo.
   - **Carga incremental (v6.4)**: El botón Actualizar usa `IncrementalRefreshAsync()` — solo lee líneas nuevas desde la última posición, sin spinner IsBusy. El spinner solo aparece al cambiar de día en el selector.
   - **Auto-scroll inteligente (v6.4)**: `ScrollIntoView` al final solo si el usuario ya estaba al final (margen 2px). Si scrolleó hacia arriba, no se fuerza el auto-scroll.
+  - **Log compacto por corrida (v6.7)**: una línea por corrida SOAP en formato `[HH:mm] Run {FULL|DELTA}: {total} IDs | N:{nuevos} U:{actualizados} A:{anulados} S:{sinCambios} | {segundos}s`.
+  - **LogsViewModel estable (v6.7 UI)**: `SemaphoreSlim(1,1)` en `IncrementalRefreshAsync` evita ejecuciones concurrentes; `IDisposable` + `Unloaded` limpian `FileSystemWatcher` y `debounceTimer`; try/catch global absorbe excepciones antes de que lleguen al hilo UI; `ScrollIntoView` protegido contra errores de virtualización reciclada.
 - **PasswordBox**: No soporta binding directo. Sincronizar en code-behind via `PasswordChanged` → `vm.Property = box.Password`.
 - **RelayCommand**: Acepta `canExecute` opcional. `CanExecuteChanged` usa `CommandManager.RequerySuggested` para re-evaluar automáticamente.
 
@@ -175,7 +178,8 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - La UI espera encontrar los archivos `.json` en `..\ServicioReportesOracle\` relativo a su ejecución.
 
 ## 🗂️ Changelog
-- **v6.6.1**: Fix precisión anulados. `query_oracle`: `OR (id LIKE 'AN%' AND (id LIKE '%SIL-%' OR id LIKE '%-%'))`. C#: `CompararConOracle` recolecta todos los rows Oracle primero; Caso B usa `Any(ora => ora.id == idMlogis || (ora.id.StartsWith("AN") && ora.id.Contains(idMlogis)))` — cubre GUIDs y SIL con prefijo AN. Anulados nunca generan Caso A ni Caso B.
+- **v6.7 (UI v4.3)**: Corrida FULL inteligente — compara `fecupd` Mlogis vs `primera_vez_visto` antes de actualizar historial; solo IDs nuevos o actualizados van a `comparaciones_pendientes.json`. `MlogisRegistro` con nuevos campos `FecUpd`, `Anulado` (bool), `IdAnuladoOracle` (string). `CompararConOracle()`: match AN% marca `anulado=true` en historial sin generar Caso B ni alerta. `consultas_soap.json`: query anulados corregida a `SUBSTR(id,3) IN ({IDS})`. Log compacto una línea por corrida: `[HH:mm] Run {FULL|DELTA}: {total} IDs | N:{nuevos} U:{actualizados} A:{anulados} S:{sinCambios} | {segundos}s`. UI: `LogsViewModel` fix memory leak (`SemaphoreSlim` anti-concurrencia, `IDisposable`+`Unloaded` para cleanup de watcher/timer, try/catch global, `ScrollIntoView` protegido).
+- **v6.6.1**: Fix precisión anulados. `query_oracle`: `OR (id LIKE 'AN%' AND (id LIKE '%SIL-%' OR id LIKE '%-%'))`. C#: `CompararConOracle` recolecta todos los rows Oracle primero; Caso B usa `Any(ora => ora.id == idMlogis || (ora.id.StartsWith("AN") && ora.id.Contains(idMlogis)))` — cubre GUIDs y SIL con prefijo AN. Anulados nunca generan Caso A ni Caso B. (Reemplazado por v6.7.)
 - **v6.6**: Soporte inicial anulados Oracle (SUBSTR approach). Reemplazado por v6.6.1.
 - **v6.4 (UI v4.1)**: Auditoría diaria en `ws_estado.json` (`caidas_hoy`, `recuperaciones_hoy`, `ultimo_error_xml`, `historial_eventos` — últimos 100 eventos, reset automático al inicio del día). Anti-spam recuperación: mail "Recuperado" solo si `alerta_caida_enviada=true`. Lock `_wsEstadoLock` en `GuardarWsEstado`. Mail: `{EndpointHost}` → "Mlogis SmartFarm" (sin Safelinks). Logs UI: `RefreshCommand` incremental sin spinner; IsBusy solo al cambiar día.
 - **v5.9 (UI v4.1)**: Health Check SOAP refactorizado: valida conectividad HTTP (UrlAutentificacion + UrlWS) y luego POST SOAP real de autenticación. Estado `"auth_error"` para LoginSucceeded=false. `ws_estado.json` incluye `detalle_error`. Mail de caída con placeholder `{DetalleError}`.

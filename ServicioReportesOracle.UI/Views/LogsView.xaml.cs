@@ -12,6 +12,7 @@ namespace ServicioReportesOracle.UI.Views
         {
             InitializeComponent();
             DataContextChanged += OnDataContextChanged;
+            Unloaded += OnUnloaded;
         }
 
         private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -22,24 +23,37 @@ namespace ServicioReportesOracle.UI.Views
                 newVm.Lines.CollectionChanged += OnLinesChanged;
         }
 
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is LogsViewModel vm)
+            {
+                vm.Lines.CollectionChanged -= OnLinesChanged;
+                vm.Dispose();
+            }
+        }
+
         private void OnLinesChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             // Solo reaccionar a nuevos ítems (no a Clear/Reset durante carga inicial)
             if (e.Action != NotifyCollectionChangedAction.Add) return;
             if (LogsListBox.Items.Count == 0) return;
 
-            var sv = GetScrollViewer(LogsListBox);
-            if (sv == null)
+            try
             {
-                // Árbol visual todavía no disponible: scroll incondicional
-                LogsListBox.ScrollIntoView(LogsListBox.Items[LogsListBox.Items.Count - 1]);
-                return;
-            }
+                var sv = GetScrollViewer(LogsListBox);
+                if (sv == null)
+                {
+                    // Árbol visual todavía no disponible: scroll incondicional
+                    LogsListBox.ScrollIntoView(LogsListBox.Items[LogsListBox.Items.Count - 1]);
+                    return;
+                }
 
-            // Solo auto-scroll si el usuario ya estaba al final (margen de 2px)
-            bool nearBottom = sv.VerticalOffset + sv.ViewportHeight >= sv.ExtentHeight - 2.0;
-            if (nearBottom)
-                LogsListBox.ScrollIntoView(LogsListBox.Items[LogsListBox.Items.Count - 1]);
+                // Solo auto-scroll si el usuario ya estaba al final (margen de 2px)
+                bool nearBottom = sv.VerticalOffset + sv.ViewportHeight >= sv.ExtentHeight - 2.0;
+                if (nearBottom)
+                    LogsListBox.ScrollIntoView(LogsListBox.Items[LogsListBox.Items.Count - 1]);
+            }
+            catch { /* VirtualizationMode=Recycling puede tirar durante actualizaciones rápidas */ }
         }
 
         private static ScrollViewer GetScrollViewer(DependencyObject parent)
