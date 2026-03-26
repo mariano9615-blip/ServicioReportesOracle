@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v6.6)
+## 🚀 Resumen del Proyecto (v6.6.1)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v6.6 (UI v4.2)
+**Versión Actual**: v6.6.1 (UI v4.2)
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -14,7 +14,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Mlogis**: Integración SOAP para comparación de registros. El timer respeta `FrecuenciaSoapMinutos` de `config.json`.
   - **`EjecutarComparacionMlogis()` (legacy)**: Se invoca desde `EjecutarConsultasSegunFrecuencia()` cuando la consulta se llama `"ComparacionMlogisOracle"`. Usa `ids_history.json` (IDs históricos vistos por SOAP) y ejecuta un SQL desde archivo (`.sql`) contra Oracle. Compara *presencia/ausencia* de IDs. Envía mail via `EnviarCorreoTracking()`. **Se mantiene por compatibilidad.**
   - **`CompararConOracle()` (activo, v6.6)**: Se invoca al final de cada `InvocacionSoapMlogis()`. Ejecuta `query_oracle` de `consultas_soap.json` contra Oracle. Compara *nrocomprobante* (Caso A) y *presencia* (Caso B). Envía mail via `EnviarAlertaCambioSoap()`. **Este es el mecanismo principal activo.**
-    - **v6.6 — Anulados**: La query incluye `OR (id LIKE 'AN%' AND SUBSTR(id, 3) IN ({IDS}))` para capturar registros anulados sin perder Index Range Scan. En C#, si `idOracle.StartsWith("AN")` y `Contains(mlogisId)` → se mapea al ID original y se marca como **Encontrado (OK)**, sin disparar Caso B.
+    - **v6.6.1 — Anulados (Fuzzy Match)**: La query usa `OR (id LIKE 'AN%' AND (id LIKE '%SIL-%' OR id LIKE '%-%'))` — Index Range Scan en `AN%` + filtro de formato. En C#, todos los rows Oracle se recolectan primero; el Caso B usa `Any(ora => ora.id == idMlogis || (ora.id.StartsWith("AN") && ora.id.Contains(idMlogis)))`. Cubre IDs tipo `AN-SIL-8353914`, `ANSIL8353914`, GUIDs con prefijo AN, etc. Anulados nunca generan Caso A ni Caso B.
   - Ambos métodos coexisten: el legacy cubre IDs históricos acumulados en `ids_history.json`; el nuevo cubre la corrida actual con validación de datos, no solo presencia.
 - **Configs**: `config.json` (Global) y `Consultas.json` (Tareas).
 - **Auto-heal**: Al iniciar, `MigrarConfigSiFaltan()` inyecta atributos faltantes en `config.json` sin pisar valores existentes.
@@ -175,7 +175,8 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - La UI espera encontrar los archivos `.json` en `..\ServicioReportesOracle\` relativo a su ejecución.
 
 ## 🗂️ Changelog
-- **v6.6**: Soporte anulados Oracle en `CompararConOracle`. `query_oracle` con `OR (id LIKE 'AN%' AND SUBSTR(id, 3) IN ({IDS}))` para Index Range Scan. C#: `idOracle.StartsWith("AN") && Contains(mlogisId)` → marcado como Encontrado (OK), sin Caso B.
+- **v6.6.1**: Fix precisión anulados. `query_oracle`: `OR (id LIKE 'AN%' AND (id LIKE '%SIL-%' OR id LIKE '%-%'))`. C#: `CompararConOracle` recolecta todos los rows Oracle primero; Caso B usa `Any(ora => ora.id == idMlogis || (ora.id.StartsWith("AN") && ora.id.Contains(idMlogis)))` — cubre GUIDs y SIL con prefijo AN. Anulados nunca generan Caso A ni Caso B.
+- **v6.6**: Soporte inicial anulados Oracle (SUBSTR approach). Reemplazado por v6.6.1.
 - **v6.4 (UI v4.1)**: Auditoría diaria en `ws_estado.json` (`caidas_hoy`, `recuperaciones_hoy`, `ultimo_error_xml`, `historial_eventos` — últimos 100 eventos, reset automático al inicio del día). Anti-spam recuperación: mail "Recuperado" solo si `alerta_caida_enviada=true`. Lock `_wsEstadoLock` en `GuardarWsEstado`. Mail: `{EndpointHost}` → "Mlogis SmartFarm" (sin Safelinks). Logs UI: `RefreshCommand` incremental sin spinner; IsBusy solo al cambiar día.
 - **v5.9 (UI v4.1)**: Health Check SOAP refactorizado: valida conectividad HTTP (UrlAutentificacion + UrlWS) y luego POST SOAP real de autenticación. Estado `"auth_error"` para LoginSucceeded=false. `ws_estado.json` incluye `detalle_error`. Mail de caída con placeholder `{DetalleError}`.
 - **v5.5 (UI v4.0)**: HealthCheckSoap configurable en `config.json` (destinatarios y plantillas para caída/recuperación, editable desde la UI). Carga asíncrona de `config.json` en GeneralConfigView con indicador IsBusy. Estado del WS SOAP visible en la UI (lee `Logs\ws_estado.json` en tiempo real). Clave maestra de recuperación de acceso en LoginWindow. Versión UI estandarizada a v4.0.

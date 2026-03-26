@@ -651,7 +651,6 @@ namespace ServicioOracleReportes
                 }
 
                 var ids = mlogisNro.Keys.ToList();
-                var idsEncontradosEnOracle = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var alertasOracle = new List<AlertaOracleItem>();
 
                 // Todos los IDs que pasaron el delay se remueven del buffer (con o sin diferencia)
@@ -665,6 +664,9 @@ namespace ServicioOracleReportes
                             return row[dc]?.ToString() ?? "";
                     return "";
                 };
+
+                // v6.6.1 — Recolectar todos los registros Oracle para fuzzy-match de anulados
+                var registrosOracle = new List<(string Id, string Nro)>();
 
                 const int chunkSize = 999;
                 int totalChunks = (ids.Count + chunkSize - 1) / chunkSize;
@@ -691,50 +693,58 @@ namespace ServicioOracleReportes
                             {
                                 string idOracle  = getCol(row, "id");
                                 string nroOracle = getCol(row, "nrocomprobante");
-
-                                if (string.IsNullOrEmpty(idOracle)) continue;
-
-                                // v6.6 — Anulados: id Oracle con prefijo "AN" que contiene el ID de Mlogis
-                                if (idOracle.StartsWith("AN", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    string mlogisIdMatch = ids.FirstOrDefault(mId =>
-                                        idOracle.IndexOf(mId, StringComparison.OrdinalIgnoreCase) >= 0);
-                                    if (mlogisIdMatch != null)
-                                    {
-                                        idsEncontradosEnOracle.Add(mlogisIdMatch);
-                                        EscribirLog($"✅ [Oracle] ID={mlogisIdMatch} → Anulado en Oracle ({idOracle}). Marcado como Encontrado (OK).");
-                                    }
-                                    continue; // Anulados no generan Caso A
-                                }
-
-                                idsEncontradosEnOracle.Add(idOracle);
-
-                                // Caso A: ID existe en Oracle pero nrocomprobante difiere
-                                if (mlogisNro.TryGetValue(idOracle, out string nroMlogis)
-                                    && !string.Equals(nroOracle, nroMlogis, StringComparison.Ordinal)
-                                    && !(string.IsNullOrEmpty(nroOracle) && string.IsNullOrEmpty(nroMlogis)))
-                                {
-                                    var reg = new MlogisRegistro { Id = idOracle, NroComprobante = nroMlogis };
-                                    EscribirLog($"⚠️ [Oracle] Diferencia nrocomprobante — ID={idOracle} | Oracle={nroOracle} | Mlogis={nroMlogis}");
-                                    alertasOracle.Add(new AlertaOracleItem
-                                    {
-                                        TipoCaso    = "A",
-                                        Registro    = reg,
-                                        Campo       = "nrocomprobante",
-                                        ValorOracle = nroOracle,
-                                        ValorMlogis = nroMlogis
-                                    });
-                                }
-                                // Caso OK: encontrado y nrocomprobante coincide → sin alerta, se remueve del buffer
+                                if (!string.IsNullOrEmpty(idOracle))
+                                    registrosOracle.Add((idOracle, nroOracle));
                             }
                         }
                     }
                 }
 
-                // Caso B: ID listo pero no encontrado en Oracle
+                EscribirLog($"🔍 Oracle devolvió {registrosOracle.Count} filas (directas + anuladas AN%).");
+
+                // Caso A: ID exacto en Oracle pero nrocomprobante difiere (excluye anulados)
+                foreach (var (idOracle, nroOracle) in registrosOracle)
+                {
+                    if (idOracle.StartsWith("AN", StringComparison.OrdinalIgnoreCase))
+                        continue; // Anulados no generan Caso A
+
+                    if (mlogisNro.TryGetValue(idOracle, out string nroMlogis)
+                        && !string.Equals(nroOracle, nroMlogis, StringComparison.Ordinal)
+                        && !(string.IsNullOrEmpty(nroOracle) && string.IsNullOrEmpty(nroMlogis)))
+                    {
+                        var reg = new MlogisRegistro { Id = idOracle, NroComprobante = nroMlogis };
+                        EscribirLog($"⚠️ [Oracle] Diferencia nrocomprobante — ID={idOracle} | Oracle={nroOracle} | Mlogis={nroMlogis}");
+                        alertasOracle.Add(new AlertaOracleItem
+                        {
+                            TipoCaso    = "A",
+                            Registro    = reg,
+                            Campo       = "nrocomprobante",
+                            ValorOracle = nroOracle,
+                            ValorMlogis = nroMlogis
+                        });
+                    }
+                }
+
+                // Caso B: ID Mlogis no encontrado ni directo ni como anulado (fuzzy-match AN%)
+                var idsEncontradosEnOracle = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var id in ids)
                 {
-                    if (!idsEncontradosEnOracle.Contains(id))
+                    bool existeOriginalOAnulado = registrosOracle.Any(ora =>
+                        string.Equals(ora.Id, id, StringComparison.OrdinalIgnoreCase) ||
+                        (ora.Id.StartsWith("AN", StringComparison.OrdinalIgnoreCase) &&
+                         ora.Id.IndexOf(id, StringComparison.OrdinalIgnoreCase) >= 0));
+
+                    if (existeOriginalOAnulado)
+                    {
+                        idsEncontradosEnOracle.Add(id);
+                        // Log solo para anulados (los directos son ruido innecesario)
+                        var anulado = registrosOracle.FirstOrDefault(ora =>
+                            ora.Id.StartsWith("AN", StringComparison.OrdinalIgnoreCase) &&
+                            ora.Id.IndexOf(id, StringComparison.OrdinalIgnoreCase) >= 0);
+                        if (anulado.Id != null)
+                            EscribirLog($"✅ [Oracle] ID={id} → Anulado en Oracle ({anulado.Id}). Marcado como Encontrado (OK).");
+                    }
+                    else
                     {
                         var reg = new MlogisRegistro { Id = id, NroComprobante = mlogisNro[id] };
                         EscribirLog($"⚠️ [Oracle] ID={id} existe en Logística (Mlogis) pero NO en ADMIS (Oracle).");
