@@ -13,7 +13,8 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Lógica**: Manejo de cronogramas, ejecución SQL (Oracle), generación Excel (ClosedXML) y envío de mails.
 - **Mlogis**: Integración SOAP para comparación de registros. El timer respeta `FrecuenciaSoapMinutos` de `config.json`.
   - **`EjecutarComparacionMlogis()` (legacy)**: Se invoca desde `EjecutarConsultasSegunFrecuencia()` cuando la consulta se llama `"ComparacionMlogisOracle"`. Usa `ids_history.json` (IDs históricos vistos por SOAP) y ejecuta un SQL desde archivo (`.sql`) contra Oracle. Compara *presencia/ausencia* de IDs. Envía mail via `EnviarCorreoTracking()`. **Se mantiene por compatibilidad.**
-  - **`CompararConOracle()` (activo, v5.1)**: Se invoca al final de cada `InvocacionSoapMlogis()`. Usa los registros de la corrida actual en `mlogis_historial.json` y ejecuta `query_oracle` de `consultas_soap.json` contra Oracle. Compara *nrocomprobante* (Caso A) y *presencia* (Caso B). Envía mail via `EnviarAlertaCambioSoap()`. **Este es el mecanismo principal activo.**
+  - **`CompararConOracle()` (activo, v6.6)**: Se invoca al final de cada `InvocacionSoapMlogis()`. Ejecuta `query_oracle` de `consultas_soap.json` contra Oracle. Compara *nrocomprobante* (Caso A) y *presencia* (Caso B). Envía mail via `EnviarAlertaCambioSoap()`. **Este es el mecanismo principal activo.**
+    - **v6.6 — Anulados**: La query incluye `OR (id LIKE 'AN%' AND SUBSTR(id, 3) IN ({IDS}))` para capturar registros anulados sin perder Index Range Scan. En C#, si `idOracle.StartsWith("AN")` y `Contains(mlogisId)` → se mapea al ID original y se marca como **Encontrado (OK)**, sin disparar Caso B.
   - Ambos métodos coexisten: el legacy cubre IDs históricos acumulados en `ids_history.json`; el nuevo cubre la corrida actual con validación de datos, no solo presencia.
 - **Configs**: `config.json` (Global) y `Consultas.json` (Tareas).
 - **Auto-heal**: Al iniciar, `MigrarConfigSiFaltan()` inyecta atributos faltantes en `config.json` sin pisar valores existentes.
@@ -131,11 +132,13 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 
 - **Trigger**: antes de cada `InvocacionSoapMlogis()`.
 - **Timeout**: 60 segundos (HEAD request al endpoint `UrlWS`).
-- **Estado persistido**: `Logs\ws_estado.json` con campos `ultimo_estado`, `ultima_vez_caido`, `ultima_vez_recuperado`, `alerta_caida_enviada`.
+- **Estado persistido**: `Logs\ws_estado.json` con campos `ultimo_estado`, `ultima_vez_caido`, `ultima_vez_recuperado`, `alerta_caida_enviada`, `detalle_error`, `caidas_hoy`, `recuperaciones_hoy`, `ultimo_error_xml`, `historial_eventos` (últimos 100, reset diario automático).
+- **Estados posibles**: `"ok"`, `"caido"` (sin respuesta HTTP), `"auth_error"` (LoginSucceeded=false o token ausente).
 - **Lógica de alertas**:
-  - WS caído + `alerta_caida_enviada = false` → envía mail de caída, setea flag, saltea corrida.
-  - WS caído + `alerta_caida_enviada = true` → solo loguea, saltea corrida (no reenvía mail).
-  - WS recuperado + estado previo `"caido"` → envía mail de recuperación, resetea flags.
+  - WS caído/auth_error + `alerta_caida_enviada = false` → envía mail de caída, setea flag, saltea corrida.
+  - WS caído/auth_error + `alerta_caida_enviada = true` → solo loguea, saltea corrida (no reenvía mail).
+  - WS recuperado + estado previo era falla + `alerta_caida_enviada = true` → envía mail de recuperación, resetea flags.
+  - WS recuperado + estado previo era falla + `alerta_caida_enviada = false` → solo loguea, incrementa `recuperaciones_hoy` (sin mail — anti-spam).
   - WS ok + estado previo `"ok"` → flujo normal.
 - **Configuración**: sección `HealthCheckSoap` en `config.json`. Se inyecta automáticamente en instalaciones existentes via `MigrarConfigSiFaltan()`.
   - `Destinatarios`: lista de mails. Si está vacía, el mail se loguea y se omite sin error.
@@ -154,7 +157,9 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Notificaciones**: Utilizar `MainViewModel.Instance.ShowNotification(msg)` en lugar de `MessageBox`.
 - **Bindings**: Usar `UpdateSourceTrigger=PropertyChanged` para una UI reactiva y moderna.
 - **Models**: Los modelos que representen JSON (`ConfigModel`, `ConsultaTaskModel`) deben implementar `INotifyPropertyChanged` y seguir la estructura anidada del archivo físico.
-- **Logging**: El servicio core loguea en `Logs/Log_<DiaSemana>.txt` (ej: `Log_Lunes.txt`). Rotación semanal automática. La UI lee estos archivos con selector de día. La vista de Logs carga de forma asíncrona las últimas 1.000 líneas (con ListBox virtualizado) y muestra el total real del archivo.
+- **Logging**: El servicio core loguea en `Logs/Log_<DiaSemana>.txt` (ej: `Log_Lunes.txt`). Rotación semanal automática. La UI lee estos archivos con selector de día. La vista de Logs carga las últimas 1.000 líneas (ListBox virtualizado) y muestra el total real del archivo.
+  - **Carga incremental (v6.4)**: El botón Actualizar usa `IncrementalRefreshAsync()` — solo lee líneas nuevas desde la última posición, sin spinner IsBusy. El spinner solo aparece al cambiar de día en el selector.
+  - **Auto-scroll inteligente (v6.4)**: `ScrollIntoView` al final solo si el usuario ya estaba al final (margen 2px). Si scrolleó hacia arriba, no se fuerza el auto-scroll.
 - **PasswordBox**: No soporta binding directo. Sincronizar en code-behind via `PasswordChanged` → `vm.Property = box.Password`.
 - **RelayCommand**: Acepta `canExecute` opcional. `CanExecuteChanged` usa `CommandManager.RequerySuggested` para re-evaluar automáticamente.
 
