@@ -7,9 +7,9 @@ namespace ServicioOracleReportes
     {
         public List<string> Destinatarios { get; set; } = new List<string> { "mdemichelis@bit.com.ar" };
         public string AsuntoCaido { get; set; } = "⚠️ [{Empresa}] WebService SOAP no disponible — {Fecha}";
-        public string CuerpoCaido { get; set; } = "El WebService SOAP no está respondiendo.\n\nURL: {UrlWS}\nDetectado: {Timestamp}\nTimeout: 60 segundos\n\nLas corridas SOAP quedan suspendidas hasta que el servicio se recupere.\nEl monitoreo Oracle y el sistema de mails existente continúan funcionando normalmente.";
+        public string CuerpoCaido { get; set; } = "El WebService SOAP no está respondiendo.\n\nEmpresa: {Empresa}\nServicio: {EndpointHost}\nDetectado: {Timestamp}\nDetalle: {DetalleError}\n\nLas corridas SOAP quedan suspendidas hasta que el servicio se recupere.\nEl monitoreo Oracle y el sistema de mails existente continúan funcionando normalmente.";
         public string AsuntoRecuperado { get; set; } = "✅ [{Empresa}] WebService SOAP recuperado — {Fecha}";
-        public string CuerpoRecuperado { get; set; } = "El WebService SOAP volvió a estar disponible.\n\nURL: {UrlWS}\nCaído desde: {UltimaVezCaido}\nRecuperado: {Timestamp}\n\nLas corridas SOAP se reanudan normalmente.";
+        public string CuerpoRecuperado { get; set; } = "El WebService SOAP volvió a estar disponible.\n\nEmpresa: {Empresa}\nServicio: {EndpointHost}\nCaído desde: {UltimaVezCaido}\nRecuperado: {Timestamp}\n\nLas corridas SOAP se reanudan normalmente.";
     }
 
     public class Configuracion

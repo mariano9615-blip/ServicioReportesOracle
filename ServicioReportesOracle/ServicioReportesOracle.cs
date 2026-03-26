@@ -20,7 +20,8 @@ namespace ServicioOracleReportes
         private Timer timer;
         private Configuracion configuracion;
         private List<ConsultaSQL> consultas;
-        private static readonly object lockObj = new object();
+        private static readonly object lockObj        = new object();
+        private static readonly object _wsEstadoLock  = new object();
         private bool enEjecucion = false;
         private DateTime ultimoWriteTimeConsultas = DateTime.MinValue;
         private string _rutaLogs;
@@ -1896,41 +1897,204 @@ namespace ServicioOracleReportes
 
             DateTime ahora = DateTime.Now;
 
+            // v6.4 — Reset contadores diarios si cambió el día
+            if (!estado.FechaContadores.HasValue || estado.FechaContadores.Value.Date < DateTime.Today)
+            {
+                estado.CaidasHoy          = 0;
+                estado.RecuperacionesHoy  = 0;
+                estado.FechaContadores    = DateTime.Today;
+            }
+
             if (!wsDisponible)
             {
+                // Si el tipo de error cambió, resetear flag para enviar nuevo mail
+                if (!string.Equals(estado.UltimoEstado, "caido", StringComparison.OrdinalIgnoreCase))
+                    estado.AlertaCaidaEnviada = false;
+
                 estado.UltimoEstado = "caido";
+                estado.DetalleError = "Sin respuesta HTTP (Timeout o servidor no disponible)";
                 if (estado.UltimaVezCaido == null)
                     estado.UltimaVezCaido = ahora;
+
+                estado.CaidasHoy++;
+                AgregarEventoHistorial(estado, "caida", estado.DetalleError, ahora);
 
                 if (!estado.AlertaCaidaEnviada)
                 {
                     EnviarMailWS(esRecuperacion: false, estado: estado);
                     estado.AlertaCaidaEnviada = true;
-                    EscribirLog($"⚠️ [WS] WebService SOAP no disponible. Alerta enviada. URL: {configuracion.UrlWS}");
+                    EscribirLog($"⚠️ [WS] WebService SOAP no disponible. Alerta enviada. Caídas hoy: {estado.CaidasHoy}");
                 }
                 else
                 {
-                    EscribirLog($"⚠️ [WS] WebService SOAP no disponible (alerta ya enviada). Corrida SOAP omitida.");
+                    EscribirLog($"⚠️ [WS] WebService SOAP no disponible (alerta ya enviada). Corrida SOAP omitida. Caídas hoy: {estado.CaidasHoy}");
                 }
 
                 GuardarWsEstado(wsEstadoPath, estado);
                 return false;
             }
-            else
+
+            // Paso 3: verificar autenticación SOAP (Error de Negocio)
+            var (authOk, authDetalle, authXml) = await VerificarAutenticacionSoapAsync();
+            if (!authOk)
             {
-                if (string.Equals(estado.UltimoEstado, "caido", StringComparison.OrdinalIgnoreCase))
+                // Si el tipo de error cambió, resetear flag para enviar nuevo mail
+                if (!string.Equals(estado.UltimoEstado, "auth_error", StringComparison.OrdinalIgnoreCase))
+                    estado.AlertaCaidaEnviada = false;
+
+                estado.UltimoEstado   = "auth_error";
+                estado.DetalleError   = authDetalle;
+                estado.UltimoErrorXml = authXml;
+                if (estado.UltimaVezCaido == null)
+                    estado.UltimaVezCaido = ahora;
+
+                estado.CaidasHoy++;
+                AgregarEventoHistorial(estado, "caida", authDetalle, ahora);
+
+                if (!estado.AlertaCaidaEnviada)
                 {
-                    EnviarMailWS(esRecuperacion: true, estado: estado);
-                    EscribirLog($"✅ [WS] WebService SOAP recuperado. Reanudando corridas SOAP.");
+                    EnviarMailWS(esRecuperacion: false, estado: estado);
+                    estado.AlertaCaidaEnviada = true;
+                    EscribirLog($"⚠️ [WS] Error de autenticación SOAP: {authDetalle}. Alerta enviada. Caídas hoy: {estado.CaidasHoy}");
+                }
+                else
+                {
+                    EscribirLog($"⚠️ [WS] Error de autenticación SOAP (alerta ya enviada): {authDetalle}. Corrida omitida.");
                 }
 
-                estado.UltimoEstado         = "ok";
-                estado.UltimaVezRecuperado  = ahora;
-                estado.AlertaCaidaEnviada   = false;
-
                 GuardarWsEstado(wsEstadoPath, estado);
-                return true;
+                return false;
             }
+
+            // WS disponible y autenticación OK
+            bool estadoPrevioEraFalla = string.Equals(estado.UltimoEstado, "caido", StringComparison.OrdinalIgnoreCase)
+                                     || string.Equals(estado.UltimoEstado, "auth_error", StringComparison.OrdinalIgnoreCase);
+            if (estadoPrevioEraFalla)
+            {
+                estado.RecuperacionesHoy++;
+                AgregarEventoHistorial(estado, "recuperacion", "WS disponible y autenticación OK", ahora);
+
+                // Anti-spam: solo enviar mail de recuperación si se había avisado de la caída
+                if (estado.AlertaCaidaEnviada)
+                {
+                    EnviarMailWS(esRecuperacion: true, estado: estado);
+                    EscribirLog($"✅ [WS] WebService SOAP recuperado. Mail enviado. Recuperaciones hoy: {estado.RecuperacionesHoy}");
+                }
+                else
+                {
+                    EscribirLog($"✅ [WS] WebService SOAP recuperado (sin alerta de caída previa, mail omitido). Recuperaciones hoy: {estado.RecuperacionesHoy}");
+                }
+            }
+
+            estado.UltimoEstado        = "ok";
+            estado.UltimaVezRecuperado = ahora;
+            estado.AlertaCaidaEnviada  = false;
+            estado.DetalleError        = null;
+
+            GuardarWsEstado(wsEstadoPath, estado);
+            return true;
+        }
+
+        private static void AgregarEventoHistorial(WsEstado estado, string evento, string detalle, DateTime ts)
+        {
+            if (estado.HistorialEventos == null)
+                estado.HistorialEventos = new List<WsEvento>();
+            estado.HistorialEventos.Add(new WsEvento { Timestamp = ts, Evento = evento, Detalle = detalle });
+            // Mantener solo los últimos 100 eventos
+            while (estado.HistorialEventos.Count > 100)
+                estado.HistorialEventos.RemoveAt(0);
+        }
+
+        private async Task<(bool ok, string detalle, string rawXml)> VerificarAutenticacionSoapAsync()
+        {
+            if (string.IsNullOrWhiteSpace(configuracion.UrlAutentificacion) ||
+                string.IsNullOrWhiteSpace(configuracion.Dominio))
+                return (true, null, null); // Sin configuración: no bloquear
+
+            try
+            {
+                string envelope =
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                    "<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+                    "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" " +
+                    "xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                    "<soap:Body><LoginServiceWithPackDirect xmlns=\"DkMServer.Services\">" +
+                    "<packName>dkactas</packName>" +
+                    $"<domain>{configuracion.Dominio}</domain>" +
+                    $"<userName>{configuracion.Dominio}</userName>" +
+                    $"<userPwd>{configuracion.Dominio}</userPwd>" +
+                    "</LoginServiceWithPackDirect></soap:Body></soap:Envelope>";
+
+                string responseBody = await Task.Run(() =>
+                {
+                    var req = (HttpWebRequest)WebRequest.Create(configuracion.UrlAutentificacion);
+                    req.Method      = "POST";
+                    req.ContentType = "text/xml; charset=utf-8";
+                    req.Headers.Add("SOAPAction", "\"DkMServer.Services/LoginServiceWithPackDirect\"");
+                    req.Timeout     = 60000;
+
+                    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(envelope);
+                    req.ContentLength = bytes.Length;
+                    using (var stream = req.GetRequestStream())
+                        stream.Write(bytes, 0, bytes.Length);
+
+                    using (var resp = (HttpWebResponse)req.GetResponse())
+                    using (var reader = new System.IO.StreamReader(resp.GetResponseStream(), System.Text.Encoding.UTF8))
+                        return reader.ReadToEnd();
+                });
+
+                string resultInner    = HcGetXmlTag(responseBody, "LoginServiceWithPackDirectResult");
+                string unescaped      = HcUnescapeXml(resultInner);
+                string loginSucceeded = HcGetXmlTag(unescaped, "LoginSucceeded");
+                string resultCode     = HcGetXmlTag(unescaped, "ResultCode");
+                string resultMsg      = HcGetXmlTag(unescaped, "ResultMessage");
+
+                if (string.Equals(loginSucceeded, "false", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Loguear XML completo para diagnóstico (truncado a 800 chars)
+                    string xmlLog = unescaped?.Length > 800 ? unescaped.Substring(0, 800) + "..." : unescaped;
+                    EscribirLog($"🔍 [WS-Auth] XML respuesta: {xmlLog}");
+
+                    // Detalle compacto para el mail
+                    string detalle = string.IsNullOrEmpty(resultCode)
+                        ? "LoginSucceeded=false"
+                        : string.IsNullOrEmpty(resultMsg)
+                            ? $"LoginSucceeded=false, ResultCode={resultCode}"
+                            : $"LoginSucceeded=false, ResultCode={resultCode}, Mensaje={resultMsg}";
+                    // Guardar XML truncado para auditoría en ws_estado.json
+                    string xmlAudit = unescaped?.Length > 1000 ? unescaped.Substring(0, 1000) + "..." : unescaped;
+                    return (false, detalle, xmlAudit);
+                }
+
+                string token = HcGetXmlTag(unescaped, "UserToken");
+                if (string.IsNullOrEmpty(token))
+                    return (false, "No se encontró UserToken en la respuesta SOAP", null);
+
+                return (true, null, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error en autenticación SOAP: {ex.Message}", null);
+            }
+        }
+
+        private static string HcGetXmlTag(string xml, string tag)
+        {
+            if (string.IsNullOrEmpty(xml)) return "";
+            string open = $"<{tag}>";
+            int s = xml.IndexOf(open, StringComparison.OrdinalIgnoreCase);
+            if (s < 0) return "";
+            s += open.Length;
+            int e = xml.IndexOf($"</{tag}>", s, StringComparison.OrdinalIgnoreCase);
+            if (e < 0) return "";
+            return xml.Substring(s, e - s).Trim();
+        }
+
+        private static string HcUnescapeXml(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace("&lt;", "<").Replace("&gt;", ">")
+                    .Replace("&amp;", "&").Replace("&quot;", "\"").Replace("&apos;", "'");
         }
 
         private void EnviarMailWS(bool esRecuperacion, WsEstado estado)
@@ -1945,13 +2109,17 @@ namespace ServicioOracleReportes
                     return;
                 }
 
-                DateTime ahora         = DateTime.Now;
-                string empresa         = configuracion.Empresa ?? "";
-                string fecha           = ahora.ToString("dd/MM/yyyy HH:mm");
-                string timestamp       = ahora.ToString("dd/MM/yyyy HH:mm:ss");
-                string caidoDesde      = estado.UltimaVezCaido.HasValue
+                DateTime ahora    = DateTime.Now;
+                string empresa    = configuracion.Empresa ?? "";
+                string fecha      = ahora.ToString("dd/MM/yyyy HH:mm");
+                string timestamp  = ahora.ToString("dd/MM/yyyy HH:mm:ss");
+                string caidoDesde = estado.UltimaVezCaido.HasValue
                     ? estado.UltimaVezCaido.Value.ToString("dd/MM/yyyy HH:mm:ss")
                     : "desconocido";
+                string detalleError = estado.DetalleError ?? "Sin detalles adicionales";
+
+                // v6.4 — Texto plano para evitar Safelinks en clientes de correo corporativos
+                string endpointHost = "Mlogis SmartFarm";
 
                 string asuntoTemplate = esRecuperacion ? hc.AsuntoRecuperado : hc.AsuntoCaido;
                 string cuerpoTemplate = esRecuperacion ? hc.CuerpoRecuperado  : hc.CuerpoCaido;
@@ -1961,13 +2129,26 @@ namespace ServicioOracleReportes
                     .Replace("{Fecha}", fecha);
 
                 string cuerpo = (cuerpoTemplate ?? "")
-                    .Replace("{UrlWS}", configuracion.UrlWS ?? "")
+                    .Replace("{Empresa}", empresa)
+                    .Replace("{EndpointHost}", endpointHost)
+                    .Replace("{UrlWS}", endpointHost)        // compat con templates viejos
                     .Replace("{Timestamp}", timestamp)
-                    .Replace("{UltimaVezCaido}", caidoDesde);
+                    .Replace("{UltimaVezCaido}", caidoDesde)
+                    .Replace("{DetalleError}", detalleError);
+
+                // Usar credenciales SMTP desencriptadas
+                string claveSMTP = CryptoHelper.IsEncrypted(configuracion.ClaveSMTP)
+                    ? CryptoHelper.Decrypt(configuracion.ClaveSMTP)
+                    : configuracion.ClaveSMTP;
+
+                // Deduplicar destinatarios (case-insensitive) para evitar duplicados del usuario
+                var destsUnicos = new System.Collections.Generic.HashSet<string>(
+                    destinatarios.Where(d => !string.IsNullOrWhiteSpace(d)).Select(d => d.Trim()),
+                    StringComparer.OrdinalIgnoreCase);
 
                 using (var cliente = new SmtpClient(configuracion.ServidorSMTP, configuracion.PuertoSMTP))
                 {
-                    cliente.Credentials = new NetworkCredential(configuracion.UsuarioSMTP, configuracion.ClaveSMTP);
+                    cliente.Credentials = new NetworkCredential(configuracion.UsuarioSMTP, claveSMTP);
                     cliente.EnableSsl   = true;
 
                     using (var mensaje = new MailMessage())
@@ -1976,15 +2157,14 @@ namespace ServicioOracleReportes
                         mensaje.Subject    = asunto;
                         mensaje.Body       = cuerpo;
                         mensaje.IsBodyHtml = false;
-                        foreach (var dest in destinatarios)
-                            if (!string.IsNullOrWhiteSpace(dest))
-                                mensaje.To.Add(dest.Trim());
+                        foreach (var dest in destsUnicos)
+                            mensaje.To.Add(dest);
                         if (mensaje.To.Count == 0) { EscribirLog("⚠️ [WS] Sin destinatarios válidos. Mail omitido."); return; }
                         cliente.Send(mensaje);
                     }
                 }
 
-                EscribirLog($"📧 Mail WS {(esRecuperacion ? "recuperación" : "caída")} enviado a {string.Join(", ", destinatarios)}");
+                EscribirLog($"📧 Mail WS {(esRecuperacion ? "recuperación" : "caída")} enviado a {string.Join(", ", destsUnicos)}");
             }
             catch (Exception ex)
             {
@@ -1994,8 +2174,11 @@ namespace ServicioOracleReportes
 
         private void GuardarWsEstado(string path, WsEstado estado)
         {
-            try   { File.WriteAllText(path, JsonConvert.SerializeObject(estado, Formatting.Indented)); }
-            catch (Exception ex) { EscribirLog($"⚠️ Error guardando ws_estado.json: {ex.Message}"); }
+            lock (_wsEstadoLock)
+            {
+                try   { File.WriteAllText(path, JsonConvert.SerializeObject(estado, Formatting.Indented)); }
+                catch (Exception ex) { EscribirLog($"⚠️ Error guardando ws_estado.json: {ex.Message}"); }
+            }
         }
 
         private class WsEstado
@@ -2011,6 +2194,37 @@ namespace ServicioOracleReportes
 
             [JsonProperty("alerta_caida_enviada")]
             public bool AlertaCaidaEnviada { get; set; } = false;
+
+            [JsonProperty("detalle_error")]
+            public string DetalleError { get; set; }
+
+            // v6.4 — Auditoría diaria
+            [JsonProperty("caidas_hoy")]
+            public int CaidasHoy { get; set; } = 0;
+
+            [JsonProperty("recuperaciones_hoy")]
+            public int RecuperacionesHoy { get; set; } = 0;
+
+            [JsonProperty("ultimo_error_xml")]
+            public string UltimoErrorXml { get; set; }
+
+            [JsonProperty("fecha_contadores")]
+            public DateTime? FechaContadores { get; set; }
+
+            [JsonProperty("historial_eventos")]
+            public List<WsEvento> HistorialEventos { get; set; } = new List<WsEvento>();
+        }
+
+        private class WsEvento
+        {
+            [JsonProperty("timestamp")]
+            public DateTime Timestamp { get; set; }
+
+            [JsonProperty("evento")]
+            public string Evento { get; set; } // "caida" | "recuperacion"
+
+            [JsonProperty("detalle")]
+            public string Detalle { get; set; }
         }
     }
 }
