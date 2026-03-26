@@ -1,9 +1,12 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.5)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.6)
 
 ## 🚀 Resumen del Proyecto
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v6.5 (UI v4.2)
+**Versión Actual**: v6.6 (UI v4.2)
 **Tecnología**: .NET Framework 4.8 (C#)
+
+## 📁 Novedades v6.6 (Anulados Oracle)
+- **Anulados**: `query_oracle` incluye `OR (id LIKE 'AN%' AND SUBSTR(id, 3) IN ({IDS}))` para capturar registros anulados sin perder Index Range Scan. En C#, si `id_oracle.StartsWith("AN")` y contiene el ID de Mlogis → marcado como Encontrado (OK), sin Caso B.
 
 ## 📁 Novedades v6.5 (Blindaje PROD)
 - **Health Check Pro**: Validación de Auth SOAP (ResultCode) + 3 Retries antes de alerta.

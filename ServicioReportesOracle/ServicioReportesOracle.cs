@@ -693,6 +693,20 @@ namespace ServicioOracleReportes
                                 string nroOracle = getCol(row, "nrocomprobante");
 
                                 if (string.IsNullOrEmpty(idOracle)) continue;
+
+                                // v6.6 — Anulados: id Oracle con prefijo "AN" que contiene el ID de Mlogis
+                                if (idOracle.StartsWith("AN", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    string mlogisIdMatch = ids.FirstOrDefault(mId =>
+                                        idOracle.IndexOf(mId, StringComparison.OrdinalIgnoreCase) >= 0);
+                                    if (mlogisIdMatch != null)
+                                    {
+                                        idsEncontradosEnOracle.Add(mlogisIdMatch);
+                                        EscribirLog($"✅ [Oracle] ID={mlogisIdMatch} → Anulado en Oracle ({idOracle}). Marcado como Encontrado (OK).");
+                                    }
+                                    continue; // Anulados no generan Caso A
+                                }
+
                                 idsEncontradosEnOracle.Add(idOracle);
 
                                 // Caso A: ID existe en Oracle pero nrocomprobante difiere
