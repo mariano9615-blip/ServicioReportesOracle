@@ -488,12 +488,9 @@ namespace ServicioReportesOracle.UI.ViewModels
                 return;
             }
 
-            double maxVal = Math.Max(AlertasCasoA, Math.Max(AlertasCasoB, AlertasAnulados));
-            double maxWidth = 300.0;
-            
-            BarraCasoAWidth = maxVal == 0 ? 0 : (AlertasCasoA / maxVal) * maxWidth;
-            BarraCasoBWidth = maxVal == 0 ? 0 : (AlertasCasoB / maxVal) * maxWidth;
-            BarraAnuladosWidth = maxVal == 0 ? 0 : (AlertasAnulados / maxVal) * maxWidth;
+            BarraCasoAWidth = AlertasCasoA == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasCasoA * 40.0));
+            BarraCasoBWidth = AlertasCasoB == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasCasoB * 40.0));
+            BarraAnuladosWidth = AlertasAnulados == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasAnulados * 40.0));
         }
 
         private void ActualizarTimeAgoTimer()
