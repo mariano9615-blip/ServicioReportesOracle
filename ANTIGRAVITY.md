@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v6.9)
+## 🚀 Resumen del Proyecto (v6.9.1)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v6.9
+**Versión Actual**: v6.9.1
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -14,7 +14,8 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Mlogis**: Integración SOAP para comparación de registros. El timer respeta `FrecuenciaSoapMinutos` de `config.json`.
   - **`EjecutarComparacionMlogis()` (legacy)**: Se invoca desde `EjecutarConsultasSegunFrecuencia()` cuando la consulta se llama `"ComparacionMlogisOracle"`. Usa `ids_history.json` (IDs históricos vistos por SOAP) y ejecuta un SQL desde archivo (`.sql`) contra Oracle. Compara *presencia/ausencia* de IDs. Envía mail via `EnviarCorreoTracking()`. **Se mantiene por compatibilidad.**
   - **`CompararConOracle()` (activo, v6.7)**: Se invoca al final de cada `InvocacionSoapMlogis()`. Ejecuta `query_oracle` de `consultas_soap.json` contra Oracle. Compara *nrocomprobante* (Caso A) y *presencia* (Caso B). Envía mail via `EnviarAlertaCambioSoap()`. **Este es el mecanismo principal activo.**
-    - **v6.7 — Anulados refactorizado**: La query usa `SUBSTR(id,3) IN ({IDS})` para anulados (reemplaza el LIKE AN% anterior). En C#: si el match es via `AN%`, se marca `anulado=true` en `MlogisRegistro` y en el historial — no genera Caso B ni alerta. `MlogisRegistro` incorpora los campos `FecUpd`, `Anulado` (bool) e `IdAnuladoOracle` (string) para trazabilidad completa.
+    - **v6.9.1 — Anulados SUBSTR(id,3,15)**: El trigger Oracle forma el ID anulado como `'AN' + SUBSTR(idOriginal,1,15) + sufijo_numérico`. La query usa `SUBSTR(id, 3, 15) IN ({IDS_TRUNCADOS})` donde `{IDS_TRUNCADOS}` son los IDs Mlogis truncados a 15 chars. En C# el match compara `SUBSTR(idOracle, 2, 15) == idMlogis.Substring(0, Min(15, len))` (equivalente exacto al trigger). Reemplaza el `SUBSTR(id,3)` de v6.7 que fallaba porque no excluía el sufijo numérico.
+    - **v6.7 — Anulados refactorizado (base)**: La query usa `SUBSTR(id,3) IN ({IDS})` para anulados (reemplaza el LIKE AN% anterior). En C#: si el match es via `AN%`, se marca `anulado=true` en `MlogisRegistro` y en el historial — no genera Caso B ni alerta. `MlogisRegistro` incorpora los campos `FecUpd`, `Anulado` (bool) e `IdAnuladoOracle` (string) para trazabilidad completa. (Corregido en v6.9.1.)
     - **v6.6.1 — Anulados (Fuzzy Match, reemplazado)**: Query con `OR (id LIKE 'AN%' AND ...)`. Reemplazado por SUBSTR en v6.7.
   - Ambos métodos coexisten: el legacy cubre IDs históricos acumulados en `ids_history.json`; el nuevo cubre la corrida actual con validación de datos, no solo presencia.
 - **Configs**: `config.json` (Global) y `Consultas.json` (Tareas).
@@ -46,7 +47,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 |---------|-----------|
 | `mlogis_historial.json` | Historial estructurado de corridas SOAP (rotación 7 días). |
 | `comparaciones_pendientes.json` | Buffer de IDs SOAP pendientes de comparar contra Oracle. |
-| `alertas_oracle_enviadas.json` | Historial de deduplicación de alertas Oracle. |
+| `alertas_oracle_enviadas.json` | Array acumulativo de alertas Oracle enviadas (purga diaria). Dedup por ID + TipoCaso + fecha. |
 | `ids_history.json` | IDs vistos por SOAP (compatibilidad legacy con `EjecutarComparacionMlogis`). |
 | `status.json` | Estado de errores/resueltos del flujo legacy `ComparacionMlogisOracle`. |
 | `ws_estado.json` | Estado del health check del WebService SOAP (último estado, timestamps, flag de alerta enviada). |
@@ -120,6 +121,28 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - Corrida FULL inteligente (v6.7): ya no limpia ciegamente el buffer. Compara `fecupd` de Mlogis vs `primera_vez_visto` del buffer antes de actualizar el historial. Solo los IDs verdaderamente nuevos o actualizados (fecupd posterior a `primera_vez_visto`) van a `comparaciones_pendientes.json`; el resto se descarta sin generar alerta.
   - `CompararConOracle()` solo incluye en la query Oracle los IDs donde `primera_vez_visto + DelayComparacionMinutos <= DateTime.Now`. Los IDs comparados (OK, Caso A o Caso B) se remueven del buffer.
 
+### alertas_oracle_enviadas.json
+- **Ubicación**: `Logs\` (generado por el servicio, no editar manualmente).
+- **Propósito**: Historial acumulativo de alertas Oracle enviadas. Usado para deduplicación: si ya se envió una alerta para el mismo ID + TipoCaso en el día actual, se omite el reenvío.
+- **Escrito por**: `EnviarAlertaOracleConsolidada()` en `ServicioReportesOracle.cs`.
+- **Leído por**: `EnviarAlertaOracleConsolidada()`.
+- **Estructura** (array plano — v6.9.1):
+```json
+[
+  {
+    "id": "SIL-8374477",
+    "tipo_caso": "B",
+    "timestamp": "2026-03-27T10:15:00",
+    "nrocomprobante": "ABC123"
+  }
+]
+```
+- **Lógica**:
+  - **Dedup**: clave = `id + tipo_caso + DateTime.Today`. Si ya existe una entrada con esa clave para hoy, la alerta no se reenvía.
+  - **Acumulación**: al escribir, se re-lee el array del disco, se purgan entradas cuyo `timestamp.Date < DateTime.Today` (para no crecer indefinidamente) y se agregan las nuevas alertas de la corrida actual.
+  - **Primera corrida del día**: la purga de entradas del día anterior ocurre automáticamente en la primera escritura del día.
+- **Nota**: el formato cambió en v6.9.1 de `{"alertas": [...]}` a un array plano `[...]` con campos `id`, `tipo_caso`, `timestamp`, `nrocomprobante`. Archivos con el formato anterior son descartados y regenerados automáticamente.
+
 ### consultas_soap.json
 - **Ubicación**: raíz del directorio de ejecución del servicio core.
 - **Propósito**: Configura las alertas de cambios SOAP y la query Oracle para comparación cruzada.
@@ -127,7 +150,9 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Campos clave**:
   - `alertas_cambios.destinatarios`: lista de mails. Si está vacía, las alertas se loguean y se omiten sin error.
   - `alertas_cambios.asunto` / `cuerpo_template`: plantillas con placeholders `{ID}`, `{Campo}`, `{ValorAnterior}`, `{ValorNuevo}`, `{Timestamp}`, `{Tipo}`.
-  - `alertas_cambios.query_oracle`: query SQL con placeholder `{IDS}` que se ejecuta contra Oracle para comparar nrocomprobante.
+  - `alertas_cambios.query_oracle`: query SQL con dos placeholders:
+    - `{IDS}`: lista de IDs Mlogis exactos para el match directo.
+    - `{IDS_TRUNCADOS}`: lista de IDs Mlogis truncados a 15 chars para el match de anulados via `SUBSTR(id, 3, 15)`. El trigger Oracle forma el ID anulado como `'AN' + SUBSTR(idOriginal, 1, 15) + sufijo_numérico`, por lo que el match correcto es `SUBSTR(id, 3, 15) IN ({IDS_TRUNCADOS})`. Ambos placeholders son reemplazados por `CompararConOracle()` antes de ejecutar la query.
 
 ## 🌐 Health Check del WebService SOAP
 
@@ -193,6 +218,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 
 ## 🗂️ Changelog
 - **UI v4.5**: Sidebar colapsable con botón ☰. Animación 260↔56px con GridLengthAnimation + CubicEase 200ms. Estado colapsado muestra solo íconos emoji de nav centrados.
+- **v6.9.1**: Fix anulados: `SUBSTR(id,3,15) IN ({IDS_TRUNCADOS})` en `consultas_soap.json` y match C# via `SUBSTR(idOracle,2,15) == idMlogis[:15]` (equivalente al trigger `TRG_MPE_RENOMBRAMLOGIS`). Fix `alertas_oracle_enviadas.json`: array acumulativo plano con purga diaria (formato `[{id, tipo_caso, timestamp, nrocomprobante}]`). Dedup por `id+tipo_caso+DateTime.Today` — ya no se pierde el historial del día al reescribir el archivo.
 - **v6.9**: Rotación diaria de `mlogis_historial.json`: corridas de hoy en `mlogis_historial.json`, corridas de ayer en `mlogis_historial_ayer.json` (solo si existen, sin sobreescribir si no hay), anteriores descartadas. Log: `🗑️ [Historial] Rotación diaria: N corridas hoy, M de ayer preservadas, K descartadas.`
 - **v6.8 (UI v4.4)**: Buscador en LogsView. `Ctrl+F` abre/cierra barra de búsqueda; `Esc` la cierra. Filtrado case-insensitive en memoria sobre `_allLines` (copia maestra de hasta 1.000 líneas), sin releer el archivo. Líneas nuevas del watcher también se filtran. `LineInfo` muestra conteo de coincidencias. Fast-path sin filtro preserva auto-scroll; con filtro activo reconstruye `Lines` via `AplicarFiltroInterno()`. `ToggleSearchCommand` y `ClearSearchCommand` en ViewModel; foco automático al abrir via `Dispatcher.BeginInvoke(DispatcherPriority.Input)`.
 - **v6.7 (UI v4.3)**: Corrida FULL inteligente — compara `fecupd` Mlogis vs `primera_vez_visto` antes de actualizar historial; solo IDs nuevos o actualizados van a `comparaciones_pendientes.json`. `MlogisRegistro` con nuevos campos `FecUpd`, `Anulado` (bool), `IdAnuladoOracle` (string). `CompararConOracle()`: match AN% marca `anulado=true` en historial sin generar Caso B ni alerta. `consultas_soap.json`: query anulados corregida a `SUBSTR(id,3) IN ({IDS})`. Log compacto una línea por corrida: `[HH:mm] Run {FULL|DELTA}: {total} IDs | N:{nuevos} U:{actualizados} A:{anulados} S:{sinCambios} | {segundos}s`. UI: `LogsViewModel` fix memory leak (`SemaphoreSlim` anti-concurrencia, `IDisposable`+`Unloaded` para cleanup de watcher/timer, try/catch global, `ScrollIntoView` protegido).

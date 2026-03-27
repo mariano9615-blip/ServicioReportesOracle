@@ -738,7 +738,8 @@ namespace ServicioOracleReportes
                     {
                         var idsChunk = ids.Skip(chunk * chunkSize).Take(chunkSize).ToList();
                         string idsList = string.Join(", ", idsChunk.Select(id => $"'{id}'"));
-                        string sql = queryTemplate.Replace("{IDS}", idsList);
+                        string idsListTruncados = string.Join(", ", idsChunk.Select(id => $"'{id.Substring(0, Math.Min(15, id.Length))}'"));
+                        string sql = queryTemplate.Replace("{IDS}", idsList).Replace("{IDS_TRUNCADOS}", idsListTruncados);
 
                         EscribirLog($"🔍 [Oracle Query] {sql}");
 
@@ -790,17 +791,23 @@ namespace ServicioOracleReportes
 
                 foreach (var id in ids)
                 {
+                    // El trigger Oracle forma el ID anulado como: 'AN' + SUBSTR(idOriginal, 1, 15) + sufijo numérico
+                    // Para el match correcto comparamos SUBSTR(idOracle, 2, 15) == idMlogis truncado a 15
+                    string idPrefix = id.Substring(0, Math.Min(15, id.Length));
+
                     bool existeOriginalOAnulado = registrosOracle.Any(ora =>
                         string.Equals(ora.Id, id, StringComparison.OrdinalIgnoreCase) ||
                         (ora.Id.StartsWith("AN", StringComparison.OrdinalIgnoreCase) &&
-                         ora.Id.IndexOf(id, StringComparison.OrdinalIgnoreCase) >= 0));
+                         ora.Id.Length > 2 &&
+                         string.Equals(ora.Id.Substring(2, Math.Min(15, ora.Id.Length - 2)), idPrefix, StringComparison.OrdinalIgnoreCase)));
 
                     if (existeOriginalOAnulado)
                     {
                         idsEncontradosEnOracle.Add(id);
                         var anulado = registrosOracle.FirstOrDefault(ora =>
                             ora.Id.StartsWith("AN", StringComparison.OrdinalIgnoreCase) &&
-                            ora.Id.IndexOf(id, StringComparison.OrdinalIgnoreCase) >= 0);
+                            ora.Id.Length > 2 &&
+                            string.Equals(ora.Id.Substring(2, Math.Min(15, ora.Id.Length - 2)), idPrefix, StringComparison.OrdinalIgnoreCase));
                         if (anulado.Id != null)
                         {
                             cntAnulados++;
@@ -959,33 +966,36 @@ namespace ServicioOracleReportes
         {
             try
             {
-                // Cargar historial de deduplicación
+                // Cargar historial de deduplicación (array acumulativo diario)
                 JArray dedupArray;
                 try
                 {
                     dedupArray = File.Exists(dedupPath)
-                        ? JArray.Parse(File.ReadAllText(dedupPath))["alertas"] as JArray ?? new JArray()
+                        ? JArray.Parse(File.ReadAllText(dedupPath)) as JArray ?? new JArray()
                         : new JArray();
                 }
                 catch { dedupArray = new JArray(); }
 
-                // Construir diccionario: clave = "id|campo" → valor_oracle previo
-                var dedupDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                // Construir set de claves ya enviadas HOY: "id|tipo_caso"
+                var dedupHoy = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var entry in dedupArray)
                 {
-                    string key = $"{entry["id"]}|{entry["campo"]}";
-                    dedupDict[key] = entry["valor_oracle"]?.ToString() ?? "";
+                    if (DateTime.TryParse(entry["timestamp"]?.ToString(), out DateTime tsEntry)
+                        && tsEntry.Date == DateTime.Today)
+                    {
+                        string key = $"{entry["id"]}|{entry["tipo_caso"]}";
+                        dedupHoy.Add(key);
+                    }
                 }
 
-                // Filtrar solo las alertas no duplicadas
+                // Filtrar solo las alertas no enviadas hoy
                 var alertasNuevas = new List<AlertaOracleItem>();
                 foreach (var alerta in alertas)
                 {
-                    string key = $"{alerta.Registro.Id}|{alerta.Campo}";
-                    if (dedupDict.TryGetValue(key, out string valorPrevio)
-                        && string.Equals(valorPrevio, alerta.ValorOracle, StringComparison.Ordinal))
+                    string key = $"{alerta.Registro.Id}|{alerta.TipoCaso}";
+                    if (dedupHoy.Contains(key))
                     {
-                        EscribirLog($"🔕 [Oracle] Alerta duplicada omitida — ID={alerta.Registro.Id}, campo={alerta.Campo}");
+                        EscribirLog($"🔕 [Oracle] Alerta ya enviada hoy — ID={alerta.Registro.Id}, tipo={alerta.TipoCaso}");
                         continue;
                     }
                     alertasNuevas.Add(alerta);
@@ -1065,40 +1075,41 @@ namespace ServicioOracleReportes
                 }
 
                 // Actualizar archivo de deduplicación después de enviar (o si sin destinatarios)
-                foreach (var item in alertasNuevas)
-                {
-                    JObject entryExistente = null;
-                    foreach (var entry in dedupArray)
-                    {
-                        if (string.Equals(entry["id"]?.ToString(), item.Registro.Id, StringComparison.OrdinalIgnoreCase)
-                            && string.Equals(entry["campo"]?.ToString(), item.Campo, StringComparison.OrdinalIgnoreCase))
-                        {
-                            entryExistente = (JObject)entry;
-                            break;
-                        }
-                    }
-
-                    if (entryExistente != null)
-                    {
-                        entryExistente["valor_oracle"]        = item.ValorOracle;
-                        entryExistente["ultima_vez_alertado"] = fechaEjecucion.ToString("yyyy-MM-ddTHH:mm:ss");
-                    }
-                    else
-                    {
-                        dedupArray.Add(new JObject
-                        {
-                            ["id"]                  = item.Registro.Id,
-                            ["campo"]               = item.Campo,
-                            ["valor_oracle"]        = item.ValorOracle,
-                            ["ultima_vez_alertado"] = fechaEjecucion.ToString("yyyy-MM-ddTHH:mm:ss")
-                        });
-                    }
-                }
-
+                // Estructura acumulativa: array plano con purga diaria al inicio del día siguiente
                 try
                 {
-                    var root = new JObject { ["alertas"] = dedupArray };
-                    File.WriteAllText(dedupPath, root.ToString(Formatting.Indented));
+                    // Re-leer del disco para no sobrepisar entradas escritas por otra corrida paralela
+                    JArray arrayActual;
+                    try
+                    {
+                        arrayActual = File.Exists(dedupPath)
+                            ? JArray.Parse(File.ReadAllText(dedupPath)) as JArray ?? new JArray()
+                            : new JArray();
+                    }
+                    catch { arrayActual = new JArray(); }
+
+                    // Purgar entradas de días anteriores (mantener solo las de hoy)
+                    var arrayPurgado = new JArray();
+                    foreach (var entry in arrayActual)
+                    {
+                        if (DateTime.TryParse(entry["timestamp"]?.ToString(), out DateTime tsEntry)
+                            && tsEntry.Date >= DateTime.Today)
+                            arrayPurgado.Add(entry);
+                    }
+
+                    // Agregar las nuevas alertas enviadas en esta corrida
+                    foreach (var item in alertasNuevas)
+                    {
+                        arrayPurgado.Add(new JObject
+                        {
+                            ["id"]             = item.Registro.Id,
+                            ["tipo_caso"]      = item.TipoCaso,
+                            ["timestamp"]      = fechaEjecucion.ToString("yyyy-MM-ddTHH:mm:ss"),
+                            ["nrocomprobante"] = item.Registro.NroComprobante ?? ""
+                        });
+                    }
+
+                    File.WriteAllText(dedupPath, arrayPurgado.ToString(Formatting.Indented));
                 }
                 catch (Exception ex)
                 {
