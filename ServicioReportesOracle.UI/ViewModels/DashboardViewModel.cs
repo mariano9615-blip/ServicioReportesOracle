@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -427,22 +427,27 @@ namespace ServicioReportesOracle.UI.ViewModels
                 if (File.Exists(_alertasEnviadasPath))
                 {
                     string json = LeerArchivoSeguro(_alertasEnviadasPath);
-                    var arr = JArray.Parse(json);
+                    var obj = JObject.Parse(json);
+                    var arr = obj["alertas"] as JArray;
                     
-                    foreach (var token in arr)
+                    if (arr != null)
                     {
-                        string timestamp = token["timestamp"]?.ToString();
-                        if (DateTime.TryParse(timestamp, out var dt) && dt.Date == DateTime.Today)
+                        foreach (var token in arr)
                         {
-                            string tipo = token["tipo_caso"]?.ToString();
-                            string id = token["id"]?.ToString();
-                            if (tipo == "A") {
-                                ca++;
-                                if (lastCasoA == null || dt > lastCasoA) { lastCasoA = dt; idCasoA = id; }
-                            }
-                            else if (tipo == "B") {
-                                cb++;
-                                if (lastCasoB == null || dt > lastCasoB) { lastCasoB = dt; idCasoB = id; }
+                            string timestamp = token["ultima_vez_alertado"]?.ToString();
+                            if (DateTime.TryParse(timestamp, out var dt) && dt.Date == DateTime.Today)
+                            {
+                                string campo = token["campo"]?.ToString();
+                                string id = token["id"]?.ToString();
+                                
+                                if (!string.IsNullOrEmpty(campo)) {
+                                    ca++;
+                                    if (lastCasoA == null || dt > lastCasoA) { lastCasoA = dt; idCasoA = id; }
+                                }
+                                else {
+                                    cb++;
+                                    if (lastCasoB == null || dt > lastCasoB) { lastCasoB = dt; idCasoB = id; }
+                                }
                             }
                         }
                     }
