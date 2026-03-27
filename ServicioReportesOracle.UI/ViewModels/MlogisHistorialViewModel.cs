@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -383,7 +384,10 @@ namespace ServicioReportesOracle.UI.ViewModels
             Ctg             = r.Ctg            ?? "";
             PrimeraVezVisto = r.PrimeraVezVisto.ToString("HH:mm");
             UltimaVezVisto  = r.UltimaVezVisto.ToString("HH:mm");
-            FecUpd          = r.FecUpd         ?? "";
+            FecUpd          = DateTime.TryParseExact(r.FecUpd, "MM/dd/yyyy", CultureInfo.InvariantCulture,
+                                DateTimeStyles.None, out var fecUpdDt)
+                                ? fecUpdDt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)
+                                : (r.FecUpd ?? "");
             Anulado         = r.Anulado;
             Cambios         = r.CambiosDetectados?.Count > 0
                 ? string.Join(", ", r.CambiosDetectados.Select(c => c.Campo))
