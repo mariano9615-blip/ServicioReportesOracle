@@ -145,12 +145,12 @@
                     <Grid Grid.Row="0" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="40"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Caso B" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-                        <Rectangle Grid.Column="1" Fill="#F44336" Height="20" Width="{Binding BarraCasoBWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        <Rectangle Grid.Column="1" Fill="#F44336" Height="20" Width="{Binding BarraCasoBWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="2" Text="{Binding AlertasCasoB}" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                         <TextBlock Grid.Column="3" Text="{Binding AlertasCasoBLastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" VerticalAlignment="Center" Visibility="{Binding HasAlertasCasoBLastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </Grid>
@@ -159,12 +159,12 @@
                     <Grid Grid.Row="1" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="40"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Caso A" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-                        <Rectangle Grid.Column="1" Fill="#F59E0B" Height="20" Width="{Binding BarraCasoAWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        <Rectangle Grid.Column="1" Fill="#F59E0B" Height="20" Width="{Binding BarraCasoAWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="2" Text="{Binding AlertasCasoA}" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                         <TextBlock Grid.Column="3" Text="{Binding AlertasCasoALastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" VerticalAlignment="Center" Visibility="{Binding HasAlertasCasoALastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </Grid>
@@ -173,12 +173,12 @@
                     <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="40"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Anulados" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-                        <Rectangle Grid.Column="1" Fill="#6B7280" Height="20" Width="{Binding BarraAnuladosWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        <Rectangle Grid.Column="1" Fill="#6B7280" Height="20" Width="{Binding BarraAnuladosWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="2" Text="{Binding AlertasAnulados}" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                         <TextBlock Grid.Column="3" Text="{Binding AlertasAnuladosLastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" VerticalAlignment="Center" Visibility="{Binding HasAlertasAnuladosLastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </Grid>
