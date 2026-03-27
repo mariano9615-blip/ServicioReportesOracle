@@ -384,9 +384,9 @@ namespace ServicioReportesOracle.UI.ViewModels
             Ctg             = r.Ctg            ?? "";
             PrimeraVezVisto = r.PrimeraVezVisto.ToString("HH:mm");
             UltimaVezVisto  = r.UltimaVezVisto.ToString("HH:mm");
-            FecUpd          = DateTime.TryParseExact(r.FecUpd, "MM/dd/yyyy", CultureInfo.InvariantCulture,
+            FecUpd          = DateTime.TryParse(r.FecUpd, CultureInfo.InvariantCulture,
                                 DateTimeStyles.None, out var fecUpdDt)
-                                ? fecUpdDt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)
+                                ? fecUpdDt.ToString("dd/MM/yyyy HH:mm")
                                 : (r.FecUpd ?? "");
             Anulado         = r.Anulado;
             Cambios         = r.CambiosDetectados?.Count > 0

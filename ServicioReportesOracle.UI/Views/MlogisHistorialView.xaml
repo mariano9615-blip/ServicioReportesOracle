@@ -326,6 +326,7 @@
                               CanUserReorderColumns="True"
                               Background="Transparent"
                               BorderThickness="0"
+                              ColumnWidth="Auto"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Auto">
                         <DataGrid.RowStyle>
@@ -387,6 +388,7 @@
                               CanUserReorderColumns="True"
                               Background="Transparent"
                               BorderThickness="0"
+                              ColumnWidth="Auto"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Auto">
                         <DataGrid.RowStyle>
