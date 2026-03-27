@@ -1,7 +1,9 @@
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using ServicioReportesOracle.UI.ViewModels;
 
 namespace ServicioReportesOracle.UI.Views
@@ -32,9 +34,36 @@ namespace ServicioReportesOracle.UI.Views
             }
         }
 
+        // ── Ctrl+F: abrir/cerrar buscador ────────────────────────────────────
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (DataContext is LogsViewModel vm)
+                {
+                    vm.IsSearchVisible = !vm.IsSearchVisible;
+                    if (vm.IsSearchVisible)
+                        Dispatcher.BeginInvoke(new System.Action(() => SearchBox.Focus()), DispatcherPriority.Input);
+                }
+                e.Handled = true;
+            }
+            base.OnPreviewKeyDown(e);
+        }
+
+        // ── Escape en el buscador: cerrar ─────────────────────────────────────
+        private void SearchBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape && DataContext is LogsViewModel vm)
+            {
+                vm.ClearSearchCommand.Execute(null);
+                LogsListBox.Focus();
+                e.Handled = true;
+            }
+        }
+
         private void OnLinesChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            // Solo reaccionar a nuevos ítems (no a Clear/Reset durante carga inicial)
+            // Solo reaccionar a nuevos ítems (no a Clear/Reset durante carga inicial o filtrado)
             if (e.Action != NotifyCollectionChangedAction.Add) return;
             if (LogsListBox.Items.Count == 0) return;
 

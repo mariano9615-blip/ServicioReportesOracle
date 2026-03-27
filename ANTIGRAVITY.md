@@ -1,10 +1,10 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.7)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.8)
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v6.6.1)
+## 🚀 Resumen del Proyecto (v6.8)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v6.7 (UI v4.3)
+**Versión Actual**: v6.8 (UI v4.4)
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -163,6 +163,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - **Auto-scroll inteligente (v6.4)**: `ScrollIntoView` al final solo si el usuario ya estaba al final (margen 2px). Si scrolleó hacia arriba, no se fuerza el auto-scroll.
   - **Log compacto por corrida (v6.7)**: una línea por corrida SOAP en formato `[HH:mm] Run {FULL|DELTA}: {total} IDs | N:{nuevos} U:{actualizados} A:{anulados} S:{sinCambios} | {segundos}s`.
   - **LogsViewModel estable (v6.7 UI)**: `SemaphoreSlim(1,1)` en `IncrementalRefreshAsync` evita ejecuciones concurrentes; `IDisposable` + `Unloaded` limpian `FileSystemWatcher` y `debounceTimer`; try/catch global absorbe excepciones antes de que lleguen al hilo UI; `ScrollIntoView` protegido contra errores de virtualización reciclada.
+  - **Buscador en tiempo real (v6.8 UI)**: `Ctrl+F` abre/cierra la barra de búsqueda; `Esc` la cierra desde el TextBox. El filtrado opera sobre `_allLines` (copia maestra en memoria de hasta 1.000 líneas) sin releer el archivo. Mientras hay texto, `Lines` muestra solo las coincidencias case-insensitive; al borrar el texto se restaura la vista completa. Líneas nuevas que llegan via watcher también se filtran antes de mostrarse. `LineInfo` indica `N coincidencias de M líneas en memoria` durante el filtrado. El fast-path sin filtro preserva el auto-scroll incremental; con filtro activo reconstruye `Lines` desde `_allLines`.
 - **PasswordBox**: No soporta binding directo. Sincronizar en code-behind via `PasswordChanged` → `vm.Property = box.Password`.
 - **RelayCommand**: Acepta `canExecute` opcional. `CanExecuteChanged` usa `CommandManager.RequerySuggested` para re-evaluar automáticamente.
 
@@ -178,6 +179,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - La UI espera encontrar los archivos `.json` en `..\ServicioReportesOracle\` relativo a su ejecución.
 
 ## 🗂️ Changelog
+- **v6.8 (UI v4.4)**: Buscador en LogsView. `Ctrl+F` abre/cierra barra de búsqueda; `Esc` la cierra. Filtrado case-insensitive en memoria sobre `_allLines` (copia maestra de hasta 1.000 líneas), sin releer el archivo. Líneas nuevas del watcher también se filtran. `LineInfo` muestra conteo de coincidencias. Fast-path sin filtro preserva auto-scroll; con filtro activo reconstruye `Lines` via `AplicarFiltroInterno()`. `ToggleSearchCommand` y `ClearSearchCommand` en ViewModel; foco automático al abrir via `Dispatcher.BeginInvoke(DispatcherPriority.Input)`.
 - **v6.7 (UI v4.3)**: Corrida FULL inteligente — compara `fecupd` Mlogis vs `primera_vez_visto` antes de actualizar historial; solo IDs nuevos o actualizados van a `comparaciones_pendientes.json`. `MlogisRegistro` con nuevos campos `FecUpd`, `Anulado` (bool), `IdAnuladoOracle` (string). `CompararConOracle()`: match AN% marca `anulado=true` en historial sin generar Caso B ni alerta. `consultas_soap.json`: query anulados corregida a `SUBSTR(id,3) IN ({IDS})`. Log compacto una línea por corrida: `[HH:mm] Run {FULL|DELTA}: {total} IDs | N:{nuevos} U:{actualizados} A:{anulados} S:{sinCambios} | {segundos}s`. UI: `LogsViewModel` fix memory leak (`SemaphoreSlim` anti-concurrencia, `IDisposable`+`Unloaded` para cleanup de watcher/timer, try/catch global, `ScrollIntoView` protegido).
 - **v6.6.1**: Fix precisión anulados. `query_oracle`: `OR (id LIKE 'AN%' AND (id LIKE '%SIL-%' OR id LIKE '%-%'))`. C#: `CompararConOracle` recolecta todos los rows Oracle primero; Caso B usa `Any(ora => ora.id == idMlogis || (ora.id.StartsWith("AN") && ora.id.Contains(idMlogis)))` — cubre GUIDs y SIL con prefijo AN. Anulados nunca generan Caso A ni Caso B. (Reemplazado por v6.7.)
 - **v6.6**: Soporte inicial anulados Oracle (SUBSTR approach). Reemplazado por v6.6.1.

@@ -20,6 +20,8 @@ namespace ServicioReportesOracle.UI.ViewModels
         private string _lineInfo;
         private long _lastReadPosition;
         private int _totalLines;
+        private string _searchText = "";
+        private bool _isSearchVisible;
 
         private FileSystemWatcher _watcher;
         private Timer _debounceTimer;
@@ -28,6 +30,9 @@ namespace ServicioReportesOracle.UI.ViewModels
         // Evita ejecuciones concurrentes de IncrementalRefreshAsync
         private readonly SemaphoreSlim _refreshLock = new SemaphoreSlim(1, 1);
         private bool _disposed;
+
+        // Copia maestra de hasta 1.000 líneas en memoria (fuente de verdad para el filtro)
+        private readonly List<string> _allLines = new List<string>();
 
         private static readonly string[] DiasOrden   = { "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo" };
         private static readonly string[] DiasNombres = { "Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado" };
@@ -62,8 +67,38 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _lineInfo = value; OnPropertyChanged(); }
         }
 
-        public ICommand RefreshCommand { get; }
-        public ICommand ClearCommand   { get; }
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (_searchText == value) return;
+                _searchText = value ?? "";
+                OnPropertyChanged();
+                AplicarFiltro();
+            }
+        }
+
+        public bool IsSearchVisible
+        {
+            get => _isSearchVisible;
+            set
+            {
+                if (_isSearchVisible == value) return;
+                _isSearchVisible = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SearchVisibility));
+                if (!value) SearchText = "";
+            }
+        }
+
+        public Visibility SearchVisibility =>
+            _isSearchVisible ? Visibility.Visible : Visibility.Collapsed;
+
+        public ICommand RefreshCommand      { get; }
+        public ICommand ClearCommand        { get; }
+        public ICommand ToggleSearchCommand { get; }
+        public ICommand ClearSearchCommand  { get; }
 
         public LogsViewModel()
         {
@@ -71,8 +106,10 @@ namespace ServicioReportesOracle.UI.ViewModels
             _logsFolder = Path.GetFullPath(Path.Combine(basePath, "..\\ServicioReportesOracle\\Logs"));
 
             // Refresh usa carga incremental (sin spinner); cambio de día usa carga completa (con spinner)
-            RefreshCommand = new RelayCommand(_ => _ = IncrementalRefreshAsync());
-            ClearCommand   = new RelayCommand(_ => ClearLogs());
+            RefreshCommand      = new RelayCommand(_ => _ = IncrementalRefreshAsync());
+            ClearCommand        = new RelayCommand(_ => ClearLogs());
+            ToggleSearchCommand = new RelayCommand(_ => IsSearchVisible = !IsSearchVisible);
+            ClearSearchCommand  = new RelayCommand(_ => { SearchText = ""; IsSearchVisible = false; });
 
             _selectedDay = DiasNombres[(int)DateTime.Today.DayOfWeek];
             _ = CargarLogInicialAsync();
@@ -93,6 +130,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
             if (path == null)
             {
+                _allLines.Clear();
                 Lines.Clear();
                 Lines.Add("Ningún día seleccionado.");
                 LineInfo = "";
@@ -103,6 +141,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
             if (!File.Exists(path))
             {
+                _allLines.Clear();
                 Lines.Clear();
                 Lines.Add($"Sin logs para {_selectedDay} — el archivo se creará automáticamente cuando el servicio escriba.");
                 LineInfo = "";
@@ -120,19 +159,17 @@ namespace ServicioReportesOracle.UI.ViewModels
                 int skip      = Math.Max(0, total - 1000);
                 var displayed = result.Lines.Skip(skip).ToList();
 
-                Lines.Clear();
-                foreach (var line in displayed)
-                    Lines.Add(line);
+                _allLines.Clear();
+                _allLines.AddRange(displayed);
 
                 _lastReadPosition = result.EndPosition;
                 _totalLines       = total;
 
-                LineInfo = total > 1000
-                    ? $"Mostrando últimas 1.000 líneas de {total:N0} totales"
-                    : $"Mostrando {total} líneas";
+                AplicarFiltro();
             }
             catch (Exception ex)
             {
+                _allLines.Clear();
                 Lines.Clear();
                 Lines.Add("Error leyendo logs: " + ex.Message);
                 LineInfo = "";
@@ -165,6 +202,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
                 if (!File.Exists(path))
                 {
+                    _allLines.Clear();
                     Lines.Clear();
                     Lines.Add($"Sin logs para {_selectedDay} — el archivo se creará automáticamente cuando el servicio escriba.");
                     LineInfo = "";
@@ -179,7 +217,6 @@ namespace ServicioReportesOracle.UI.ViewModels
                 if (fileLen < _lastReadPosition)
                 {
                     // Archivo rotado/truncado → recarga completa con spinner
-                    // Mantenemos el lock durante la recarga para evitar interleaving
                     await CargarLogInicialAsync();
                     return;
                 }
@@ -193,21 +230,73 @@ namespace ServicioReportesOracle.UI.ViewModels
                 _lastReadPosition  = result.EndPosition;
                 _totalLines       += result.Lines.Count;
 
+                // Actualizar la copia maestra
                 foreach (var line in result.Lines)
-                    Lines.Add(line);
+                    _allLines.Add(line);
+                while (_allLines.Count > 1000)
+                    _allLines.RemoveAt(0);
 
-                // Mantener límite de 1000 líneas visibles
-                while (Lines.Count > 1000)
-                    Lines.RemoveAt(0);
+                if (string.IsNullOrEmpty(_searchText))
+                {
+                    // Fast path sin filtro: adición incremental (preserva auto-scroll)
+                    foreach (var line in result.Lines)
+                        Lines.Add(line);
+                    while (Lines.Count > 1000)
+                        Lines.RemoveAt(0);
+                }
+                else
+                {
+                    // Filtro activo: reconstruir vista filtrada
+                    AplicarFiltroInterno();
+                }
 
-                LineInfo = _totalLines > 1000
-                    ? $"Mostrando últimas 1.000 líneas de {_totalLines:N0} totales"
-                    : $"Mostrando {_totalLines} líneas";
+                ActualizarLineInfo();
             }
             catch { /* absorber cualquier excepción para no propagar al hilo UI */ }
             finally
             {
                 _refreshLock.Release();
+            }
+        }
+
+        // ── Aplica el filtro actual sobre _allLines y actualiza Lines + LineInfo ─
+        private void AplicarFiltro()
+        {
+            AplicarFiltroInterno();
+            ActualizarLineInfo();
+        }
+
+        private void AplicarFiltroInterno()
+        {
+            Lines.Clear();
+            if (string.IsNullOrEmpty(_searchText))
+            {
+                foreach (var line in _allLines)
+                    Lines.Add(line);
+            }
+            else
+            {
+                foreach (var line in _allLines)
+                {
+                    if (line.IndexOf(_searchText, StringComparison.OrdinalIgnoreCase) >= 0)
+                        Lines.Add(line);
+                }
+            }
+        }
+
+        private void ActualizarLineInfo()
+        {
+            if (string.IsNullOrEmpty(_searchText))
+            {
+                LineInfo = _totalLines > 1000
+                    ? $"Mostrando últimas 1.000 líneas de {_totalLines:N0} totales"
+                    : $"Mostrando {_totalLines} líneas";
+            }
+            else
+            {
+                LineInfo = Lines.Count > 0
+                    ? $"{Lines.Count} coincidencias de {_allLines.Count} líneas en memoria"
+                    : $"Sin coincidencias en las {_allLines.Count} líneas en memoria";
             }
         }
 

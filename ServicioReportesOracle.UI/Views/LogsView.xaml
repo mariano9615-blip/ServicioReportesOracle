@@ -136,6 +136,20 @@
                         </Style>
                     </ComboBox.ItemContainerStyle>
                 </ComboBox>
+                <!-- Botón de búsqueda (Ctrl+F) -->
+                <Button Command="{Binding ToggleSearchCommand}" Margin="0,0,10,0" Padding="15,5"
+                        Background="{StaticResource SurfaceBrush}" Foreground="White"
+                        ToolTip="Buscar en logs (Ctrl+F)">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="6"/>
+                        </Style>
+                    </Button.Resources>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🔍" FontFamily="Segoe UI Emoji" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Buscar" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
                 <Button Command="{Binding RefreshCommand}" Margin="0,0,10,0" Padding="15,5" Background="{StaticResource SurfaceBrush}" Foreground="White">
                     <Button.Resources>
                         <Style TargetType="Border">
@@ -164,13 +178,63 @@
         <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="10">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
+                <!-- Barra de búsqueda (Ctrl+F) -->
+                <Border Grid.Row="0"
+                        Visibility="{Binding SearchVisibility}"
+                        Background="{StaticResource SurfaceContainerHighBrush}"
+                        CornerRadius="8"
+                        Margin="0,0,0,8"
+                        Padding="10,7">
+                    <DockPanel>
+                        <TextBlock Text="🔍" FontFamily="Segoe UI Emoji" FontSize="14"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"
+                                   Foreground="{StaticResource OnSurfaceVariantBrush}"
+                                   DockPanel.Dock="Left"/>
+                        <Button x:Name="CloseSearchButton"
+                                DockPanel.Dock="Right"
+                                Command="{Binding ClearSearchCommand}"
+                                ToolTip="Cerrar búsqueda (Esc)"
+                                Margin="8,0,0,0" Padding="6,2"
+                                Background="Transparent" BorderThickness="0"
+                                Foreground="{StaticResource OnSurfaceVariantBrush}"
+                                FontSize="13" VerticalAlignment="Center"
+                                Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#1AFFFFFF"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <TextBlock Text="✕" Foreground="{StaticResource OnSurfaceVariantBrush}" FontSize="13"/>
+                        </Button>
+                        <TextBox x:Name="SearchBox"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Foreground="{StaticResource OnSurfaceBrush}"
+                                 CaretBrush="{StaticResource OnSurfaceBrush}"
+                                 VerticalContentAlignment="Center"
+                                 Padding="0,0,0,0"
+                                 FontFamily="Consolas"
+                                 FontSize="13"
+                                 KeyDown="SearchBox_KeyDown"/>
+                    </DockPanel>
+                </Border>
+
                 <!-- Lista de líneas con virtualización -->
                 <ListBox x:Name="LogsListBox"
-                         Grid.Row="0"
+                         Grid.Row="1"
                          ItemsSource="{Binding Lines}"
                          Background="Transparent"
                          BorderThickness="0"
@@ -228,13 +292,13 @@
                 </ListBox>
 
                 <!-- Overlay de carga -->
-                <Grid Grid.Row="0" Visibility="{Binding LoadingVisibility}" Background="#88000000">
+                <Grid Grid.Row="1" Visibility="{Binding LoadingVisibility}" Background="#88000000">
                     <TextBlock Text="Cargando..." HorizontalAlignment="Center" VerticalAlignment="Center"
                                Foreground="White" FontSize="16" FontWeight="SemiBold"/>
                 </Grid>
 
                 <!-- Info de líneas -->
-                <TextBlock Grid.Row="1"
+                <TextBlock Grid.Row="2"
                            Text="{Binding LineInfo}"
                            Foreground="{StaticResource OnSurfaceVariantBrush}"
                            FontSize="11"
