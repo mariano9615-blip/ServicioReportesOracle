@@ -5,8 +5,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="900"
+             xmlns:conv="clr-namespace:ServicioReportesOracle.UI.Converters"
              Foreground="{StaticResource OnSurfaceBrush}"
              Unloaded="UserControl_Unloaded">
+
+    <UserControl.Resources>
+        <conv:IntToOpacityConverter x:Key="IntToOpacityConverter"/>
+    </UserControl.Resources>
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -87,11 +92,11 @@
                     <TextBlock Grid.Row="2" Text="{Binding LastRunTotalIds, StringFormat='Total de IDs: {0}'}" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,4"/>
                     
                     <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="{Binding LastRunNuevos, StringFormat='Nuevos: {0}'}" FontSize="11" Foreground="#4CAF50"/>
+                        <TextBlock Text="{Binding LastRunNuevos, StringFormat='Nuevos: {0}'}" FontSize="11" Foreground="#4CAF50" Opacity="{Binding LastRunNuevos, Converter={StaticResource IntToOpacityConverter}}"/>
                         <TextBlock Text=" | " FontSize="11" Foreground="{StaticResource OutlineBrush}"/>
-                        <TextBlock Text="{Binding LastRunActualizados, StringFormat='Actualizados: {0}'}" FontSize="11" Foreground="#F59E0B"/>
+                        <TextBlock Text="{Binding LastRunActualizados, StringFormat='Actualizados: {0}'}" FontSize="11" Foreground="#F59E0B" Opacity="{Binding LastRunActualizados, Converter={StaticResource IntToOpacityConverter}}"/>
                         <TextBlock Text=" | " FontSize="11" Foreground="{StaticResource OutlineBrush}"/>
-                        <TextBlock Text="{Binding LastRunAnulados, StringFormat='Anulados: {0}'}" FontSize="11" Foreground="#6B7280"/>
+                        <TextBlock Text="{Binding LastRunAnulados, StringFormat='Anulados: {0}'}" FontSize="11" Foreground="#6B7280" Opacity="{Binding LastRunAnulados, Converter={StaticResource IntToOpacityConverter}}"/>
                         <TextBlock Text=" | " FontSize="11" Foreground="{StaticResource OutlineBrush}"/>
                         <TextBlock Text="{Binding LastRunSinCambios, StringFormat='Sin cambios: {0}'}" FontSize="11" Foreground="#6B7280" Opacity="0.5"/>
                     </StackPanel>
@@ -224,9 +229,9 @@
 
                                         <TextBlock Grid.Column="2" Text="{Binding NTotal, StringFormat='Total: {0}'}" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
                                         
-                                        <TextBlock Grid.Column="3" Text="{Binding NNuevos, StringFormat='Nuevos: {0}'}" VerticalAlignment="Center" Foreground="#4CAF50"/>
-                                        <TextBlock Grid.Column="4" Text="{Binding NActualizados, StringFormat='Actualizados: {0}'}" VerticalAlignment="Center" Foreground="#F59E0B"/>
-                                        <TextBlock Grid.Column="5" Text="{Binding NAnulados, StringFormat='Anulados: {0}'}" VerticalAlignment="Center" Foreground="#6B7280"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding NNuevos, StringFormat='Nuevos: {0}'}" VerticalAlignment="Center" Foreground="#4CAF50" Opacity="{Binding NNuevos, Converter={StaticResource IntToOpacityConverter}}"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding NActualizados, StringFormat='Actualizados: {0}'}" VerticalAlignment="Center" Foreground="#F59E0B" Opacity="{Binding NActualizados, Converter={StaticResource IntToOpacityConverter}}"/>
+                                        <TextBlock Grid.Column="5" Text="{Binding NAnulados, StringFormat='Anulados: {0}'}" VerticalAlignment="Center" Foreground="#6B7280" Opacity="{Binding NAnulados, Converter={StaticResource IntToOpacityConverter}}"/>
                                         <TextBlock Grid.Column="6" Text="{Binding NSinCambios, StringFormat='Sin cambios: {0}'}" VerticalAlignment="Center" Foreground="#6B7280" Opacity="0.5"/>
                                     </Grid>
                                 </Border>
