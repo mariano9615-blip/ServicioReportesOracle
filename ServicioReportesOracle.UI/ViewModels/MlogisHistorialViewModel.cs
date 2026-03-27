@@ -149,14 +149,17 @@ namespace ServicioReportesOracle.UI.ViewModels
                 _historial     = await LeerHistorialAsync(_historialPath);
                 _historialAyer = await LeerHistorialAsync(_historialAyerPath);
 
-                if (_historial.Count == 0 && _historialAyer.Count == 0 && !File.Exists(_historialPath))
+                Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
-                    RebuildAll();
-                    LineInfo = "Archivo mlogis_historial.json no encontrado";
-                    return;
-                }
+                    if (_historial.Count == 0 && _historialAyer.Count == 0 && !File.Exists(_historialPath))
+                    {
+                        RebuildAll();
+                        LineInfo = "Archivo mlogis_historial.json no encontrado";
+                        return;
+                    }
 
-                RebuildAll();
+                    RebuildAll();
+                });
             }
             catch { /* absorber para no propagar al hilo UI */ }
             finally

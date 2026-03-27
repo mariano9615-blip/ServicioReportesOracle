@@ -123,11 +123,10 @@ namespace ServicioReportesOracle.UI.ViewModels
                     CargarAlertas(); // Requiere info del historial (corridas) para anulados o lee de alertas_enviadas
                 });
 
-                ActualizarTimeAgoTimer();
-                ActualizarWidthsBarras();
-
-                Application.Current?.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
+                    ActualizarTimeAgoTimer();
+                    ActualizarWidthsBarras();
                     OnPropertyChanged(nameof(HasCorridasHoy));
                 });
             }
@@ -147,55 +146,65 @@ namespace ServicioReportesOracle.UI.ViewModels
                     string json = LeerArchivoSeguro(_wsEstadoPath);
                     var ws = JObject.Parse(json);
                     string estado = ws["ultimo_estado"]?.ToString();
-                    WsCaidasHoy = ws["caidas_hoy"]?.ToObject<int>() ?? 0;
+                    int caidasHoy = ws["caidas_hoy"]?.ToObject<int>() ?? 0;
+                    string ultimaVezCaido = ws["ultima_vez_caido"]?.ToString();
                     
-                    if (estado == "ok")
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
                     {
-                        WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
-                        WsStatusText = "Operativo";
-                    }
-                    else if (estado == "caido")
-                    {
-                        WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F44336"));
-                        WsStatusText = "Caído";
-                    }
-                    else if (estado == "auth_error")
-                    {
-                        WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F44336"));
-                        WsStatusText = "Error de autenticación";
-                    }
-                    else
-                    {
-                        WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
-                        WsStatusText = "Desconocido";
-                    }
-
-                    if (WsCaidasHoy == 0)
-                    {
-                        WsSubtext = "Sin caídas registradas hoy";
-                    }
-                    else
-                    {
-                        string ultimaVezCaido = ws["ultima_vez_caido"]?.ToString();
-                        if (DateTime.TryParse(ultimaVezCaido, out var dt))
-                            WsSubtext = $"Última caída: {dt:HH:mm}";
+                        WsCaidasHoy = caidasHoy;
+                        if (estado == "ok")
+                        {
+                            WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
+                            WsStatusText = "Operativo";
+                        }
+                        else if (estado == "caido")
+                        {
+                            WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F44336"));
+                            WsStatusText = "Caído";
+                        }
+                        else if (estado == "auth_error")
+                        {
+                            WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F44336"));
+                            WsStatusText = "Error de autenticación";
+                        }
                         else
-                            WsSubtext = "Última caída: desconocida";
-                    }
+                        {
+                            WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
+                            WsStatusText = "Desconocido";
+                        }
+
+                        if (WsCaidasHoy == 0)
+                        {
+                            WsSubtext = "Sin caídas registradas hoy";
+                        }
+                        else
+                        {
+                            if (DateTime.TryParse(ultimaVezCaido, out var dt))
+                                WsSubtext = $"Última caída: {dt:HH:mm}";
+                            else
+                                WsSubtext = "Última caída: desconocida";
+                        }
+                    });
                 }
                 else
                 {
-                    WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
-                    WsStatusText = "-";
-                    WsSubtext = "Sin datos";
-                    WsCaidasHoy = 0;
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
+                        WsStatusText = "-";
+                        WsSubtext = "Sin datos";
+                        WsCaidasHoy = 0;
+                    });
                 }
             }
             catch
             {
-                WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
-                WsStatusText = "Error al leer";
-                WsSubtext = "-";
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
+                    WsStatusText = "Error al leer";
+                    WsSubtext = "-";
+                });
             }
         }
 
@@ -208,22 +217,33 @@ namespace ServicioReportesOracle.UI.ViewModels
                     string json = LeerArchivoSeguro(_pendientesPath);
                     var jobj = JObject.Parse(json);
                     var pendientesArr = jobj["pendientes"] as JArray;
-                    PendientesCount = pendientesArr?.Count ?? 0;
+                    int pCount = pendientesArr?.Count ?? 0;
+
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        PendientesCount = pCount;
+                        if (PendientesCount > 0)
+                            PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B")); // Amarillo
+                        else
+                            PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Verde
+                    });
                 }
                 else
                 {
-                    PendientesCount = 0;
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        PendientesCount = 0;
+                        PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Verde
+                    });
                 }
-
-                if (PendientesCount > 0)
-                    PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B")); // Amarillo
-                else
-                    PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Verde
             }
             catch
             {
-                PendientesCount = 0;
-                PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    PendientesCount = 0;
+                    PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
+                });
             }
         }
 
@@ -247,7 +267,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
                 int totalAnuladosHoy = 0;
 
-                Application.Current?.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
                     CorridasHoy.Clear();
                     if (corridasHoyRaw.Count > 0)
@@ -277,16 +297,19 @@ namespace ServicioReportesOracle.UI.ViewModels
                         LastRunAgoText = "Sin corridas registradas hoy";
                         LastRunBadgeColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
                     }
-                });
 
-                // Los anulados detectados de hoy provienen del historial
-                AlertasAnulados = totalAnuladosHoy;
+                    // Los anulados detectados de hoy provienen del historial
+                    AlertasAnulados = totalAnuladosHoy;
+                });
             }
             catch
             {
-                Application.Current?.Dispatcher.Invoke(() => CorridasHoy.Clear());
-                AlertasAnulados = 0;
-                _lastRunDateTime = null;
+                Application.Current?.Dispatcher.InvokeAsync(() => 
+                {
+                    CorridasHoy.Clear();
+                    AlertasAnulados = 0;
+                    _lastRunDateTime = null;
+                });
             }
         }
 
@@ -314,13 +337,19 @@ namespace ServicioReportesOracle.UI.ViewModels
                     }
                 }
 
-                AlertasCasoA = ca;
-                AlertasCasoB = cb;
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    AlertasCasoA = ca;
+                    AlertasCasoB = cb;
+                });
             }
             catch
             {
-                AlertasCasoA = 0;
-                AlertasCasoB = 0;
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    AlertasCasoA = 0;
+                    AlertasCasoB = 0;
+                });
             }
         }
 
@@ -345,19 +374,16 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         private void ActualizarTimeAgoTimer()
         {
-            Application.Current?.Dispatcher.Invoke(() =>
+            if (_lastRunDateTime.HasValue && _lastRunDateTime.Value.Date == DateTime.Today)
             {
-                if (_lastRunDateTime.HasValue && _lastRunDateTime.Value.Date == DateTime.Today)
-                {
-                    int min = (int)(DateTime.Now - _lastRunDateTime.Value).TotalMinutes;
-                    if (min < 0) min = 0;
-                    LastRunAgoText = $"hace {min} minutos";
-                }
-                else
-                {
-                    LastRunAgoText = "Sin corridas registradas hoy";
-                }
-            });
+                int min = (int)(DateTime.Now - _lastRunDateTime.Value).TotalMinutes;
+                if (min < 0) min = 0;
+                LastRunAgoText = $"hace {min} minutos";
+            }
+            else
+            {
+                LastRunAgoText = "Sin corridas registradas hoy";
+            }
         }
 
         private string LeerArchivoSeguro(string path)
