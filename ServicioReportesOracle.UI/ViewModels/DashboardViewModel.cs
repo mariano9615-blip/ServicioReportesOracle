@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -38,6 +38,8 @@ namespace ServicioReportesOracle.UI.ViewModels
         private string _wsStatusText;
         private string _wsSubtext;
         private int _wsCaidasHoy;
+        private string _wsDetalleError;
+        private bool _wsHasErrorDetail;
 
         // Last Run
         private string _lastRunBadge;
@@ -46,10 +48,16 @@ namespace ServicioReportesOracle.UI.ViewModels
         private int _lastRunTotalIds;
         private string _lastRunAgoText;
         private DateTime? _lastRunDateTime;
+        private int _lastRunNuevos;
+        private int _lastRunActualizados;
+        private int _lastRunAnulados;
+        private int _lastRunSinCambios;
 
         // Pending
         private int _pendientesCount;
         private SolidColorBrush _pendientesColor;
+        private DateTime? _oldestPendienteDate;
+        private string _oldestPendienteText;
 
         // Alerts Today
         private int _alertasCasoA;
@@ -59,6 +67,9 @@ namespace ServicioReportesOracle.UI.ViewModels
         private double _barraCasoBWidth;
         private double _barraAnuladosWidth;
         private bool _hasAlertasToday;
+        private string _alertasCasoALastText;
+        private string _alertasCasoBLastText;
+        private string _alertasAnuladosLastText;
 
         public ObservableCollection<CorridaDashboardItem> CorridasHoy { get; } = new ObservableCollection<CorridaDashboardItem>();
 
@@ -88,15 +99,23 @@ namespace ServicioReportesOracle.UI.ViewModels
         public string WsStatusText { get => _wsStatusText; set { _wsStatusText = value; OnPropertyChanged(); } }
         public string WsSubtext { get => _wsSubtext; set { _wsSubtext = value; OnPropertyChanged(); } }
         public int WsCaidasHoy { get => _wsCaidasHoy; set { _wsCaidasHoy = value; OnPropertyChanged(); } }
+        public string WsDetalleError { get => _wsDetalleError; set { _wsDetalleError = value; OnPropertyChanged(); } }
+        public bool WsHasErrorDetail { get => _wsHasErrorDetail; set { _wsHasErrorDetail = value; OnPropertyChanged(); } }
 
         public string LastRunBadge { get => _lastRunBadge; set { _lastRunBadge = value; OnPropertyChanged(); } }
         public SolidColorBrush LastRunBadgeColor { get => _lastRunBadgeColor; set { _lastRunBadgeColor = value; OnPropertyChanged(); } }
         public string LastRunTime { get => _lastRunTime; set { _lastRunTime = value; OnPropertyChanged(); } }
         public int LastRunTotalIds { get => _lastRunTotalIds; set { _lastRunTotalIds = value; OnPropertyChanged(); } }
         public string LastRunAgoText { get => _lastRunAgoText; set { _lastRunAgoText = value; OnPropertyChanged(); } }
+        public int LastRunNuevos { get => _lastRunNuevos; set { _lastRunNuevos = value; OnPropertyChanged(); } }
+        public int LastRunActualizados { get => _lastRunActualizados; set { _lastRunActualizados = value; OnPropertyChanged(); } }
+        public int LastRunAnulados { get => _lastRunAnulados; set { _lastRunAnulados = value; OnPropertyChanged(); } }
+        public int LastRunSinCambios { get => _lastRunSinCambios; set { _lastRunSinCambios = value; OnPropertyChanged(); } }
 
         public int PendientesCount { get => _pendientesCount; set { _pendientesCount = value; OnPropertyChanged(); } }
         public SolidColorBrush PendientesColor { get => _pendientesColor; set { _pendientesColor = value; OnPropertyChanged(); } }
+        public string OldestPendienteText { get => _oldestPendienteText; set { _oldestPendienteText = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasOldestPendiente)); } }
+        public bool HasOldestPendiente => !string.IsNullOrEmpty(OldestPendienteText);
 
         public int AlertasCasoA { get => _alertasCasoA; set { _alertasCasoA = value; OnPropertyChanged(); } }
         public int AlertasCasoB { get => _alertasCasoB; set { _alertasCasoB = value; OnPropertyChanged(); } }
@@ -106,6 +125,14 @@ namespace ServicioReportesOracle.UI.ViewModels
         public double BarraAnuladosWidth { get => _barraAnuladosWidth; set { _barraAnuladosWidth = value; OnPropertyChanged(); } }
         public bool HasAlertasToday { get => _hasAlertasToday; set { _hasAlertasToday = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasNoAlertasToday)); } }
         public bool HasNoAlertasToday => !HasAlertasToday;
+        
+        public string AlertasCasoALastText { get => _alertasCasoALastText; set { _alertasCasoALastText = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasAlertasCasoALastText)); } }
+        public string AlertasCasoBLastText { get => _alertasCasoBLastText; set { _alertasCasoBLastText = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasAlertasCasoBLastText)); } }
+        public string AlertasAnuladosLastText { get => _alertasAnuladosLastText; set { _alertasAnuladosLastText = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasAlertasAnuladosLastText)); } }
+        
+        public bool HasAlertasCasoALastText => !string.IsNullOrEmpty(AlertasCasoALastText);
+        public bool HasAlertasCasoBLastText => !string.IsNullOrEmpty(AlertasCasoBLastText);
+        public bool HasAlertasAnuladosLastText => !string.IsNullOrEmpty(AlertasAnuladosLastText);
 
         public bool HasCorridasHoy => CorridasHoy.Count > 0;
         public bool HasNoCorridasHoy => CorridasHoy.Count == 0;
@@ -151,10 +178,27 @@ namespace ServicioReportesOracle.UI.ViewModels
                     string estado = ws["ultimo_estado"]?.ToString();
                     int caidasHoy = ws["caidas_hoy"]?.ToObject<int>() ?? 0;
                     string ultimaVezCaido = ws["ultima_vez_caido"]?.ToString();
+                    string detalleError = ws["detalle_error"]?.ToString();
                     
                     Application.Current?.Dispatcher.InvokeAsync(() =>
                     {
                         WsCaidasHoy = caidasHoy;
+
+                        if (estado == "caido" || estado == "auth_error")
+                        {
+                            if (!string.IsNullOrEmpty(detalleError)) {
+                                string trunc = detalleError.Length > 80 ? detalleError.Substring(0, 80) + "..." : detalleError;
+                                WsDetalleError = trunc;
+                                WsHasErrorDetail = true;
+                            } else {
+                                WsHasErrorDetail = false;
+                            }
+                        }
+                        else
+                        {
+                            WsHasErrorDetail = false;
+                        }
+
                         if (estado == "ok")
                         {
                             WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
@@ -197,6 +241,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                         WsStatusText = "-";
                         WsSubtext = "Sin datos";
                         WsCaidasHoy = 0;
+                        WsHasErrorDetail = false;
                     });
                 }
             }
@@ -207,6 +252,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     WsColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
                     WsStatusText = "Error al leer";
                     WsSubtext = "-";
+                    WsHasErrorDetail = false;
                 });
             }
         }
@@ -222,13 +268,31 @@ namespace ServicioReportesOracle.UI.ViewModels
                     var pendientesArr = jobj["pendientes"] as JArray;
                     int pCount = pendientesArr?.Count ?? 0;
 
+                    DateTime? oldest = null;
+                    if (pendientesArr != null)
+                    {
+                        foreach (var p in pendientesArr)
+                        {
+                            if (DateTime.TryParse(p["primera_vez_visto"]?.ToString(), out DateTime dt))
+                            {
+                                if (oldest == null || dt < oldest.Value) oldest = dt;
+                            }
+                        }
+                    }
+
                     Application.Current?.Dispatcher.InvokeAsync(() =>
                     {
                         PendientesCount = pCount;
                         if (PendientesCount > 0)
+                        {
                             PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B")); // Amarillo
+                            _oldestPendienteDate = oldest;
+                        }
                         else
+                        {
                             PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Verde
+                            _oldestPendienteDate = null;
+                        }
                     });
                 }
                 else
@@ -237,6 +301,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     {
                         PendientesCount = 0;
                         PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Verde
+                        _oldestPendienteDate = null;
                     });
                 }
             }
@@ -246,6 +311,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                 {
                     PendientesCount = 0;
                     PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
+                    _oldestPendienteDate = null;
                 });
             }
         }
@@ -263,12 +329,14 @@ namespace ServicioReportesOracle.UI.ViewModels
                         corridas.AddRange(parsed.Corridas);
                 }
 
-                // Filtrar solo las de hoy (en caso de que aún no se haya rotado si no hubo primera corrida)
                 var corridasHoyRaw = corridas.Where(c => c.FechaEjecucion.Date == DateTime.Today)
                                              .OrderByDescending(c => c.FechaEjecucion)
                                              .ToList();
 
                 int totalAnuladosHoy = 0;
+                
+                DateTime? lastAnuladoDate = null;
+                string lastAnuladoId = null;
 
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
@@ -289,6 +357,24 @@ namespace ServicioReportesOracle.UI.ViewModels
                             var item = new CorridaDashboardItem(c);
                             CorridasHoy.Add(item);
                             totalAnuladosHoy += item.NAnulados;
+                            
+                            var anuladosEnEstaCorrida = c.Registros.Where(r => r.Anulado).ToList();
+                            if (anuladosEnEstaCorrida.Count > 0)
+                            {
+                                if (lastAnuladoDate == null || c.FechaEjecucion > lastAnuladoDate)
+                                {
+                                    lastAnuladoDate = c.FechaEjecucion;
+                                    lastAnuladoId = anuladosEnEstaCorrida.Last().Id;
+                                }
+                            }
+                        }
+
+                        if (CorridasHoy.Count > 0) {
+                            var firstItem = CorridasHoy[0];
+                            LastRunNuevos = firstItem.NNuevos;
+                            LastRunActualizados = firstItem.NActualizados;
+                            LastRunAnulados = firstItem.NAnulados;
+                            LastRunSinCambios = firstItem.NSinCambios;
                         }
                     }
                     else
@@ -299,10 +385,19 @@ namespace ServicioReportesOracle.UI.ViewModels
                         LastRunBadge = "-";
                         LastRunAgoText = "Sin corridas registradas hoy";
                         LastRunBadgeColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
+                        LastRunNuevos = 0;
+                        LastRunActualizados = 0;
+                        LastRunAnulados = 0;
+                        LastRunSinCambios = 0;
                     }
 
-                    // Los anulados detectados de hoy provienen del historial
                     AlertasAnulados = totalAnuladosHoy;
+                    
+                    if (lastAnuladoDate.HasValue) {
+                        AlertasAnuladosLastText = $"Último: {lastAnuladoId} — {lastAnuladoDate.Value:HH:mm}";
+                    } else {
+                        AlertasAnuladosLastText = "";
+                    }
                 });
             }
             catch
@@ -312,6 +407,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     CorridasHoy.Clear();
                     AlertasAnulados = 0;
                     _lastRunDateTime = null;
+                    AlertasAnuladosLastText = "";
                 });
             }
         }
@@ -322,6 +418,11 @@ namespace ServicioReportesOracle.UI.ViewModels
             {
                 int ca = 0;
                 int cb = 0;
+                
+                DateTime? lastCasoA = null;
+                DateTime? lastCasoB = null;
+                string idCasoA = null;
+                string idCasoB = null;
 
                 if (File.Exists(_alertasEnviadasPath))
                 {
@@ -334,8 +435,15 @@ namespace ServicioReportesOracle.UI.ViewModels
                         if (DateTime.TryParse(timestamp, out var dt) && dt.Date == DateTime.Today)
                         {
                             string tipo = token["tipo_caso"]?.ToString();
-                            if (tipo == "A") ca++;
-                            else if (tipo == "B") cb++;
+                            string id = token["id"]?.ToString();
+                            if (tipo == "A") {
+                                ca++;
+                                if (lastCasoA == null || dt > lastCasoA) { lastCasoA = dt; idCasoA = id; }
+                            }
+                            else if (tipo == "B") {
+                                cb++;
+                                if (lastCasoB == null || dt > lastCasoB) { lastCasoB = dt; idCasoB = id; }
+                            }
                         }
                     }
                 }
@@ -344,6 +452,12 @@ namespace ServicioReportesOracle.UI.ViewModels
                 {
                     AlertasCasoA = ca;
                     AlertasCasoB = cb;
+                    
+                    if (lastCasoA.HasValue) AlertasCasoALastText = $"Último: {idCasoA} — {lastCasoA.Value:HH:mm}";
+                    else AlertasCasoALastText = "";
+                    
+                    if (lastCasoB.HasValue) AlertasCasoBLastText = $"Último: {idCasoB} — {lastCasoB.Value:HH:mm}";
+                    else AlertasCasoBLastText = "";
                 });
             }
             catch
@@ -352,6 +466,8 @@ namespace ServicioReportesOracle.UI.ViewModels
                 {
                     AlertasCasoA = 0;
                     AlertasCasoB = 0;
+                    AlertasCasoALastText = "";
+                    AlertasCasoBLastText = "";
                 });
             }
         }
@@ -386,6 +502,17 @@ namespace ServicioReportesOracle.UI.ViewModels
             else
             {
                 LastRunAgoText = "Sin corridas registradas hoy";
+            }
+
+            if (_oldestPendienteDate.HasValue)
+            {
+                int minPendiente = (int)(DateTime.Now - _oldestPendienteDate.Value).TotalMinutes;
+                if (minPendiente < 0) minPendiente = 0;
+                OldestPendienteText = $"Más antiguo: hace {minPendiente} min";
+            }
+            else
+            {
+                OldestPendienteText = "";
             }
         }
 
@@ -468,6 +595,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         public int NNuevos { get; }
         public int NActualizados { get; }
         public int NAnulados { get; }
+        public int NSinCambios { get; }
 
         public CorridaDashboardItem(MlogisCorrida c)
         {
@@ -494,7 +622,6 @@ namespace ServicioReportesOracle.UI.ViewModels
                 }
                 else
                 {
-                    // Es nuevo si se vió por primera vez en esta corrida (margen 5 min)
                     if (Math.Abs((r.PrimeraVezVisto - c.FechaEjecucion).TotalMinutes) < 5)
                         nuevos++;
                 }
@@ -503,6 +630,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             NNuevos = nuevos;
             NActualizados = actualizados;
             NAnulados = anulados;
+            NSinCambios = NTotal - nuevos - actualizados - anulados;
         }
     }
 }

@@ -46,6 +46,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Text="🌐 WebService" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,10"/>
@@ -57,7 +58,9 @@
 
                     <TextBlock Grid.Row="2" Text="{Binding WsSubtext}" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                     
-                    <TextBlock Grid.Row="3" Text="{Binding WsCaidasHoy, StringFormat='Caídas hoy: {0}'}" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}"/>
+                    <TextBlock Grid.Row="3" Text="{Binding WsCaidasHoy, StringFormat='Caídas hoy: {0}'}" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,4"/>
+
+                    <TextBlock Grid.Row="4" Text="{Binding WsDetalleError}" FontSize="11" Foreground="#F44336" TextWrapping="Wrap" MaxWidth="280" Visibility="{Binding WsHasErrorDetail, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </Grid>
             </Border>
 
@@ -65,6 +68,7 @@
             <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="5,0,5,0">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -80,9 +84,19 @@
                         <TextBlock Text="{Binding LastRunTime}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource OnSurfaceBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <TextBlock Grid.Row="2" Text="{Binding LastRunTotalIds, StringFormat='Total de IDs: {0}'}" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="2" Text="{Binding LastRunTotalIds, StringFormat='Total de IDs: {0}'}" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,4"/>
                     
-                    <TextBlock Grid.Row="3" Text="{Binding LastRunAgoText}" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}"/>
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="{Binding LastRunNuevos, StringFormat='Nuevos: {0}'}" FontSize="11" Foreground="#4CAF50"/>
+                        <TextBlock Text=" | " FontSize="11" Foreground="{StaticResource OutlineBrush}"/>
+                        <TextBlock Text="{Binding LastRunActualizados, StringFormat='Actualizados: {0}'}" FontSize="11" Foreground="#F59E0B"/>
+                        <TextBlock Text=" | " FontSize="11" Foreground="{StaticResource OutlineBrush}"/>
+                        <TextBlock Text="{Binding LastRunAnulados, StringFormat='Anulados: {0}'}" FontSize="11" Foreground="#6B7280"/>
+                        <TextBlock Text=" | " FontSize="11" Foreground="{StaticResource OutlineBrush}"/>
+                        <TextBlock Text="{Binding LastRunSinCambios, StringFormat='Sin cambios: {0}'}" FontSize="11" Foreground="#6B7280" Opacity="0.5"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="4" Text="{Binding LastRunAgoText}" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}"/>
                 </Grid>
             </Border>
 
@@ -92,6 +106,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -99,7 +114,9 @@
 
                     <TextBlock Grid.Row="1" Text="{Binding PendientesCount}" FontSize="32" FontWeight="Bold" Foreground="{Binding PendientesColor}" Margin="0,0,0,5" HorizontalAlignment="Left"/>
                     
-                    <TextBlock Grid.Row="2" Text="IDs esperando comparación con Oracle" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="2" Text="IDs esperando comparación con Oracle" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                    
+                    <TextBlock Grid.Row="3" Text="{Binding OldestPendienteText}" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" TextWrapping="Wrap" Visibility="{Binding HasOldestPendiente, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </Grid>
             </Border>
         </Grid>
@@ -127,8 +144,11 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Caso B" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-                        <Rectangle Grid.Column="1" Fill="#F44336" Height="20" Width="{Binding BarraCasoBWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left"/>
-                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoB}" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <Rectangle Fill="#F44336" Height="20" Width="{Binding BarraCasoBWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left"/>
+                            <TextBlock Text="{Binding AlertasCasoBLastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" Margin="0,2,0,0" Visibility="{Binding HasAlertasCasoBLastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoB}" VerticalAlignment="Center" FontWeight="Bold"/>
                     </Grid>
 
                     <!-- Caso A -->
@@ -139,8 +159,11 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Caso A" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-                        <Rectangle Grid.Column="1" Fill="#F59E0B" Height="20" Width="{Binding BarraCasoAWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left"/>
-                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoA}" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <Rectangle Fill="#F59E0B" Height="20" Width="{Binding BarraCasoAWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left"/>
+                            <TextBlock Text="{Binding AlertasCasoALastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" Margin="0,2,0,0" Visibility="{Binding HasAlertasCasoALastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoA}" VerticalAlignment="Center" FontWeight="Bold"/>
                     </Grid>
 
                     <!-- Anulados -->
@@ -151,8 +174,11 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Anulados" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-                        <Rectangle Grid.Column="1" Fill="#6B7280" Height="20" Width="{Binding BarraAnuladosWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left"/>
-                        <TextBlock Grid.Column="2" Text="{Binding AlertasAnulados}" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <Rectangle Fill="#6B7280" Height="20" Width="{Binding BarraAnuladosWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left"/>
+                            <TextBlock Text="{Binding AlertasAnuladosLastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" Margin="0,2,0,0" Visibility="{Binding HasAlertasAnuladosLastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding AlertasAnulados}" VerticalAlignment="Center" FontWeight="Bold"/>
                     </Grid>
                 </Grid>
             </StackPanel>
@@ -180,12 +206,13 @@
                                 <Border BorderBrush="{StaticResource OutlineBrush}" BorderThickness="0,0,0,1" Padding="4,8">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="50"/>
                                             <ColumnDefinition Width="60"/>
-                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="80"/>
-                                            <ColumnDefinition Width="80"/>
-                                            <ColumnDefinition Width="80"/>
-                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
@@ -197,9 +224,10 @@
 
                                         <TextBlock Grid.Column="2" Text="{Binding NTotal, StringFormat='Total: {0}'}" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
                                         
-                                        <TextBlock Grid.Column="3" Text="{Binding NNuevos, StringFormat='N: {0}'}" VerticalAlignment="Center" Foreground="#4CAF50"/>
-                                        <TextBlock Grid.Column="4" Text="{Binding NActualizados, StringFormat='U: {0}'}" VerticalAlignment="Center" Foreground="#F59E0B"/>
-                                        <TextBlock Grid.Column="5" Text="{Binding NAnulados, StringFormat='A: {0}'}" VerticalAlignment="Center" Foreground="#6B7280"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding NNuevos, StringFormat='Nuevos: {0}'}" VerticalAlignment="Center" Foreground="#4CAF50"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding NActualizados, StringFormat='Actualizados: {0}'}" VerticalAlignment="Center" Foreground="#F59E0B"/>
+                                        <TextBlock Grid.Column="5" Text="{Binding NAnulados, StringFormat='Anulados: {0}'}" VerticalAlignment="Center" Foreground="#6B7280"/>
+                                        <TextBlock Grid.Column="6" Text="{Binding NSinCambios, StringFormat='Sin cambios: {0}'}" VerticalAlignment="Center" Foreground="#6B7280" Opacity="0.5"/>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
