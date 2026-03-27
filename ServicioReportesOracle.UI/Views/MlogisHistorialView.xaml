@@ -218,56 +218,75 @@
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="0,2">
-                                            <Grid.Style>
-                                                <Style TargetType="Grid">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsEmpty}" Value="True">
-                                                            <Setter Property="Opacity" Value="0.4"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Grid.Style>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
+                                            <!-- Separador "— Ayer —" (solo visible cuando IsSeparator=True) -->
+                                            <TextBlock x:Name="SepText"
+                                                       Text="— Ayer —"
+                                                       Visibility="Collapsed"
+                                                       HorizontalAlignment="Center"
+                                                       FontSize="11" FontStyle="Italic"
+                                                       Foreground="{StaticResource OnSurfaceVariantBrush}"
+                                                       Opacity="0.6"
+                                                       Margin="0,4"/>
 
-                                            <!-- Hora -->
-                                            <TextBlock Grid.Column="0"
-                                                       Text="{Binding Hora}"
-                                                       Foreground="White"
-                                                       FontFamily="Consolas"
-                                                       FontSize="13"
-                                                       VerticalAlignment="Center"
-                                                       Margin="0,0,6,0"/>
-
-                                            <!-- Badge FULL / DELTA -->
-                                            <Border Grid.Column="1" CornerRadius="4" Padding="5,2" VerticalAlignment="Center">
-                                                <Border.Style>
-                                                    <Style TargetType="Border">
-                                                        <Setter Property="Background" Value="#555"/>
+                                            <!-- Contenido normal de corrida -->
+                                            <Grid x:Name="NormalGrid">
+                                                <Grid.Style>
+                                                    <Style TargetType="Grid">
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Tipo}" Value="FULL">
-                                                                <Setter Property="Background" Value="#0078D4"/>
+                                                            <DataTrigger Binding="{Binding IsEmpty}" Value="True">
+                                                                <Setter Property="Opacity" Value="0.4"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </Border.Style>
-                                                <TextBlock Text="{Binding Tipo}"
-                                                           Foreground="White"
-                                                           FontSize="10"
-                                                           FontWeight="SemiBold"/>
-                                            </Border>
+                                                </Grid.Style>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
 
-                                            <!-- Cantidad IDs -->
-                                            <TextBlock Grid.Column="2"
-                                                       Text="{Binding CountText}"
-                                                       Foreground="{StaticResource OnSurfaceVariantBrush}"
-                                                       FontSize="12"
-                                                       VerticalAlignment="Center"
-                                                       Margin="6,0,0,0"/>
+                                                <!-- Hora -->
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding Hora}"
+                                                           Foreground="White"
+                                                           FontFamily="Consolas"
+                                                           FontSize="13"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,6,0"/>
+
+                                                <!-- Badge FULL / DELTA -->
+                                                <Border Grid.Column="1" CornerRadius="4" Padding="5,2" VerticalAlignment="Center">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#555"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Tipo}" Value="FULL">
+                                                                    <Setter Property="Background" Value="#0078D4"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding Tipo}"
+                                                               Foreground="White"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"/>
+                                                </Border>
+
+                                                <!-- Cantidad IDs -->
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding CountText}"
+                                                           Foreground="{StaticResource OnSurfaceVariantBrush}"
+                                                           FontSize="12"
+                                                           VerticalAlignment="Center"
+                                                           Margin="6,0,0,0"/>
+                                            </Grid>
                                         </Grid>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsSeparator}" Value="True">
+                                                <Setter TargetName="SepText"    Property="Visibility" Value="Visible"/>
+                                                <Setter TargetName="NormalGrid" Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                                 <ListBox.ItemContainerStyle>
@@ -306,6 +325,19 @@
                                                 </ControlTemplate>
                                             </Setter.Value>
                                         </Setter>
+                                        <!-- Separador: no seleccionable, sin hover highlight -->
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSeparator}" Value="True">
+                                                <Setter Property="IsEnabled"       Value="False"/>
+                                                <Setter Property="Focusable"       Value="False"/>
+                                                <Setter Property="Padding"         Value="0"/>
+                                                <Setter Property="IsHitTestVisible" Value="False"/>
+                                            </DataTrigger>
+                                            <!-- Corridas de ayer: opacidad reducida -->
+                                            <DataTrigger Binding="{Binding IsDeAyer}" Value="True">
+                                                <Setter Property="Opacity" Value="0.5"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
                                     </Style>
                                 </ListBox.ItemContainerStyle>
                             </ListBox>

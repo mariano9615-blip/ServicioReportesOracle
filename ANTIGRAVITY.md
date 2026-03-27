@@ -1,10 +1,10 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.9)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.9.2)
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v6.9.1)
+## 🚀 Resumen del Proyecto (v6.9.2)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v6.9.1
+**Versión Actual**: v6.9.2
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -181,6 +181,18 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - Solo es limpieza de disco; no afecta el flujo de comparación Oracle (que opera sobre `comparaciones_pendientes.json`).
 - Se loguea: `🗑️ [Historial] Rotación diaria: N corridas hoy, M de ayer preservadas, K descartadas.`
 
+## 🗂️ Vista Historial SOAP — mlogis_historial_ayer.json (UI v4.6)
+- **MlogisHistorialViewModel** carga ambos archivos en cada refresh:
+  - `mlogis_historial.json` (corridas de hoy)
+  - `mlogis_historial_ayer.json` (corridas de ayer, si existe)
+- **Panel izquierdo (modo Por Corrida)**: las corridas de hoy aparecen primero, luego un separador `— Ayer —` y las corridas de ayer con `Opacity=0.5`.
+  - El separador se implementa como un `CorridaItem` con `IsSeparator=true`; no es seleccionable (`IsEnabled=False`, `IsHitTestVisible=False`, `Focusable=False`).
+  - Las corridas de ayer tienen `IsDeAyer=true`; el `ItemContainerStyle` aplica `Opacity=0.5` vía `DataTrigger`.
+- **FileSystemWatcher**: filtro cambiado a `"mlogis_historial*.json"` — detecta cambios en ambos archivos, incluida la creación de `mlogis_historial_ayer.json` a medianoche.
+- **Modo Por ID único**: itera `_historial.Concat(_historialAyer)` para deduplicación — los IDs de ayer se incluyen sin diferenciación visual.
+- **LineInfo**: muestra el total combinado (`_historial.Count + _historialAyer.Count` corridas).
+- **Integridad ciclo `comparaciones_pendientes.json` (v6.9.2)**: verificada — formato consistente entre escritura (`{"pendientes":[...]}`) y lectura (`["pendientes"] as JArray`). Operaciones secuenciales `ActualizarComparacionesPendientes` → `CompararConOracle`, sin race condition ni lost-update. No existe el bug de `alertas_oracle_enviadas.json`.
+
 ## 🗂️ Sidebar Colapsable (UI v4.5)
 - **Comportamiento**: botón ☰ en la parte superior del sidebar togglea entre expandido (260px) y colapsado (56px).
 - **Animación**: `GridLengthAnimation` custom (`GridLengthAnimation.cs`) con `CubicEase EaseInOut` 200ms sobre `SidebarColumn.Width`.
@@ -217,6 +229,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - La UI espera encontrar los archivos `.json` en `..\ServicioReportesOracle\` relativo a su ejecución.
 
 ## 🗂️ Changelog
+- **v6.9.2 (UI v4.6)**: Historial SOAP muestra corridas de hoy + ayer. `MlogisHistorialViewModel` carga `mlogis_historial.json` y `mlogis_historial_ayer.json` (si existe). Panel izquierdo: separador `— Ayer —` entre hoy y ayer; corridas de ayer con `Opacity=0.5`. `FileSystemWatcher` con filtro `mlogis_historial*.json` detecta ambos archivos. Modo Por ID único: deduplicación combinada de ambos historiales. `LineInfo` refleja total combinado. Ciclo `comparaciones_pendientes.json` verificado sin bugs: formato consistente y operaciones secuenciales.
 - **UI v4.5**: Sidebar colapsable con botón ☰. Animación 260↔56px con GridLengthAnimation + CubicEase 200ms. Estado colapsado muestra solo íconos emoji de nav centrados.
 - **v6.9.1**: Fix anulados: `SUBSTR(id,3,15) IN ({IDS_TRUNCADOS})` en `consultas_soap.json` y match C# via `SUBSTR(idOracle,2,15) == idMlogis[:15]` (equivalente al trigger `TRG_MPE_RENOMBRAMLOGIS`). Fix `alertas_oracle_enviadas.json`: array acumulativo plano con purga diaria (formato `[{id, tipo_caso, timestamp, nrocomprobante}]`). Dedup por `id+tipo_caso+DateTime.Today` — ya no se pierde el historial del día al reescribir el archivo.
 - **v6.9**: Rotación diaria de `mlogis_historial.json`: corridas de hoy en `mlogis_historial.json`, corridas de ayer en `mlogis_historial_ayer.json` (solo si existen, sin sobreescribir si no hay), anteriores descartadas. Log: `🗑️ [Historial] Rotación diaria: N corridas hoy, M de ayer preservadas, K descartadas.`

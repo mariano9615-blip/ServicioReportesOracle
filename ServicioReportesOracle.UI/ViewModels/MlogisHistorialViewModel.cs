@@ -18,6 +18,7 @@ namespace ServicioReportesOracle.UI.ViewModels
     public class MlogisHistorialViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly string _historialPath;
+        private readonly string _historialAyerPath;
         private bool _isModoCorrida = true;
         private bool _isSearchVisible;
         private string _searchText = "";
@@ -30,7 +31,8 @@ namespace ServicioReportesOracle.UI.ViewModels
         private const int DebounceMs = 2000;
         private readonly SemaphoreSlim _refreshLock = new SemaphoreSlim(1, 1);
 
-        private List<MlogisCorrida> _historial = new List<MlogisCorrida>();
+        private List<MlogisCorrida> _historial     = new List<MlogisCorrida>();
+        private List<MlogisCorrida> _historialAyer = new List<MlogisCorrida>();
         private readonly List<RegistroDisplayItem> _allRegistrosCorrida = new List<RegistroDisplayItem>();
         private readonly List<RegistroDisplayItem> _allRegistrosUnicos  = new List<RegistroDisplayItem>();
 
@@ -46,6 +48,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             set
             {
                 if (_selectedCorrida == value) return;
+                if (value?.IsSeparator == true) return; // separador no es seleccionable
                 _selectedCorrida = value;
                 OnPropertyChanged();
                 if (_isModoCorrida)
@@ -122,8 +125,9 @@ namespace ServicioReportesOracle.UI.ViewModels
         public MlogisHistorialViewModel()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            _historialPath = Path.GetFullPath(
-                Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\mlogis_historial.json"));
+            string logsDir  = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs"));
+            _historialPath     = Path.Combine(logsDir, "mlogis_historial.json");
+            _historialAyerPath = Path.Combine(logsDir, "mlogis_historial_ayer.json");
 
             RefreshCommand           = new RelayCommand(_ => _ = CargarAsync());
             ToggleModoCorridaCommand = new RelayCommand(_ => IsModoCorrida = true);
@@ -142,33 +146,16 @@ namespace ServicioReportesOracle.UI.ViewModels
             if (!await _refreshLock.WaitAsync(0)) return;
             try
             {
-                if (!File.Exists(_historialPath))
+                _historial     = await LeerHistorialAsync(_historialPath);
+                _historialAyer = await LeerHistorialAsync(_historialAyerPath);
+
+                if (_historial.Count == 0 && _historialAyer.Count == 0 && !File.Exists(_historialPath))
                 {
-                    _historial = new List<MlogisCorrida>();
                     RebuildAll();
                     LineInfo = "Archivo mlogis_historial.json no encontrado";
                     return;
                 }
 
-                MlogisHistorial parsed = null;
-                try
-                {
-                    string json = await Task.Run(() =>
-                    {
-                        using (var fs = new FileStream(_historialPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                        using (var reader = new System.IO.StreamReader(fs))
-                            return reader.ReadToEnd();
-                    });
-                    parsed = JsonConvert.DeserializeObject<MlogisHistorial>(json);
-                }
-                catch (Exception ex)
-                {
-                    MainViewModel.Instance?.ShowNotification("Error leyendo historial SOAP: " + ex.Message, "Error");
-                    LineInfo = "Error al leer archivo";
-                    return;
-                }
-
-                _historial = parsed?.Corridas ?? new List<MlogisCorrida>();
                 RebuildAll();
             }
             catch { /* absorber para no propagar al hilo UI */ }
@@ -178,24 +165,57 @@ namespace ServicioReportesOracle.UI.ViewModels
             }
         }
 
+        private async Task<List<MlogisCorrida>> LeerHistorialAsync(string path)
+        {
+            if (!File.Exists(path)) return new List<MlogisCorrida>();
+            try
+            {
+                string json = await Task.Run(() =>
+                {
+                    using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (var reader = new System.IO.StreamReader(fs))
+                        return reader.ReadToEnd();
+                });
+                var parsed = JsonConvert.DeserializeObject<MlogisHistorial>(json);
+                return parsed?.Corridas ?? new List<MlogisCorrida>();
+            }
+            catch (Exception ex)
+            {
+                MainViewModel.Instance?.ShowNotification("Error leyendo historial SOAP: " + ex.Message, "Error");
+                return new List<MlogisCorrida>();
+            }
+        }
+
         // ── Reconstrucción de colecciones ─────────────────────────────────────
 
         private void RebuildAll()
         {
-            var sorted = _historial.OrderByDescending(c => c.FechaEjecucion).ToList();
+            var sortedHoy  = _historial.OrderByDescending(c => c.FechaEjecucion).ToList();
+            var sortedAyer = _historialAyer.OrderByDescending(c => c.FechaEjecucion).ToList();
 
             // Preservar selección actual
-            DateTime? prevFecha = _selectedCorrida?.Corrida?.FechaEjecucion;
+            DateTime? prevFecha = _selectedCorrida?.IsSeparator == false
+                ? _selectedCorrida?.Corrida?.FechaEjecucion
+                : null;
 
             Corridas.Clear();
-            foreach (var c in sorted)
-                Corridas.Add(new CorridaItem(c));
+            foreach (var c in sortedHoy)
+                Corridas.Add(new CorridaItem(c, esDeAyer: false));
+
+            if (sortedAyer.Count > 0)
+            {
+                // Separador visual entre hoy y ayer
+                if (sortedHoy.Count > 0)
+                    Corridas.Add(CorridaItem.CrearSeparador());
+                foreach (var c in sortedAyer)
+                    Corridas.Add(new CorridaItem(c, esDeAyer: true));
+            }
 
             CorridaItem toSelect = null;
             if (prevFecha.HasValue)
-                toSelect = Corridas.FirstOrDefault(x => x.Corrida.FechaEjecucion == prevFecha.Value);
+                toSelect = Corridas.FirstOrDefault(x => !x.IsSeparator && x.Corrida?.FechaEjecucion == prevFecha.Value);
             if (toSelect == null)
-                toSelect = Corridas.FirstOrDefault();
+                toSelect = Corridas.FirstOrDefault(x => !x.IsSeparator);
 
             // Forzar trigger aunque sea el mismo objeto
             _selectedCorrida = null;
@@ -221,9 +241,9 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             _allRegistrosUnicos.Clear();
 
-            // Aplanar y deduplicar por ID; conservar el de ultima_vez_visto más reciente
+            // Aplanar y deduplicar por ID desde ambos historiales; conservar el de ultima_vez_visto más reciente
             var byId = new Dictionary<string, (MlogisRegistro Reg, int Count)>(StringComparer.OrdinalIgnoreCase);
-            foreach (var corrida in _historial)
+            foreach (var corrida in _historial.Concat(_historialAyer))
             {
                 if (corrida.Registros == null) continue;
                 foreach (var r in corrida.Registros)
@@ -281,7 +301,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         private void ActualizarLineInfo()
         {
-            int corridas = _historial.Count;
+            int corridas = _historial.Count + _historialAyer.Count;
             if (_isModoCorrida)
             {
                 int total = _allRegistrosCorrida.Count;
@@ -316,13 +336,15 @@ namespace ServicioReportesOracle.UI.ViewModels
                 Application.Current?.Dispatcher.BeginInvoke(new Action(() => _ = CargarAsync()));
             }, null, Timeout.Infinite, Timeout.Infinite);
 
+            // Observar ambos archivos: mlogis_historial.json y mlogis_historial_ayer.json
             _watcher = new FileSystemWatcher(dir)
             {
-                Filter              = Path.GetFileName(_historialPath),
-                NotifyFilter        = NotifyFilters.LastWrite | NotifyFilters.Size,
+                Filter              = "mlogis_historial*.json",
+                NotifyFilter        = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
                 EnableRaisingEvents = true
             };
             _watcher.Changed += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
+            _watcher.Created  += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
         }
 
         // ── IDisposable ───────────────────────────────────────────────────────
@@ -346,13 +368,15 @@ namespace ServicioReportesOracle.UI.ViewModels
 
     public class CorridaItem
     {
-        public MlogisCorrida Corrida   { get; }
-        public string        Hora      { get; }
-        public string        Tipo      { get; }   // "FULL" | "DELTA"
-        public string        CountText { get; }
-        public bool          IsEmpty   { get; }
+        public MlogisCorrida Corrida     { get; }
+        public string        Hora        { get; }
+        public string        Tipo        { get; }   // "FULL" | "DELTA"
+        public string        CountText   { get; }
+        public bool          IsEmpty     { get; }
+        public bool          IsSeparator { get; }
+        public bool          IsDeAyer    { get; }
 
-        public CorridaItem(MlogisCorrida c)
+        public CorridaItem(MlogisCorrida c, bool esDeAyer = false)
         {
             Corrida   = c;
             Hora      = c.FechaEjecucion.ToString("HH:mm");
@@ -360,7 +384,16 @@ namespace ServicioReportesOracle.UI.ViewModels
             int n     = c.Registros?.Count ?? 0;
             CountText = $"{n} IDs";
             IsEmpty   = n == 0;
+            IsDeAyer  = esDeAyer;
         }
+
+        // Constructor privado solo para separador
+        private CorridaItem()
+        {
+            IsSeparator = true;
+        }
+
+        public static CorridaItem CrearSeparador() => new CorridaItem();
     }
 
     public class RegistroDisplayItem
