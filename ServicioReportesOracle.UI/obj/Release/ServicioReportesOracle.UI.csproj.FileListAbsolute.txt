@@ -62,6 +62,8 @@ c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.
 c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\ChangePasswordView.g.cs
 c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\MlogisHistorialView.baml
 c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\MlogisHistorialView.g.cs
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Memory.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Numerics.Vectors.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Runtime.CompilerServices.Unsafe.xml
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Threading.Tasks.Extensions.dll
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\UiSettingsView.baml
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\UiSettingsView.g.cs
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\DashboardView.baml
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\DashboardView.g.cs

@@ -1,0 +1,9 @@
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Debug\TestSoap.exe
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Debug\TestSoap.pdb
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Debug\Newtonsoft.Json.dll
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Debug\Newtonsoft.Json.xml
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.csproj.AssemblyReference.cache
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.csproj.CoreCompileInputs.cache
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.csproj.Up2Date
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.exe
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\obj\Debug\TestSoap.pdb

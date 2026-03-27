@@ -37,6 +37,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _notificationType = value; OnPropertyChanged(); }
         }
 
+        public ICommand NavDashboardCommand { get; }
         public ICommand NavGeneralCommand { get; }
         public ICommand NavTasksCommand { get; }
         public ICommand NavEditorCommand { get; }
@@ -52,6 +53,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             Instance = this;
 
+            NavDashboardCommand        = new RelayCommand(_ => SelectedViewModel = new DashboardViewModel());
             NavGeneralCommand          = new RelayCommand(_ => SelectedViewModel = new GeneralConfigViewModel());
             NavTasksCommand            = new RelayCommand(_ => SelectedViewModel = new TasksViewModel());
             NavEditorCommand           = new RelayCommand(_ => SelectedViewModel = new SqlEditorViewModel());
@@ -62,7 +64,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             NavUiSettingsCommand       = new RelayCommand(_ => SelectedViewModel = new UiSettingsViewModel());
 
             // Default view
-            SelectedViewModel = new GeneralConfigViewModel();
+            SelectedViewModel = new DashboardViewModel();
         }
 
         public void ShowNotification(string message, string type = "Success")

@@ -1,10 +1,10 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.9.2)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.0)
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v6.9.2)
+## 🚀 Resumen del Proyecto (v7.0)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v6.9.2
+**Versión Actual**: v7.0
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -23,7 +23,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 
 ### 2. 💎 ServicioReportesOracle.UI (WPF)
 - **Arquitectura**: MVVM pura.
-- **Vistas**: `GeneralConfigView`, `TasksView` (Gestión ABM), `SqlEditorView` (Testing), `LogsView`, `ServiceControlView`, `ChangePasswordView`.
+- **Vistas**: `DashboardView` (Pantalla principal al iniciar), `GeneralConfigView`, `TasksView` (Gestión ABM), `SqlEditorView` (Testing), `LogsView`, `ServiceControlView`, `ChangePasswordView`.
 - **Diseño**: Tema oscuro premium con notificaciones tipo "Toast" incorporadas.
 - **Modelos**: Estructura anidada para configuración de mails (`Mail.ConError.Asunto`, etc.).
 
@@ -229,6 +229,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - La UI espera encontrar los archivos `.json` en `..\ServicioReportesOracle\` relativo a su ejecución.
 
 ## 🗂️ Changelog
+- **v7.0**: DashboardView agregado como pantalla principal por defecto al iniciar la UI. Reúne en un vistazo el estado del WebService de Mlogis (health check de `ws_estado.json`), información de la última corrida, cantidad de procesos `pendientes`, alertas enviadas hoy (Casos A, B y Anulados con barras proporcionales), y una lista compacta de todas las corridas de hoy desde `mlogis_historial.json`. Todo reactivo basado en `FileSystemWatcher` con debounce de 2 segundos.
 - **v6.9.2 (UI v4.6)**: Historial SOAP muestra corridas de hoy + ayer. `MlogisHistorialViewModel` carga `mlogis_historial.json` y `mlogis_historial_ayer.json` (si existe). Panel izquierdo: separador `— Ayer —` entre hoy y ayer; corridas de ayer con `Opacity=0.5`. `FileSystemWatcher` con filtro `mlogis_historial*.json` detecta ambos archivos. Modo Por ID único: deduplicación combinada de ambos historiales. `LineInfo` refleja total combinado. Ciclo `comparaciones_pendientes.json` verificado sin bugs: formato consistente y operaciones secuenciales.
 - **UI v4.5**: Sidebar colapsable con botón ☰. Animación 260↔56px con GridLengthAnimation + CubicEase 200ms. Estado colapsado muestra solo íconos emoji de nav centrados.
 - **v6.9.1**: Fix anulados: `SUBSTR(id,3,15) IN ({IDS_TRUNCADOS})` en `consultas_soap.json` y match C# via `SUBSTR(idOracle,2,15) == idMlogis[:15]` (equivalente al trigger `TRG_MPE_RENOMBRAMLOGIS`). Fix `alertas_oracle_enviadas.json`: array acumulativo plano con purga diaria (formato `[{id, tipo_caso, timestamp, nrocomprobante}]`). Dedup por `id+tipo_caso+DateTime.Today` — ya no se pierde el historial del día al reescribir el archivo.

@@ -1,0 +1,212 @@
+<UserControl x:Class="ServicioReportesOracle.UI.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="900"
+             Foreground="{StaticResource OnSurfaceBrush}"
+             Unloaded="UserControl_Unloaded">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Cabecera y botón actualizar -->
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="Dashboard" FontSize="24" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
+            <Button Command="{Binding RefreshCommand}" HorizontalAlignment="Right" VerticalAlignment="Center" 
+                    Background="{StaticResource SurfaceContainerHighBrush}" Foreground="{StaticResource OnSurfaceBrush}"
+                    BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" Padding="15,8"
+                    Style="{x:Null}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🔄" FontFamily="Segoe UI Emoji" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Actualizar" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- FILA 1: Tres cards -->
+        <Grid Grid.Row="1" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Card WebService -->
+            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="🌐 WebService" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,10"/>
+                    
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Ellipse Width="12" Height="12" Fill="{Binding WsColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding WsStatusText}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource OnSurfaceBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2" Text="{Binding WsSubtext}" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    
+                    <TextBlock Grid.Row="3" Text="{Binding WsCaidasHoy, StringFormat='Caídas hoy: {0}'}" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}"/>
+                </Grid>
+            </Border>
+
+            <!-- Card Última corrida -->
+            <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="5,0,5,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="⏱ Última corrida" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,10"/>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Border Background="{Binding LastRunBadgeColor}" CornerRadius="4" Padding="6,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding LastRunBadge}" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                        </Border>
+                        <TextBlock Text="{Binding LastRunTime}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource OnSurfaceBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2" Text="{Binding LastRunTotalIds, StringFormat='Total de IDs: {0}'}" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,8"/>
+                    
+                    <TextBlock Grid.Row="3" Text="{Binding LastRunAgoText}" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}"/>
+                </Grid>
+            </Border>
+
+            <!-- Card Pendientes -->
+            <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="10,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="⏳ Pendientes" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,10"/>
+
+                    <TextBlock Grid.Row="1" Text="{Binding PendientesCount}" FontSize="32" FontWeight="Bold" Foreground="{Binding PendientesColor}" Margin="0,0,0,5" HorizontalAlignment="Left"/>
+                    
+                    <TextBlock Grid.Row="2" Text="IDs esperando comparación con Oracle" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" TextWrapping="Wrap"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- FILA 2: Alertas hoy -->
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,15">
+            <StackPanel>
+                <TextBlock Text="🚨 Alertas enviadas hoy" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,15"/>
+                
+                <TextBlock Text="Sin alertas enviadas hoy" Foreground="{StaticResource OnSurfaceVariantBrush}" FontStyle="Italic"
+                           Visibility="{Binding HasAlertasToday, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverted}"/>
+
+                <Grid Visibility="{Binding HasAlertasToday, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Caso B -->
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Caso B" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
+                        <Rectangle Grid.Column="1" Fill="#F44336" Height="20" Width="{Binding BarraCasoBWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left"/>
+                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoB}" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                    </Grid>
+
+                    <!-- Caso A -->
+                    <Grid Grid.Row="1" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Caso A" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
+                        <Rectangle Grid.Column="1" Fill="#F59E0B" Height="20" Width="{Binding BarraCasoAWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left"/>
+                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoA}" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                    </Grid>
+
+                    <!-- Anulados -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Anulados" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
+                        <Rectangle Grid.Column="1" Fill="#6B7280" Height="20" Width="{Binding BarraAnuladosWidth}" RadiusX="4" RadiusY="4" HorizontalAlignment="Left"/>
+                        <TextBlock Grid.Column="2" Text="{Binding AlertasAnulados}" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                    </Grid>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- FILA 3: Corridas de hoy -->
+        <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <TextBlock Grid.Row="0" Text="📊 Corridas de hoy" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,10"/>
+                
+                <TextBlock Grid.Row="1" Text="Sin corridas registradas hoy" Foreground="{StaticResource OnSurfaceVariantBrush}" FontStyle="Italic"
+                           Visibility="{Binding HasCorridasHoy, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverted}"/>
+
+                <!-- Lista de corridas -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="200"
+                              Visibility="{Binding HasCorridasHoy, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ItemsControl ItemsSource="{Binding CorridasHoy}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource OutlineBrush}" BorderThickness="0,0,0,1" Padding="4,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding Hora}" VerticalAlignment="Center" FontWeight="Bold"/>
+                                        
+                                        <Border Grid.Column="1" Background="{Binding BadgeColor}" CornerRadius="3" Padding="4,2" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding TipoBadge}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                        </Border>
+
+                                        <TextBlock Grid.Column="2" Text="{Binding NTotal, StringFormat='Total: {0}'}" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
+                                        
+                                        <TextBlock Grid.Column="3" Text="{Binding NNuevos, StringFormat='N: {0}'}" VerticalAlignment="Center" Foreground="#4CAF50"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding NActualizados, StringFormat='U: {0}'}" VerticalAlignment="Center" Foreground="#F59E0B"/>
+                                        <TextBlock Grid.Column="5" Text="{Binding NAnulados, StringFormat='A: {0}'}" VerticalAlignment="Center" Foreground="#6B7280"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

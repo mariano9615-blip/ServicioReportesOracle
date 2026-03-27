@@ -18,6 +18,9 @@
         StateChanged="Window_StateChanged">
 
     <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <v:DashboardView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:GeneralConfigViewModel}">
             <v:GeneralConfigView/>
         </DataTemplate>
@@ -238,7 +241,13 @@
                                    Foreground="{StaticResource OnSurfaceVariantBrush}"
                                    Margin="20,0,20,20"/>
 
-                        <RadioButton x:Name="NavBtn1" Style="{StaticResource SidebarButtonStyle}" IsChecked="True" Command="{Binding NavGeneralCommand}">
+                        <RadioButton x:Name="NavBtn0" Style="{StaticResource SidebarButtonStyle}" IsChecked="True" Command="{Binding NavDashboardCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🏠" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="NavText0" Text="Dashboard" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="NavBtn1" Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavGeneralCommand}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                 <TextBlock x:Name="NavText1" Text="Configuración General" VerticalAlignment="Center"/>
