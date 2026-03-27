@@ -1,10 +1,10 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.8)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v6.9)
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v6.8)
+## 🚀 Resumen del Proyecto (v6.9)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v6.8 (UI v4.4)
+**Versión Actual**: v6.9
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -149,9 +149,19 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 
 ## 🗂️ Rotación de mlogis_historial.json
 
-- Al escribir `mlogis_historial.json` después de cada corrida, se eliminan automáticamente las corridas con `fecha_ejecucion < DateTime.Now.AddDays(-7)`.
+- Al escribir `mlogis_historial.json` después de cada corrida, se aplica rotación diaria:
+  - **hoy** (`fecha_ejecucion.Date == DateTime.Today`): van a `mlogis_historial.json`.
+  - **ayer** (`fecha_ejecucion.Date == DateTime.Today.AddDays(-1)`): van a `Logs\mlogis_historial_ayer.json`. Solo se escribe si hay corridas de ayer (no sobreescribe si no las hay).
+  - **anteriores**: se descartan.
 - Solo es limpieza de disco; no afecta el flujo de comparación Oracle (que opera sobre `comparaciones_pendientes.json`).
-- Se loguea: `🗑️ [Historial] N corridas eliminadas por rotación (>7 días)`.
+- Se loguea: `🗑️ [Historial] Rotación diaria: N corridas hoy, M de ayer preservadas, K descartadas.`
+
+## 🗂️ Sidebar Colapsable (UI v4.5)
+- **Comportamiento**: botón ☰ en la parte superior del sidebar togglea entre expandido (260px) y colapsado (56px).
+- **Animación**: `GridLengthAnimation` custom (`GridLengthAnimation.cs`) con `CubicEase EaseInOut` 200ms sobre `SidebarColumn.Width`.
+- **Estado colapsado**: se ocultan `SidebarTitle`, `SidebarSubtitle`, labels de nav (`NavText1`–`NavText7`) y `VersionText`. Quedan visibles solo el botón ☰ y los íconos emoji de cada item.
+- **Campo**: `private bool _sidebarExpanded = true;` en `MainWindow.xaml.cs`.
+- **Colores**: sin hardcodeo — overlays semitransparentes `#22FFFFFF`/`#33FFFFFF` como el `TitleBarButtonStyle` existente.
 
 ## 📋 Reglas de Desarrollo
 - **Interfaz (WPF)**: Usar siempre el sistema de colores de `App.xaml`. Evitar hardcodear colores en las vistas.
@@ -179,6 +189,8 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - La UI espera encontrar los archivos `.json` en `..\ServicioReportesOracle\` relativo a su ejecución.
 
 ## 🗂️ Changelog
+- **UI v4.5**: Sidebar colapsable con botón ☰. Animación 260↔56px con GridLengthAnimation + CubicEase 200ms. Estado colapsado muestra solo íconos emoji de nav centrados.
+- **v6.9**: Rotación diaria de `mlogis_historial.json`: corridas de hoy en `mlogis_historial.json`, corridas de ayer en `mlogis_historial_ayer.json` (solo si existen, sin sobreescribir si no hay), anteriores descartadas. Log: `🗑️ [Historial] Rotación diaria: N corridas hoy, M de ayer preservadas, K descartadas.`
 - **v6.8 (UI v4.4)**: Buscador en LogsView. `Ctrl+F` abre/cierra barra de búsqueda; `Esc` la cierra. Filtrado case-insensitive en memoria sobre `_allLines` (copia maestra de hasta 1.000 líneas), sin releer el archivo. Líneas nuevas del watcher también se filtran. `LineInfo` muestra conteo de coincidencias. Fast-path sin filtro preserva auto-scroll; con filtro activo reconstruye `Lines` via `AplicarFiltroInterno()`. `ToggleSearchCommand` y `ClearSearchCommand` en ViewModel; foco automático al abrir via `Dispatcher.BeginInvoke(DispatcherPriority.Input)`.
 - **v6.7 (UI v4.3)**: Corrida FULL inteligente — compara `fecupd` Mlogis vs `primera_vez_visto` antes de actualizar historial; solo IDs nuevos o actualizados van a `comparaciones_pendientes.json`. `MlogisRegistro` con nuevos campos `FecUpd`, `Anulado` (bool), `IdAnuladoOracle` (string). `CompararConOracle()`: match AN% marca `anulado=true` en historial sin generar Caso B ni alerta. `consultas_soap.json`: query anulados corregida a `SUBSTR(id,3) IN ({IDS})`. Log compacto una línea por corrida: `[HH:mm] Run {FULL|DELTA}: {total} IDs | N:{nuevos} U:{actualizados} A:{anulados} S:{sinCambios} | {segundos}s`. UI: `LogsViewModel` fix memory leak (`SemaphoreSlim` anti-concurrencia, `IDisposable`+`Unloaded` para cleanup de watcher/timer, try/catch global, `ScrollIntoView` protegido).
 - **v6.6.1**: Fix precisión anulados. `query_oracle`: `OR (id LIKE 'AN%' AND (id LIKE '%SIL-%' OR id LIKE '%-%'))`. C#: `CompararConOracle` recolecta todos los rows Oracle primero; Caso B usa `Any(ora => ora.id == idMlogis || (ora.id.StartsWith("AN") && ora.id.Contains(idMlogis)))` — cubre GUIDs y SIL con prefijo AN. Anulados nunca generan Caso A ni Caso B. (Reemplazado por v6.7.)

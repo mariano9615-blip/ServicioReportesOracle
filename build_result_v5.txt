@@ -1,0 +1,4 @@
+﻿
+  ServicioReportesOracle -> c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\bin\Release\ServicioReportesOracle.exe
+  TestSoap -> c:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Release\TestSoap.exe
+  ServicioReportesOracle.UI -> c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ServicioReportesOracle.UI.exe

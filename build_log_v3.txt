@@ -1,0 +1,43 @@
+Versi├│n de MSBuild 17.14.14+a129329f1 para .NET Framework
+Compilaci├│n iniciada a las 23/3/2026 00:56:15.
+
+Proyecto "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" en nodo 1 (destinos predeterminados).
+ValidateSolutionConfiguration:
+  Compilando la configuraci├│n de soluciones "Release|Any CPU".
+El proyecto "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (1) est├í compilando "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\ServicioReportesOracle.csproj" (2) en el nodo 1 (destinos predeterminados).
+GenerateBindingRedirectsUpdateAppConfig:
+  Copiando el archivo de "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\App.config" en "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\obj\Release\ServicioReportesOracle.exe.config".
+  Aplicando tarea Touch a "obj\Release\ServicioReportesOracle.exe.config".
+GenerateTargetFrameworkMonikerAttribute:
+Se omitir├í el destino "GenerateTargetFrameworkMonikerAttribute" porque todos los archivos de salida est├ín actualizados respecto a los archivos de entrada.
+CoreCompile:
+Se omitir├í el destino "CoreCompile" porque todos los archivos de salida est├ín actualizados respecto a los archivos de entrada.
+_CopyAppConfigFile:
+  Copiando el archivo de "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\obj\Release\ServicioReportesOracle.exe.config" en "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\bin\Release\ServicioReportesOracle.exe.config".
+CopyFilesToOutputDirectory:
+  ServicioReportesOracle -> C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\bin\Release\ServicioReportesOracle.exe
+Compilaci├│n del proyecto terminada "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\ServicioReportesOracle.csproj" (destinos predeterminados).
+El proyecto "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (1) est├í compilando "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\TestSoap.csproj" (3) en el nodo 1 (destinos predeterminados).
+GenerateTargetFrameworkMonikerAttribute:
+Se omitir├í el destino "GenerateTargetFrameworkMonikerAttribute" porque todos los archivos de salida est├ín actualizados respecto a los archivos de entrada.
+CoreCompile:
+Se omitir├í el destino "CoreCompile" porque todos los archivos de salida est├ín actualizados respecto a los archivos de entrada.
+CopyFilesToOutputDirectory:
+  TestSoap -> C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Release\TestSoap.exe
+Compilaci├│n del proyecto terminada "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\TestSoap.csproj" (destinos predeterminados).
+El proyecto "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (1) est├í compilando "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj" (4) en el nodo 1 (destinos predeterminados).
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\Views\TasksView.xaml(36,94): error MC3011: no se puede encontrar el miembro est├ítico 'Empty' en el tipo 'Expression'. [C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj]
+Compilaci├│n del proyecto terminada "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj" (destinos predeterminados) -- ERROR.
+Compilaci├│n del proyecto terminada "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (destinos predeterminados) -- ERROR.
+
+ERROR al compilar.
+
+"C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (destino predeterminado) (1) ->
+"C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj" (destino predeterminado) (4) ->
+(MarkupCompilePass1 destino) -> 
+  C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\Views\TasksView.xaml(36,94): error MC3011: no se puede encontrar el miembro est├ítico 'Empty' en el tipo 'Expression'. [C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj]
+
+    0 Advertencia(s)
+    1 Errores
+
+Tiempo transcurrido 00:00:00.92

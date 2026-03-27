@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" ServicioReportesOracle.sln /t:Rebuild /p:Configuration=Release /nologo /v:minimal)",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\mdemichelis\\\\source\\\\repos\\\\ServicioReportesOracle && \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"\" ServicioReportesOracle.sln /t:Rebuild /p:Configuration=Release /nologo /v:minimal\")",
+      "mcp__stitch__create_project",
+      "mcp__stitch__generate_screen_from_text",
+      "mcp__stitch__list_screens",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" ServicioReportesOracle.sln /t:Rebuild /p:Configuration=Release /m)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"ServicioReportesOracle.sln\" \"/t:Rebuild\" \"/p:Configuration=Release\" \"/m\")"
+    ]
+  }
+}

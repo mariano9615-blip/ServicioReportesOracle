@@ -463,14 +463,22 @@ namespace ServicioOracleReportes
 
                 historial.Corridas.Add(nuevaCorrida);
 
-                // Rotación: eliminar corridas con más de 7 días de antigüedad
-                int antesDeRotacion = historial.Corridas.Count;
-                historial.Corridas.RemoveAll(c => c.FechaEjecucion < DateTime.Now.AddDays(-7));
-                int corridasEliminadas = antesDeRotacion - historial.Corridas.Count;
-                if (corridasEliminadas > 0)
-                    EscribirLog($"🗑️ [Historial] {corridasEliminadas} corridas eliminadas por rotación (>7 días)");
+                // Rotación diaria: hoy → mlogis_historial.json | ayer → mlogis_historial_ayer.json | anteriores → descartadas
+                var corridasHoy  = historial.Corridas.Where(c => c.FechaEjecucion.Date == DateTime.Today).ToList();
+                var corridasAyer = historial.Corridas.Where(c => c.FechaEjecucion.Date == DateTime.Today.AddDays(-1)).ToList();
+                int descartadas  = historial.Corridas.Count - corridasHoy.Count - corridasAyer.Count;
 
+                historial.Corridas = corridasHoy;
                 File.WriteAllText(historialPath, JsonConvert.SerializeObject(historial, Formatting.Indented));
+
+                if (corridasAyer.Count > 0)
+                {
+                    string historialAyerPath = Path.Combine(_rutaLogs, "mlogis_historial_ayer.json");
+                    var historialAyer = new MlogisHistorial { Corridas = corridasAyer };
+                    File.WriteAllText(historialAyerPath, JsonConvert.SerializeObject(historialAyer, Formatting.Indented));
+                }
+
+                EscribirLog($"🗑️ [Historial] Rotación diaria: {corridasHoy.Count} corridas hoy, {corridasAyer.Count} de ayer preservadas, {descartadas} descartadas.");
 
                 EscribirLog($"✅ Corrida {tipo.ToUpper()} guardada en mlogis_historial.json. " +
                             $"Registros: {nuevaCorrida.Registros.Count}. Cambios detectados: {alertas.Count}.");

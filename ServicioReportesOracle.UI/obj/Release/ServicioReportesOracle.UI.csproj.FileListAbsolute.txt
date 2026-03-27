@@ -5,7 +5,6 @@ C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\Oracle.ManagedDataAccess.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ServicioReportesOracle.exe
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ClosedXML.dll
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Threading.Tasks.Extensions.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Memory.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\DocumentFormat.OpenXml.Framework.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\DocumentFormat.OpenXml.dll
@@ -61,3 +60,8 @@ C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\ServicioReportesOracle.UI.pdb
 c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\ChangePasswordView.baml
 c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\ChangePasswordView.g.cs
+c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\MlogisHistorialView.baml
+c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\MlogisHistorialView.g.cs
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Memory.xml
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Numerics.Vectors.xml
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Runtime.CompilerServices.Unsafe.xml

@@ -86,6 +86,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\MlogisHistorialView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Views\ServiceControlView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -123,8 +127,12 @@
     <Compile Include="Views\LogsView.xaml.cs">
       <DependentUpon>LogsView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\MlogisHistorialView.xaml.cs">
+      <DependentUpon>MlogisHistorialView.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GridLengthAnimation.cs" />
     <Compile Include="Models\ConfigModel.cs" />
     <Compile Include="Models\ConsultaTaskModel.cs" />
     <Compile Include="Services\ConfigService.cs" />
@@ -134,6 +142,7 @@
     <Compile Include="ViewModels\TasksViewModel.cs" />
     <Compile Include="ViewModels\SqlEditorViewModel.cs" />
     <Compile Include="ViewModels\LogsViewModel.cs" />
+    <Compile Include="ViewModels\MlogisHistorialViewModel.cs" />
     <Compile Include="ViewModels\ServiceControlViewModel.cs" />
     <Compile Include="ViewModels\ChangePasswordViewModel.cs" />
     <Compile Include="Converters\NullToVisibilityConverter.cs" />

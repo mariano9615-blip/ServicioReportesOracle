@@ -41,6 +41,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         public ICommand NavTasksCommand { get; }
         public ICommand NavEditorCommand { get; }
         public ICommand NavLogsCommand { get; }
+        public ICommand NavMlogisHistorialCommand { get; }
         public ICommand NavServiceCommand { get; }
         public ICommand NavChangePasswordCommand { get; }
 
@@ -50,12 +51,13 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             Instance = this;
 
-            NavGeneralCommand = new RelayCommand(_ => SelectedViewModel = new GeneralConfigViewModel());
-            NavTasksCommand = new RelayCommand(_ => SelectedViewModel = new TasksViewModel());
-            NavEditorCommand = new RelayCommand(_ => SelectedViewModel = new SqlEditorViewModel());
-            NavLogsCommand = new RelayCommand(_ => SelectedViewModel = new LogsViewModel());
-            NavServiceCommand = new RelayCommand(_ => SelectedViewModel = new ServiceControlViewModel());
-            NavChangePasswordCommand = new RelayCommand(_ => SelectedViewModel = new ChangePasswordViewModel());
+            NavGeneralCommand          = new RelayCommand(_ => SelectedViewModel = new GeneralConfigViewModel());
+            NavTasksCommand            = new RelayCommand(_ => SelectedViewModel = new TasksViewModel());
+            NavEditorCommand           = new RelayCommand(_ => SelectedViewModel = new SqlEditorViewModel());
+            NavLogsCommand             = new RelayCommand(_ => SelectedViewModel = new LogsViewModel());
+            NavMlogisHistorialCommand  = new RelayCommand(_ => SelectedViewModel = new MlogisHistorialViewModel());
+            NavServiceCommand          = new RelayCommand(_ => SelectedViewModel = new ServiceControlViewModel());
+            NavChangePasswordCommand   = new RelayCommand(_ => SelectedViewModel = new ChangePasswordViewModel());
 
             // Default view
             SelectedViewModel = new GeneralConfigViewModel();

@@ -1,0 +1,57 @@
+Versi├│n de MSBuild 17.14.14+a129329f1 para .NET Framework
+Compilaci├│n iniciada a las 23/3/2026 00:58:17.
+
+Proyecto "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" en nodo 1 (destinos predeterminados).
+ValidateSolutionConfiguration:
+  Compilando la configuraci├│n de soluciones "Release|Any CPU".
+El proyecto "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (1) est├í compilando "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\ServicioReportesOracle.csproj" (2) en el nodo 1 (destinos predeterminados).
+GenerateBindingRedirectsUpdateAppConfig:
+  Copiando el archivo de "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\App.config" en "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\obj\Release\ServicioReportesOracle.exe.config".
+  Aplicando tarea Touch a "obj\Release\ServicioReportesOracle.exe.config".
+GenerateTargetFrameworkMonikerAttribute:
+Se omitir├í el destino "GenerateTargetFrameworkMonikerAttribute" porque todos los archivos de salida est├ín actualizados respecto a los archivos de entrada.
+CoreCompile:
+Se omitir├í el destino "CoreCompile" porque todos los archivos de salida est├ín actualizados respecto a los archivos de entrada.
+_CopyAppConfigFile:
+  Copiando el archivo de "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\obj\Release\ServicioReportesOracle.exe.config" en "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\bin\Release\ServicioReportesOracle.exe.config".
+CopyFilesToOutputDirectory:
+  ServicioReportesOracle -> C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\bin\Release\ServicioReportesOracle.exe
+Compilaci├│n del proyecto terminada "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\ServicioReportesOracle.csproj" (destinos predeterminados).
+El proyecto "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (1) est├í compilando "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\TestSoap.csproj" (3) en el nodo 1 (destinos predeterminados).
+GenerateTargetFrameworkMonikerAttribute:
+Se omitir├í el destino "GenerateTargetFrameworkMonikerAttribute" porque todos los archivos de salida est├ín actualizados respecto a los archivos de entrada.
+CoreCompile:
+Se omitir├í el destino "CoreCompile" porque todos los archivos de salida est├ín actualizados respecto a los archivos de entrada.
+CopyFilesToOutputDirectory:
+  TestSoap -> C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\bin\Release\TestSoap.exe
+Compilaci├│n del proyecto terminada "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\TestSoap\TestSoap.csproj" (destinos predeterminados).
+El proyecto "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (1) est├í compilando "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj" (4) en el nodo 1 (destinos predeterminados).
+El proyecto "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj" (4) est├í compilando "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI_vipilfiw_wpftmp.csproj" (5) en el nodo 1 (_CompileTemporaryAssembly destinos).
+CoreCompile:
+  C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\Roslyn\csc.exe /noconfig /nowarn:1701,1702 /fullpaths /nostdlib+ /platform:anycpu32bitpreferred /errorreport:prompt /warn:4 /define:TRACE /highentropyva+ /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\Microsoft.CSharp.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\mscorlib.dll" /reference:C:\Users\mdemichelis\source\repos\ServicioReportesOracle\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll /reference:C:\Users\mdemichelis\source\repos\ServicioReportesOracle\packages\Oracle.ManagedDataAccess.23.9.0\lib\net472\Oracle.ManagedDataAccess.dll /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\PresentationCore.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\PresentationFramework.dll" /reference:C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\bin\Release\ServicioReportesOracle.exe /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Core.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Data.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Xaml.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Xml.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\WindowsBase.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\Facades\netstandard.dll" /debug:pdbonly /filealign:512 /optimize+ /out:obj\Release\ServicioReportesOracle.UI.exe /subsystemversion:6.00 /target:winexe /utf8output /deterministic+ /langversion:7.3 App.xaml.cs MainWindow.xaml.cs Views\GeneralConfigView.xaml.cs Views\TasksView.xaml.cs Views\SqlEditorView.xaml.cs Views\LogsView.xaml.cs Models\ConfigModel.cs Models\ConsultaTaskModel.cs Services\ConfigService.cs Services\SqlService.cs ViewModels\MainViewModel.cs ViewModels\GeneralConfigViewModel.cs ViewModels\TasksViewModel.cs ViewModels\SqlEditorViewModel.cs ViewModels\LogsViewModel.cs Converters\NullToVisibilityConverter.cs Properties\AssemblyInfo.cs Properties\Resources.Designer.cs Properties\Settings.Designer.cs C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\MainWindow.g.cs C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\GeneralConfigView.g.cs C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\TasksView.g.cs C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\SqlEditorView.g.cs C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\LogsView.g.cs C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\App.g.cs C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\GeneratedInternalTypeHelper.g.cs
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ViewModels\GeneralConfigViewModel.cs(53,38): error CS0246: El nombre del tipo o del espacio de nombres 'SoapClient' no se encontr├│ (┬┐falta una directiva using o una referencia de ensamblado?) [C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI_vipilfiw_wpftmp.csproj]
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ViewModels\MainViewModel.cs(46,35): warning CS0067: El evento 'RelayCommand.CanExecuteChanged' nunca se usa [C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI_vipilfiw_wpftmp.csproj]
+  CompilerServer: server - server processed compilation - ServicioReportesOracle.UI_vipilfiw_wpftmp
+Compilaci├│n del proyecto terminada "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI_vipilfiw_wpftmp.csproj" (_CompileTemporaryAssembly destinos) -- ERROR.
+Compilaci├│n del proyecto terminada "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj" (destinos predeterminados) -- ERROR.
+Compilaci├│n del proyecto terminada "C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (destinos predeterminados) -- ERROR.
+
+ERROR al compilar.
+
+"C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (destino predeterminado) (1) ->
+"C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj" (destino predeterminado) (4) ->
+"C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI_vipilfiw_wpftmp.csproj" (_CompileTemporaryAssembly destino) (5) ->
+(CoreCompile destino) -> 
+  C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ViewModels\MainViewModel.cs(46,35): warning CS0067: El evento 'RelayCommand.CanExecuteChanged' nunca se usa [C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI_vipilfiw_wpftmp.csproj]
+
+
+"C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.sln" (destino predeterminado) (1) ->
+"C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI.csproj" (destino predeterminado) (4) ->
+"C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI_vipilfiw_wpftmp.csproj" (_CompileTemporaryAssembly destino) (5) ->
+(CoreCompile destino) -> 
+  C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ViewModels\GeneralConfigViewModel.cs(53,38): error CS0246: El nombre del tipo o del espacio de nombres 'SoapClient' no se encontr├│ (┬┐falta una directiva using o una referencia de ensamblado?) [C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\ServicioReportesOracle.UI_vipilfiw_wpftmp.csproj]
+
+    1 Advertencia(s)
+    1 Errores
+
+Tiempo transcurrido 00:00:00.87
