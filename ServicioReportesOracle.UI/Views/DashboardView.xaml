@@ -110,7 +110,7 @@
                 <TextBlock Text="🚨 Alertas enviadas hoy" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,15"/>
                 
                 <TextBlock Text="Sin alertas enviadas hoy" Foreground="{StaticResource OnSurfaceVariantBrush}" FontStyle="Italic"
-                           Visibility="{Binding HasAlertasToday, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverted}"/>
+                           Visibility="{Binding HasNoAlertasToday, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                 <Grid Visibility="{Binding HasAlertasToday, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid.RowDefinitions>
@@ -169,7 +169,7 @@
                 <TextBlock Grid.Row="0" Text="📊 Corridas de hoy" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,10"/>
                 
                 <TextBlock Grid.Row="1" Text="Sin corridas registradas hoy" Foreground="{StaticResource OnSurfaceVariantBrush}" FontStyle="Italic"
-                           Visibility="{Binding HasCorridasHoy, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverted}"/>
+                           Visibility="{Binding HasNoCorridasHoy, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                 <!-- Lista de corridas -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="200"

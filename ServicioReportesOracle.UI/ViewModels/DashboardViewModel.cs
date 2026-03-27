@@ -104,9 +104,11 @@ namespace ServicioReportesOracle.UI.ViewModels
         public double BarraCasoAWidth { get => _barraCasoAWidth; set { _barraCasoAWidth = value; OnPropertyChanged(); } }
         public double BarraCasoBWidth { get => _barraCasoBWidth; set { _barraCasoBWidth = value; OnPropertyChanged(); } }
         public double BarraAnuladosWidth { get => _barraAnuladosWidth; set { _barraAnuladosWidth = value; OnPropertyChanged(); } }
-        public bool HasAlertasToday { get => _hasAlertasToday; set { _hasAlertasToday = value; OnPropertyChanged(); } }
+        public bool HasAlertasToday { get => _hasAlertasToday; set { _hasAlertasToday = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasNoAlertasToday)); } }
+        public bool HasNoAlertasToday => !HasAlertasToday;
 
         public bool HasCorridasHoy => CorridasHoy.Count > 0;
+        public bool HasNoCorridasHoy => CorridasHoy.Count == 0;
 
         #endregion
 
@@ -128,6 +130,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     ActualizarTimeAgoTimer();
                     ActualizarWidthsBarras();
                     OnPropertyChanged(nameof(HasCorridasHoy));
+                    OnPropertyChanged(nameof(HasNoCorridasHoy));
                 });
             }
             catch { /* absorber */ }
