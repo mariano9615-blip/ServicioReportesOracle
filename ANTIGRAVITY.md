@@ -174,6 +174,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - **Log compacto por corrida (v6.7)**: una línea por corrida SOAP en formato `[HH:mm] Run {FULL|DELTA}: {total} IDs | N:{nuevos} U:{actualizados} A:{anulados} S:{sinCambios} | {segundos}s`.
   - **LogsViewModel estable (v6.7 UI)**: `SemaphoreSlim(1,1)` en `IncrementalRefreshAsync` evita ejecuciones concurrentes; `IDisposable` + `Unloaded` limpian `FileSystemWatcher` y `debounceTimer`; try/catch global absorbe excepciones antes de que lleguen al hilo UI; `ScrollIntoView` protegido contra errores de virtualización reciclada.
   - **Buscador en tiempo real (v6.8 UI)**: `Ctrl+F` abre/cierra la barra de búsqueda; `Esc` la cierra desde el TextBox. El filtrado opera sobre `_allLines` (copia maestra en memoria de hasta 1.000 líneas) sin releer el archivo. Mientras hay texto, `Lines` muestra solo las coincidencias case-insensitive; al borrar el texto se restaura la vista completa. Líneas nuevas que llegan via watcher también se filtran antes de mostrarse. `LineInfo` indica `N coincidencias de M líneas en memoria` durante el filtrado. El fast-path sin filtro preserva el auto-scroll incremental; con filtro activo reconstruye `Lines` desde `_allLines`.
+- **ComboBox**: Siempre aplicar el Style del tema oscuro (inline `ComboBox.Style` + `ComboBox.ItemContainerStyle` con template custom). Nunca usar ComboBox sin Style explícito — el default de WPF renderiza texto negro invisible sobre fondo oscuro. Ver `LogsView.xaml` como referencia.
 - **PasswordBox**: No soporta binding directo. Sincronizar en code-behind via `PasswordChanged` → `vm.Property = box.Password`.
 - **RelayCommand**: Acepta `canExecute` opcional. `CanExecuteChanged` usa `CommandManager.RequerySuggested` para re-evaluar automáticamente.
 
@@ -186,6 +187,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 
 ## 🛠️ Flujo de Compilación
 - Compilar siempre la solución completa `ServicioReportesOracle.sln` en modo **Release** para despliegue.
+- Comando de rebuild Release: `"C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" ServicioReportesOracle.sln -p:Configuration=Release -t:Rebuild -m` — usar siempre este comando; `dotnet build` falla con error MSB4216/GenerateResource en proyectos .NET Framework 4.8.
 - La UI espera encontrar los archivos `.json` en `..\ServicioReportesOracle\` relativo a su ejecución.
 
 ## 🗂️ Changelog

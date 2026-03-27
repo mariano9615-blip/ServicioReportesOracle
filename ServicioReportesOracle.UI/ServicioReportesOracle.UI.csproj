@@ -98,6 +98,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\UiSettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -124,6 +128,9 @@
     <Compile Include="Views\ChangePasswordView.xaml.cs">
       <DependentUpon>ChangePasswordView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\UiSettingsView.xaml.cs">
+      <DependentUpon>UiSettingsView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\LogsView.xaml.cs">
       <DependentUpon>LogsView.xaml</DependentUpon>
     </Compile>
@@ -133,7 +140,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GridLengthAnimation.cs" />
+    <Compile Include="Helpers\UiSettingsService.cs" />
     <Compile Include="Models\ConfigModel.cs" />
+    <Compile Include="Models\UiSettingsModel.cs" />
     <Compile Include="Models\ConsultaTaskModel.cs" />
     <Compile Include="Services\ConfigService.cs" />
     <Compile Include="Services\SqlService.cs" />
@@ -145,6 +154,7 @@
     <Compile Include="ViewModels\MlogisHistorialViewModel.cs" />
     <Compile Include="ViewModels\ServiceControlViewModel.cs" />
     <Compile Include="ViewModels\ChangePasswordViewModel.cs" />
+    <Compile Include="ViewModels\UiSettingsViewModel.cs" />
     <Compile Include="Converters\NullToVisibilityConverter.cs" />
     <Compile Include="Converters\StringListConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

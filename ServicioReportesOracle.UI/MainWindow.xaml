@@ -39,6 +39,9 @@
         <DataTemplate DataType="{x:Type vm:ChangePasswordViewModel}">
             <v:ChangePasswordView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:UiSettingsViewModel}">
+            <v:UiSettingsView/>
+        </DataTemplate>
 
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
@@ -87,6 +90,37 @@
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#33FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Botón de nav inferior (Button, no RadioButton) — igual visual que SidebarButtonStyle -->
+        <Style x:Key="NavBottomButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource OnSurfaceVariantBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="15,12,15,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="10" Margin="5,2">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#252525"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#303030"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -248,13 +282,28 @@
                         </RadioButton>
                     </StackPanel>
 
-                    <!-- Row 2: Versión -->
-                    <TextBlock x:Name="VersionText" Grid.Row="2"
-                               Text="v4.4"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,16"
-                               Foreground="{StaticResource OnSurfaceVariantBrush}"
-                               Opacity="0.5"/>
+                    <!-- Row 2: Botón UI Settings + Versión -->
+                    <StackPanel Grid.Row="2" Margin="0,0,0,0">
+                        <Border Height="1" Background="{StaticResource OutlineBrush}"
+                                Opacity="0.3" Margin="12,4,12,4"/>
+                        <Button x:Name="NavBtnSettings"
+                                Style="{StaticResource NavBottomButtonStyle}"
+                                Command="{Binding NavUiSettingsCommand}"
+                                ToolTip="Configuración de Interfaz">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" FontSize="14"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="NavTextSettings" Text="Config. de Interfaz"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <TextBlock x:Name="VersionText"
+                                   Text="v4.5"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,6,0,12"
+                                   Foreground="{StaticResource OnSurfaceVariantBrush}"
+                                   Opacity="0.5"/>
+                    </StackPanel>
                 </Grid>
             </Border>
 

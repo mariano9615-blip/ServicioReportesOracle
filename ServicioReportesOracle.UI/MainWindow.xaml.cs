@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
+using ServicioReportesOracle.UI.Helpers;
 using ServicioReportesOracle.UI.ViewModels;
 
 namespace ServicioReportesOracle.UI
@@ -19,8 +20,10 @@ namespace ServicioReportesOracle.UI
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            this.Width = SystemParameters.PrimaryScreenWidth * 0.95;
-            this.Height = SystemParameters.PrimaryScreenHeight * 0.95;
+            var uiSettings = new UiSettingsService().Load();
+            double widthFactor = uiSettings.WindowWidthPercent / 100.0;
+            this.Width = SystemParameters.PrimaryScreenWidth * widthFactor;
+            this.Height = SystemParameters.PrimaryScreenHeight * 0.80;
             this.Left = (SystemParameters.PrimaryScreenWidth - this.Width) / 2;
             this.Top = (SystemParameters.PrimaryScreenHeight - this.Height) / 2;
         }
@@ -94,6 +97,7 @@ namespace ServicioReportesOracle.UI
             NavText5.Visibility        = vis;
             NavText6.Visibility        = vis;
             NavText7.Visibility        = vis;
+            NavTextSettings.Visibility = vis;
             VersionText.Visibility     = vis;
 
             // Íconos: ajustar padding del RadioButton para centrarlos en 56px
@@ -103,7 +107,8 @@ namespace ServicioReportesOracle.UI
             NavBtn4.Padding = padding;
             NavBtn5.Padding = padding;
             NavBtn6.Padding = padding;
-            NavBtn7.Padding = padding;
+            NavBtn7.Padding          = padding;
+            NavBtnSettings.Padding   = padding;
 
             // Botón hamburguesa: centrar cuando colapsado, alinear a la derecha cuando expandido
             if (_sidebarExpanded)
