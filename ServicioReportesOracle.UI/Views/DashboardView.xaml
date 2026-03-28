@@ -11,10 +11,48 @@
 
     <UserControl.Resources>
         <conv:IntToOpacityConverter x:Key="IntToOpacityConverter"/>
+        <Style x:Key="DashboardCardButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <Grid>
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Margin="{TemplateBinding Padding}"/>
+                                <Border x:Name="HoverOverlay"
+                                        Background="#22FFFFFF"
+                                        CornerRadius="8"
+                                        Visibility="Collapsed"
+                                        IsHitTestVisible="False"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HoverOverlay" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -45,7 +83,11 @@
             </Grid.ColumnDefinitions>
 
             <!-- Card WebService -->
-            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,10,0">
+            <Border Grid.Column="0"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="0,0,10,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -71,7 +113,10 @@
             </Border>
 
             <!-- Card Última corrida -->
-            <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="5,0,5,0">
+            <Button Grid.Column="1"
+                    Command="{Binding NavigateToMlogisHistorialCommand}"
+                    Style="{StaticResource DashboardCardButtonStyle}"
+                    Margin="5,0,5,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -104,10 +149,13 @@
 
                     <TextBlock Grid.Row="4" Text="{Binding LastRunAgoText}" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}"/>
                 </Grid>
-            </Border>
+            </Button>
 
             <!-- Card Pendientes -->
-            <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="10,0,5,0">
+            <Button Grid.Column="2"
+                    Command="{Binding TogglePendientesPanelCommand}"
+                    Style="{StaticResource DashboardCardButtonStyle}"
+                    Margin="10,0,5,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -124,10 +172,14 @@
                     
                     <TextBlock Grid.Row="3" Text="{Binding OldestPendienteText}" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" TextWrapping="Wrap" Visibility="{Binding HasOldestPendiente, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </Grid>
-            </Border>
+            </Button>
 
             <!-- Card Estado del Servicio -->
-            <Border Grid.Column="3" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="5,0,0,0">
+            <Border Grid.Column="3"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="5,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -147,8 +199,101 @@
             </Border>
         </Grid>
 
-        <!-- FILA 2: Alertas hoy -->
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,15">
+        <!-- FILA 2: Panel de pendientes -->
+        <Border Grid.Row="2"
+                Background="{StaticResource SurfaceContainerHighBrush}"
+                BorderBrush="{StaticResource OutlineBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,15"
+                Visibility="{Binding IsPendientesPanelOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <TextBlock Text="Comparaciones pendientes"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource OnSurfaceBrush}"/>
+                    <Button Content="X"
+                            Command="{Binding ClosePendientesPanelCommand}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Padding="8,2"
+                            Background="Transparent"
+                            Foreground="{StaticResource OnSurfaceBrush}"
+                            BorderBrush="{StaticResource OutlineBrush}"
+                            BorderThickness="1"
+                            Style="{x:Null}"/>
+                </Grid>
+
+                <Grid Grid.Row="1"
+                      Visibility="{Binding HasPendientesDetalle, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="1.5*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="ID" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Grid.Column="1" Text="Nrocomprobante" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Grid.Column="2" Text="Primera vez visto" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Grid.Column="3" Text="Corrida origen" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Grid.Column="4" Text="Esperando hace" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="SemiBold"/>
+                </Grid>
+
+                <TextBlock Grid.Row="2"
+                           Text="Sin comparaciones pendientes"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource OnSurfaceBrush}"
+                           FontStyle="Italic"
+                           Visibility="{Binding HasNoPendientesDetalle, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <ScrollViewer Grid.Row="2"
+                              Margin="0,8,0,0"
+                              VerticalScrollBarVisibility="Auto"
+                              MaxHeight="220"
+                              Visibility="{Binding HasPendientesDetalle, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ItemsControl ItemsSource="{Binding PendientesDetalle}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource OutlineBrush}" BorderThickness="0,0,0,1" Padding="0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="1.5*"/>
+                                            <ColumnDefinition Width="1.5*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding Id}" Foreground="{StaticResource OnSurfaceBrush}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Nrocomprobante}" Foreground="{StaticResource OnSurfaceBrush}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding PrimeraVezVistoText}" Foreground="{StaticResource OnSurfaceBrush}"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding CorridaOrigen}" Foreground="{StaticResource OnSurfaceBrush}"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding EsperandoHace}" Foreground="{StaticResource OnSurfaceBrush}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- FILA 3: Alertas hoy -->
+        <Button Grid.Row="3"
+                Command="{Binding NavigateToAlertasCommand}"
+                Style="{StaticResource DashboardCardButtonStyle}"
+                Margin="0,0,0,15">
             <StackPanel>
                 <TextBlock Text="🚨 Alertas enviadas hoy" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,0,0,15"/>
                 
@@ -166,49 +311,52 @@
                     <Grid Grid.Row="0" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="220"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Caso B" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-                        <Rectangle Grid.Column="1" Fill="#F44336" Height="20" Width="{Binding BarraCasoBWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoB}" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                        <TextBlock Grid.Column="3" Text="{Binding AlertasCasoBLastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" VerticalAlignment="Center" Visibility="{Binding HasAlertasCasoBLastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <Grid Grid.Column="1" VerticalAlignment="Center" Height="20">
+                            <Rectangle Fill="#F44336" Height="20" Width="{Binding BarraCasoBWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding AlertasCasoB}" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,0,0,0"/>
+                        </Grid>
+                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoBLastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" VerticalAlignment="Center" Visibility="{Binding HasAlertasCasoBLastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </Grid>
 
                     <!-- Caso A -->
                     <Grid Grid.Row="1" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="220"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Caso A" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-                        <Rectangle Grid.Column="1" Fill="#F59E0B" Height="20" Width="{Binding BarraCasoAWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoA}" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                        <TextBlock Grid.Column="3" Text="{Binding AlertasCasoALastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" VerticalAlignment="Center" Visibility="{Binding HasAlertasCasoALastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <Grid Grid.Column="1" VerticalAlignment="Center" Height="20">
+                            <Rectangle Fill="#F59E0B" Height="20" Width="{Binding BarraCasoAWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding AlertasCasoA}" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,0,0,0"/>
+                        </Grid>
+                        <TextBlock Grid.Column="2" Text="{Binding AlertasCasoALastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" VerticalAlignment="Center" Visibility="{Binding HasAlertasCasoALastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </Grid>
 
                     <!-- Anulados -->
                     <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="220"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Anulados" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-                        <Rectangle Grid.Column="1" Fill="#6B7280" Height="20" Width="{Binding BarraAnuladosWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="{Binding AlertasAnulados}" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                        <TextBlock Grid.Column="3" Text="{Binding AlertasAnuladosLastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" VerticalAlignment="Center" Visibility="{Binding HasAlertasAnuladosLastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <Grid Grid.Column="1" VerticalAlignment="Center" Height="20">
+                            <Rectangle Fill="#6B7280" Height="20" Width="{Binding BarraAnuladosWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding AlertasAnulados}" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,0,0,0"/>
+                        </Grid>
+                        <TextBlock Grid.Column="2" Text="{Binding AlertasAnuladosLastText}" FontSize="10" Foreground="{StaticResource OnSurfaceVariantBrush}" Opacity="0.6" VerticalAlignment="Center" Visibility="{Binding HasAlertasAnuladosLastText, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </Grid>
                 </Grid>
             </StackPanel>
-        </Border>
+        </Button>
 
-        <!-- FILA 3: Corridas de hoy -->
-        <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16">
+        <!-- FILA 4: Corridas de hoy -->
+        <Border Grid.Row="4" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>

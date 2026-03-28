@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.0)
+## 🚀 Resumen del Proyecto (v7.0.4)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.0
+**Versión Actual**: v7.0.4
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -26,6 +26,12 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Vistas**: `DashboardView` (Pantalla principal al iniciar), `GeneralConfigView`, `TasksView` (Gestión ABM), `SqlEditorView` (Testing), `LogsView`, `ServiceControlView`, `ChangePasswordView`.
 - **Diseño**: Tema oscuro premium con notificaciones tipo "Toast" incorporadas.
 - **Modelos**: Estructura anidada para configuración de mails (`Mail.ConError.Asunto`, etc.).
+- **Dashboard (v7.0.4)**:
+  - Cards navegables con el mismo mecanismo del sidebar (`MainViewModel.Nav*Command`): Última corrida → `MlogisHistorialView`, Alertas hoy → `AlertasView`.
+  - Card `WebService` solo informativa (no clickeable, sin `Command`, sin cursor `Hand`, sin hover).
+  - Card de pendientes expandible inline (toggle por clic): muestra `Logs\comparaciones_pendientes.json` en modo solo lectura con columnas `ID`, `Nrocomprobante`, `Primera vez visto` (`HH:mm dd/MM`), `Corrida origen` (`FULL|DELTA`) y `Esperando hace` (`Xh Ym` recalculado en runtime).
+  - Interacción visual de cards navegables: cursor `Hand` y overlay hover `#22FFFFFF` cubriendo la card completa (no solo el contenido interior), sin bordes/efectos extra fuera del tema.
+  - Sección Alertas hoy: contadores en `OnSurfaceBrush` y alineados al inicio de cada barra de progreso.
 
 ### 3. 🧪 TestSoap (Console)
 - Herramienta rápida para debuggear la conectividad con el WS de Mlogis sin levantar todo el servicio.
@@ -292,4 +298,4 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.0.2 — Fix compatibilidad alertas_oracle_enviadas.json formato viejo (migración a array plano v6.9.1).
+Versión actual: v7.0.4 — Fixes visuales del Dashboard (hover completo, WebService no clickeable, contadores de alertas en blanco y alineados).

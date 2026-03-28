@@ -37,7 +37,7 @@
                 <!-- Sin alertas -->
                 <TextBlock Foreground="{StaticResource OnSurfaceVariantBrush}" FontStyle="Italic" FontSize="14"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="{Binding HasAlertas, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
+                           Visibility="{Binding HasNoAlertas, Converter={StaticResource BoolToVisibilityConverter}}"
                            Text="Sin alertas enviadas hoy"/>
 
                 <!-- Lista de alertas estilo WhatsApp -->

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -65,6 +66,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         private SolidColorBrush _pendientesColor;
         private DateTime? _oldestPendienteDate;
         private string _oldestPendienteText;
+        private bool _isPendientesPanelOpen;
 
         // Alerts Today
         private int _alertasCasoA;
@@ -79,8 +81,14 @@ namespace ServicioReportesOracle.UI.ViewModels
         private string _alertasAnuladosLastText;
 
         public ObservableCollection<CorridaDashboardItem> CorridasHoy { get; } = new ObservableCollection<CorridaDashboardItem>();
+        public ObservableCollection<PendienteDashboardItem> PendientesDetalle { get; } = new ObservableCollection<PendienteDashboardItem>();
 
         public ICommand RefreshCommand { get; }
+        public ICommand NavigateToServiceControlCommand { get; }
+        public ICommand NavigateToMlogisHistorialCommand { get; }
+        public ICommand NavigateToAlertasCommand { get; }
+        public ICommand TogglePendientesPanelCommand { get; }
+        public ICommand ClosePendientesPanelCommand { get; }
 
         public DashboardViewModel()
         {
@@ -93,6 +101,17 @@ namespace ServicioReportesOracle.UI.ViewModels
             _alertasEnviadasPath = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
 
             RefreshCommand = new RelayCommand(_ => _ = CargarAsync());
+            NavigateToServiceControlCommand = new RelayCommand(_ => EjecutarNavegacion(m => m.NavServiceCommand));
+            NavigateToMlogisHistorialCommand = new RelayCommand(_ => EjecutarNavegacion(m => m.NavMlogisHistorialCommand));
+            NavigateToAlertasCommand = new RelayCommand(_ => EjecutarNavegacion(m => m.NavAlertasCommand));
+            TogglePendientesPanelCommand = new RelayCommand(_ => IsPendientesPanelOpen = !IsPendientesPanelOpen);
+            ClosePendientesPanelCommand = new RelayCommand(_ => IsPendientesPanelOpen = false);
+
+            PendientesDetalle.CollectionChanged += (s, e) =>
+            {
+                OnPropertyChanged(nameof(HasPendientesDetalle));
+                OnPropertyChanged(nameof(HasNoPendientesDetalle));
+            };
 
             ConfigurarWatcher();
             ConfigurarTimer();
@@ -128,6 +147,9 @@ namespace ServicioReportesOracle.UI.ViewModels
         public SolidColorBrush PendientesColor { get => _pendientesColor; set { _pendientesColor = value; OnPropertyChanged(); } }
         public string OldestPendienteText { get => _oldestPendienteText; set { _oldestPendienteText = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasOldestPendiente)); } }
         public bool HasOldestPendiente => !string.IsNullOrEmpty(OldestPendienteText);
+        public bool IsPendientesPanelOpen { get => _isPendientesPanelOpen; set { _isPendientesPanelOpen = value; OnPropertyChanged(); } }
+        public bool HasPendientesDetalle => PendientesDetalle.Count > 0;
+        public bool HasNoPendientesDetalle => PendientesDetalle.Count == 0;
 
         public int AlertasCasoA { get => _alertasCasoA; set { _alertasCasoA = value; OnPropertyChanged(); } }
         public int AlertasCasoB { get => _alertasCasoB; set { _alertasCasoB = value; OnPropertyChanged(); } }
@@ -273,6 +295,8 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             try
             {
+                var detallePendientes = new List<PendienteDashboardItem>();
+
                 if (File.Exists(_pendientesPath))
                 {
                     string json = LeerArchivoSeguro(_pendientesPath);
@@ -285,10 +309,45 @@ namespace ServicioReportesOracle.UI.ViewModels
                     {
                         foreach (var p in pendientesArr)
                         {
-                            if (DateTime.TryParse(p["primera_vez_visto"]?.ToString(), out DateTime dt))
+                            DateTime dt;
+                            string primeraVezVisto = p["primera_vez_visto"]?.ToString();
+                            bool parseOk = DateTime.TryParse(
+                                primeraVezVisto,
+                                CultureInfo.InvariantCulture,
+                                DateTimeStyles.AssumeLocal,
+                                out dt);
+
+                            if (!parseOk)
+                            {
+                                parseOk = DateTime.TryParse(primeraVezVisto, out dt);
+                            }
+
+                            if (parseOk)
                             {
                                 if (oldest == null || dt < oldest.Value) oldest = dt;
                             }
+
+                            string corrida = (p["corrida_origen"]?.ToString() ?? "-").Trim();
+                            if (string.IsNullOrWhiteSpace(corrida))
+                            {
+                                corrida = "-";
+                            }
+                            else
+                            {
+                                corrida = corrida.ToUpperInvariant();
+                            }
+
+                            var item = new PendienteDashboardItem
+                            {
+                                Id = p["id"]?.ToString() ?? "-",
+                                Nrocomprobante = p["nrocomprobante"]?.ToString() ?? "-",
+                                PrimeraVezVistoDate = parseOk ? (DateTime?)dt : null,
+                                PrimeraVezVistoText = parseOk ? dt.ToString("HH:mm dd/MM") : "-",
+                                CorridaOrigen = corrida
+                            };
+
+                            item.EsperandoHace = CalcularEsperandoHace(item.PrimeraVezVistoDate);
+                            detallePendientes.Add(item);
                         }
                     }
 
@@ -305,6 +364,12 @@ namespace ServicioReportesOracle.UI.ViewModels
                             PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Verde
                             _oldestPendienteDate = null;
                         }
+
+                        PendientesDetalle.Clear();
+                        foreach (var item in detallePendientes.OrderBy(p => p.PrimeraVezVistoDate ?? DateTime.MaxValue))
+                        {
+                            PendientesDetalle.Add(item);
+                        }
                     });
                 }
                 else
@@ -314,6 +379,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                         PendientesCount = 0;
                         PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Verde
                         _oldestPendienteDate = null;
+                        PendientesDetalle.Clear();
                     });
                 }
             }
@@ -324,6 +390,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     PendientesCount = 0;
                     PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
                     _oldestPendienteDate = null;
+                    PendientesDetalle.Clear();
                 });
             }
         }
@@ -528,6 +595,50 @@ namespace ServicioReportesOracle.UI.ViewModels
             {
                 OldestPendienteText = "";
             }
+
+            ActualizarEsperandoHacePendientes();
+        }
+
+        private void ActualizarEsperandoHacePendientes()
+        {
+            foreach (var item in PendientesDetalle)
+            {
+                item.EsperandoHace = CalcularEsperandoHace(item.PrimeraVezVistoDate);
+            }
+        }
+
+        private string CalcularEsperandoHace(DateTime? primeraVezVisto)
+        {
+            if (!primeraVezVisto.HasValue)
+            {
+                return "-";
+            }
+
+            int totalMin = (int)(DateTime.Now - primeraVezVisto.Value).TotalMinutes;
+            if (totalMin < 0) totalMin = 0;
+            int horas = totalMin / 60;
+            int minutos = totalMin % 60;
+            return $"{horas}h {minutos}m";
+        }
+
+        private void EjecutarNavegacion(Func<MainViewModel, ICommand> selector)
+        {
+            var main = MainViewModel.Instance;
+            if (main == null || selector == null)
+            {
+                return;
+            }
+
+            var command = selector(main);
+            if (command == null)
+            {
+                return;
+            }
+
+            if (command.CanExecute(null))
+            {
+                command.Execute(null);
+            }
         }
 
         private void RefreshServiceStatus()
@@ -724,5 +835,31 @@ namespace ServicioReportesOracle.UI.ViewModels
             NAnulados = anulados;
             NSinCambios = NTotal - nuevos - actualizados - anulados;
         }
+    }
+
+    public class PendienteDashboardItem : INotifyPropertyChanged
+    {
+        private string _esperandoHace;
+
+        public string Id { get; set; }
+        public string Nrocomprobante { get; set; }
+        public string PrimeraVezVistoText { get; set; }
+        public DateTime? PrimeraVezVistoDate { get; set; }
+        public string CorridaOrigen { get; set; }
+
+        public string EsperandoHace
+        {
+            get => _esperandoHace;
+            set
+            {
+                _esperandoHace = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
