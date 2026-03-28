@@ -61,6 +61,14 @@ namespace ServicioReportesOracle.UI
             Close();
         }
 
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.StopBackgroundTasks();
+            }
+        }
+
         private void Window_StateChanged(object sender, System.EventArgs e)
         {
             if (MaxRestoreIcon != null)
