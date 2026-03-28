@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.0.6)
+## 🚀 Resumen del Proyecto (v7.0.7)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.0.6
+**Versión Actual**: v7.0.7
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -58,9 +58,10 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 | `status.json` | Estado de errores/resueltos del flujo legacy `ComparacionMlogisOracle`. |
 | `ws_estado.json` | Estado del health check del WebService SOAP (último estado, timestamps, flag de alerta enviada). |
 | `oracle_circuit_state.json` | Estado persistido del Circuit Breaker Oracle (`closed/open/half_open`, fallos, timestamp de apertura, flag de alerta). |
+| `pendientes_alerta_estado.json` | Estado de alertas por umbral de `comparaciones_pendientes.json` (último envío + cantidad al enviar). |
 | `Log_<DiaSemana>.txt` | Logs de ejecución del servicio (rotación semanal). |
 
-> **Migración automática**: al iniciar, el servicio mueve los 5 archivos operativos de la raíz a `Logs\` si existen allí (instalaciones existentes).
+> **Migración automática**: al iniciar, el servicio mueve los archivos operativos de la raíz a `Logs\` si existen allí (instalaciones existentes).
 
 ---
 
@@ -160,6 +161,20 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - `alertas_cambios.query_oracle`: query SQL con dos placeholders:
     - `{IDS}`: lista de IDs Mlogis exactos para el match directo.
     - `{IDS_TRUNCADOS}`: lista de IDs Mlogis truncados a 15 chars para el match de anulados via `SUBSTR(id, 3, 15)`. El trigger Oracle forma el ID anulado como `'AN' + SUBSTR(idOriginal, 1, 15) + sufijo_numérico`, por lo que el match correcto es `SUBSTR(id, 3, 15) IN ({IDS_TRUNCADOS})`. Ambos placeholders son reemplazados por `CompararConOracle()` antes de ejecutar la query.
+
+### AlertaPendientes (config.json)
+- **Ubicación**: sección `AlertaPendientes` dentro de `config.json` (raíz del servicio core).
+- **Propósito**: alerta proactiva por crecimiento de `comparaciones_pendientes.json` para detectar fallas silenciosas de Oracle.
+- **Campos**:
+  - `Destinatarios`: lista de mails para alertas/resolución.
+  - `UmbralCantidad`: cantidad mínima de pendientes para disparar alerta (default 50).
+  - `CooldownHoras`: ventana anti-spam entre alertas consecutivas por umbral (default 4h).
+  - `AsuntoAlerta` / `CuerpoAlerta`: plantilla de alerta al superar umbral.
+  - `AsuntoResolucion` / `CuerpoResolucion`: plantilla cuando pendientes vuelve por debajo del umbral.
+- **Placeholders soportados**: `{CantidadActual}`, `{IdMasAntiguo}`, `{HorasEnBuffer}`, `{Timestamp}`, `{Empresa}`.
+- **Persistencia anti-spam**: `Logs\pendientes_alerta_estado.json` con:
+  - `ultimo_envio`: último envío de alerta por umbral.
+  - `cantidad_al_enviar`: cantidad registrada al enviar la alerta.
 
 ## 🌐 Health Check del WebService SOAP
 
@@ -318,5 +333,5 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.0.6 — Circuit Breaker Oracle persistido con estados `closed/open/half_open`, umbral+timeout configurables, prueba `SELECT 1 FROM DUAL` en HALF-OPEN y alertas SMTP de caída/recuperación.
+Versión actual: v7.0.7 — Alerta proactiva de `comparaciones_pendientes.json` con umbral + cooldown configurables, mail de resolución al normalizar y estado persistido en `pendientes_alerta_estado.json`.
 

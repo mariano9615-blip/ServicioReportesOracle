@@ -27,5 +27,14 @@
     "CuerpoCaido": "El Circuit Breaker de Oracle se abrió por fallos consecutivos de conexión.\n\nEmpresa: {Empresa}\nDetectado: {Timestamp}\nFallos consecutivos: {FallosConsecutivos}\n\nLas corridas que requieren Oracle se omitirán hasta que se recupere la conexión.",
     "AsuntoRecuperado": "✅ [{Empresa}] Oracle recuperado — {Fecha}",
     "CuerpoRecuperado": "La conexión Oracle se recuperó y el Circuit Breaker volvió a CLOSED.\n\nEmpresa: {Empresa}\nRecuperado: {Timestamp}\nFallos consecutivos previos: {FallosConsecutivos}\n\nLas corridas Oracle se reanudan normalmente."
+  },
+  "AlertaPendientes": {
+    "Destinatarios": [],
+    "UmbralCantidad": 50,
+    "CooldownHoras": 4,
+    "AsuntoAlerta": "⚠️ [{Empresa}] Buffer de pendientes alto — {CantidadActual}",
+    "CuerpoAlerta": "Se detectó un crecimiento en comparaciones_pendientes.json.\n\nEmpresa: {Empresa}\nPendientes actuales: {CantidadActual}\nID más antiguo: {IdMasAntiguo}\nHoras en buffer (ID más antiguo): {HorasEnBuffer}\nDetectado: {Timestamp}",
+    "AsuntoResolucion": "✅ [{Empresa}] Buffer de pendientes normalizado",
+    "CuerpoResolucion": "El buffer de comparaciones pendientes volvió a valores normales.\n\nEmpresa: {Empresa}\nPendientes actuales: {CantidadActual}\nID más antiguo: {IdMasAntiguo}\nHoras en buffer (ID más antiguo): {HorasEnBuffer}\nDetectado: {Timestamp}"
   }
 }

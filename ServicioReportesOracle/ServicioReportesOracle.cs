@@ -959,10 +959,191 @@ namespace ServicioOracleReportes
                 File.WriteAllText(pendientesPath,
                     new JObject { ["pendientes"] = pendientesArr }.ToString(Formatting.Indented));
                 EscribirLog($"📋 [Pendientes] {pendientesArr.Count} IDs en buffer. Corrida: {tipo.ToUpper()}.");
+
+                VerificarUmbralPendientes(pendientesArr);
             }
             catch (Exception ex)
             {
                 EscribirLog("⚠️ Error actualizando comparaciones_pendientes.json: " + ex.Message);
+            }
+        }
+
+        private void VerificarUmbralPendientes(JArray pendientesArr)
+        {
+            try
+            {
+                var cfg = configuracion.AlertaPendientes ?? new AlertaPendientesConfig();
+                int umbral = cfg.UmbralCantidad > 0 ? cfg.UmbralCantidad : 50;
+                int cooldownHoras = cfg.CooldownHoras > 0 ? cfg.CooldownHoras : 4;
+                int cantidadActual = pendientesArr?.Count ?? 0;
+                string estadoPath = Path.Combine(_rutaLogs, "pendientes_alerta_estado.json");
+
+                PendientesAlertaEstado estado;
+                try
+                {
+                    estado = File.Exists(estadoPath)
+                        ? JsonConvert.DeserializeObject<PendientesAlertaEstado>(File.ReadAllText(estadoPath)) ?? new PendientesAlertaEstado()
+                        : new PendientesAlertaEstado();
+                }
+                catch { estado = new PendientesAlertaEstado(); }
+
+                DateTime ahora = DateTime.Now;
+                var registros = new List<(string Id, DateTime PrimeraVez)>();
+
+                if (pendientesArr != null)
+                {
+                    foreach (JObject item in pendientesArr)
+                    {
+                        string id = item["id"]?.ToString() ?? "";
+                        if (string.IsNullOrWhiteSpace(id)) continue;
+
+                        DateTime primeraVez;
+                        if (!DateTime.TryParse(item["primera_vez_visto"]?.ToString(), out primeraVez))
+                            primeraVez = ahora;
+
+                        registros.Add((id, primeraVez));
+                    }
+                }
+
+                string idMasAntiguo = "N/A";
+                double horasEnBuffer = 0;
+                if (registros.Count > 0)
+                {
+                    var masAntiguo = registros.OrderBy(r => r.PrimeraVez).First();
+                    idMasAntiguo = masAntiguo.Id;
+                    horasEnBuffer = Math.Max(0, (ahora - masAntiguo.PrimeraVez).TotalHours);
+                }
+
+                bool arribaUmbral = cantidadActual >= umbral;
+                bool habiaAlertaActiva = estado.UltimoEnvio.HasValue;
+
+                if (arribaUmbral)
+                {
+                    bool dentroCooldown = estado.UltimoEnvio.HasValue &&
+                                          (ahora - estado.UltimoEnvio.Value).TotalHours < cooldownHoras;
+
+                    if (dentroCooldown)
+                    {
+                        EscribirLog($"ℹ️ [AlertaPendientes] Umbral alcanzado ({cantidadActual}/{umbral}) pero en cooldown ({cooldownHoras}h).");
+                        return;
+                    }
+
+                    if (EnviarMailAlertaPendientes(
+                        esResolucion: false,
+                        cantidadActual: cantidadActual,
+                        idMasAntiguo: idMasAntiguo,
+                        horasEnBuffer: horasEnBuffer))
+                    {
+                        estado.UltimoEnvio = ahora;
+                        estado.CantidadAlEnviar = cantidadActual;
+                        GuardarEstadoAlertaPendientes(estadoPath, estado);
+                    }
+
+                    return;
+                }
+
+                if (habiaAlertaActiva)
+                {
+                    if (EnviarMailAlertaPendientes(
+                        esResolucion: true,
+                        cantidadActual: cantidadActual,
+                        idMasAntiguo: idMasAntiguo,
+                        horasEnBuffer: horasEnBuffer))
+                    {
+                        estado.UltimoEnvio = null;
+                        estado.CantidadAlEnviar = 0;
+                        GuardarEstadoAlertaPendientes(estadoPath, estado);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("⚠️ [AlertaPendientes] Error verificando umbral de pendientes: " + ex.Message);
+            }
+        }
+
+        private bool EnviarMailAlertaPendientes(bool esResolucion, int cantidadActual, string idMasAntiguo, double horasEnBuffer)
+        {
+            try
+            {
+                var cfg = configuracion.AlertaPendientes ?? new AlertaPendientesConfig();
+                var destinatarios = cfg.Destinatarios ?? new List<string>();
+                if (destinatarios.Count == 0)
+                {
+                    EscribirLog("⚠️ [AlertaPendientes] Destinatarios vacíos. Mail omitido.");
+                    return false;
+                }
+
+                DateTime ahora = DateTime.Now;
+                string empresa = configuracion.Empresa ?? "";
+                string timestamp = ahora.ToString("dd/MM/yyyy HH:mm:ss");
+                string horasTexto = horasEnBuffer.ToString("F2");
+
+                string asuntoTemplate = esResolucion ? cfg.AsuntoResolucion : cfg.AsuntoAlerta;
+                string cuerpoTemplate = esResolucion ? cfg.CuerpoResolucion : cfg.CuerpoAlerta;
+
+                string asunto = (asuntoTemplate ?? "")
+                    .Replace("{Empresa}", empresa)
+                    .Replace("{CantidadActual}", cantidadActual.ToString())
+                    .Replace("{IdMasAntiguo}", idMasAntiguo)
+                    .Replace("{HorasEnBuffer}", horasTexto)
+                    .Replace("{Timestamp}", timestamp);
+
+                string cuerpo = (cuerpoTemplate ?? "")
+                    .Replace("{Empresa}", empresa)
+                    .Replace("{CantidadActual}", cantidadActual.ToString())
+                    .Replace("{IdMasAntiguo}", idMasAntiguo)
+                    .Replace("{HorasEnBuffer}", horasTexto)
+                    .Replace("{Timestamp}", timestamp);
+
+                string claveSMTP = CryptoHelper.IsEncrypted(configuracion.ClaveSMTP)
+                    ? CryptoHelper.Decrypt(configuracion.ClaveSMTP)
+                    : configuracion.ClaveSMTP;
+
+                var destsUnicos = new HashSet<string>(
+                    destinatarios.Where(d => !string.IsNullOrWhiteSpace(d)).Select(d => d.Trim()),
+                    StringComparer.OrdinalIgnoreCase);
+                if (destsUnicos.Count == 0)
+                {
+                    EscribirLog("⚠️ [AlertaPendientes] Sin destinatarios válidos. Mail omitido.");
+                    return false;
+                }
+
+                using (var cliente = new SmtpClient(configuracion.ServidorSMTP, configuracion.PuertoSMTP))
+                {
+                    cliente.Credentials = new NetworkCredential(configuracion.UsuarioSMTP, claveSMTP);
+                    cliente.EnableSsl = true;
+
+                    using (var mensaje = new MailMessage())
+                    {
+                        mensaje.From = new MailAddress(configuracion.Remitente);
+                        mensaje.Subject = asunto;
+                        mensaje.Body = cuerpo;
+                        mensaje.IsBodyHtml = false;
+                        foreach (var d in destsUnicos) mensaje.To.Add(d);
+                        cliente.Send(mensaje);
+                    }
+                }
+
+                EscribirLog($"📧 [AlertaPendientes] Mail de {(esResolucion ? "resolución" : "alerta")} enviado. Pendientes={cantidadActual}, ID más antiguo={idMasAntiguo}, Horas={horasTexto}.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("❌ [AlertaPendientes] Error enviando mail: " + ex.Message);
+                return false;
+            }
+        }
+
+        private void GuardarEstadoAlertaPendientes(string path, PendientesAlertaEstado estado)
+        {
+            try
+            {
+                File.WriteAllText(path, JsonConvert.SerializeObject(estado, Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("⚠️ [AlertaPendientes] Error guardando pendientes_alerta_estado.json: " + ex.Message);
             }
         }
 
@@ -2155,7 +2336,8 @@ namespace ServicioOracleReportes
                 "comparaciones_pendientes.json",
                 "alertas_oracle_enviadas.json",
                 "ids_history.json",
-                "status.json"
+                "status.json",
+                "pendientes_alerta_estado.json"
             };
 
             foreach (var archivo in archivosOperativos)
@@ -2521,6 +2703,15 @@ namespace ServicioOracleReportes
                 try   { File.WriteAllText(path, JsonConvert.SerializeObject(estado, Formatting.Indented)); }
                 catch (Exception ex) { EscribirLog($"⚠️ Error guardando ws_estado.json: {ex.Message}"); }
             }
+        }
+
+        private class PendientesAlertaEstado
+        {
+            [JsonProperty("ultimo_envio")]
+            public DateTime? UltimoEnvio { get; set; }
+
+            [JsonProperty("cantidad_al_enviar")]
+            public int CantidadAlEnviar { get; set; }
         }
 
         private class WsEstado

@@ -3,6 +3,29 @@ using System.Collections.Generic;
 
 namespace ServicioOracleReportes
 {
+    public class AlertaPendientesConfig
+    {
+        public List<string> Destinatarios { get; set; } = new List<string>();
+        public int UmbralCantidad { get; set; } = 50;
+        public int CooldownHoras { get; set; } = 4;
+        public string AsuntoAlerta { get; set; } = "⚠️ [{Empresa}] Buffer de pendientes alto — {CantidadActual}";
+        public string CuerpoAlerta { get; set; } =
+            "Se detectó un crecimiento en comparaciones_pendientes.json.\n\n" +
+            "Empresa: {Empresa}\n" +
+            "Pendientes actuales: {CantidadActual}\n" +
+            "ID más antiguo: {IdMasAntiguo}\n" +
+            "Horas en buffer (ID más antiguo): {HorasEnBuffer}\n" +
+            "Detectado: {Timestamp}";
+        public string AsuntoResolucion { get; set; } = "✅ [{Empresa}] Buffer de pendientes normalizado";
+        public string CuerpoResolucion { get; set; } =
+            "El buffer de comparaciones pendientes volvió a valores normales.\n\n" +
+            "Empresa: {Empresa}\n" +
+            "Pendientes actuales: {CantidadActual}\n" +
+            "ID más antiguo: {IdMasAntiguo}\n" +
+            "Horas en buffer (ID más antiguo): {HorasEnBuffer}\n" +
+            "Detectado: {Timestamp}";
+    }
+
     public class CircuitBreakerAlertaConfig
     {
         public List<string> Destinatarios { get; set; } = new List<string>();
@@ -69,5 +92,8 @@ namespace ServicioOracleReportes
         public int CircuitBreakerUmbral { get; set; } = 3;
         public int CircuitBreakerTimeoutMinutos { get; set; } = 15;
         public CircuitBreakerAlertaConfig CircuitBreakerAlerta { get; set; } = new CircuitBreakerAlertaConfig();
+
+        // Alerta de crecimiento del buffer comparaciones_pendientes.json
+        public AlertaPendientesConfig AlertaPendientes { get; set; } = new AlertaPendientesConfig();
     }
 }
