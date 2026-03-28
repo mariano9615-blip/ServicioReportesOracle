@@ -216,6 +216,67 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **PasswordBox**: No soporta binding directo. Sincronizar en code-behind via `PasswordChanged` → `vm.Property = box.Password`.
 - **RelayCommand**: Acepta `canExecute` opcional. `CanExecuteChanged` usa `CommandManager.RequerySuggested` para re-evaluar automáticamente.
 
+## ⛔ Patrones Prohibidos
+- NUNCA usar `dotnet build` — siempre MSBuild.exe directo (falla con MSB4216/GenerateResource en .NET Framework 4.8)
+- NUNCA hardcodear colores en vistas — usar exclusivamente brushes de App.xaml (OnSurfaceBrush, SurfaceBrush, etc.)
+- NUNCA usar MessageBox — usar MainViewModel.Instance.ShowNotification()
+- NUNCA usar ComboBox sin Style explícito — el default de WPF renderiza texto negro invisible sobre fondo oscuro
+- NUNCA modificar propiedades bindeadas a la UI desde threads secundarios — siempre usar Application.Current.Dispatcher.InvokeAsync()
+- NUNCA usar binding Mode=TwoWay sobre propiedades de solo lectura en modelos — usar Mode=OneWay explícito en DataTemplates
+- NUNCA escribir en los archivos operativos de Logs\ desde la UI — esos archivos son exclusivos del servicio core (excepción: alertas_leidas.json y ui_settings.json que son de la UI)
+
+## 📎 Snippets de Referencia
+SNIPPET 1 — FileSystemWatcher con debounce 2s y Dispatcher:
+```csharp
+private FileSystemWatcher _watcher;
+private System.Timers.Timer _debounceTimer;
+
+private void IniciarWatcher(string path)
+{
+    _watcher = new FileSystemWatcher(Path.GetDirectoryName(path))
+    {
+        Filter = Path.GetFileName(path),
+        NotifyFilter = NotifyFilters.LastWrite,
+        EnableRaisingEvents = true
+    };
+    _watcher.Changed += OnArchivoChanged;
+
+    _debounceTimer = new System.Timers.Timer(2000) { AutoReset = false };
+    _debounceTimer.Elapsed += (s, e) =>
+        Application.Current.Dispatcher.InvokeAsync(() => CargarDatos());
+}
+
+private void OnArchivoChanged(object sender, FileSystemEventArgs e)
+{
+    _debounceTimer.Stop();
+    _debounceTimer.Start();
+}
+```
+
+SNIPPET 2 — Cleanup en Unloaded (IDisposable):
+```csharp
+public void Dispose()
+{
+    _watcher?.Dispose();
+    _debounceTimer?.Dispose();
+    _dispatcherTimer?.Stop();
+}
+// En code-behind: this.Unloaded += (s, e) => (DataContext as IDisposable)?.Dispose();
+```
+
+SNIPPET 3 — ComboBox con Style del tema oscuro:
+Referencia: ver LogsView.xaml — copiar el Style inline de ComboBox y ComboBox.ItemContainerStyle de ese archivo para cualquier ComboBox nuevo.
+
+SNIPPET 4 — Propiedad con NotifyPropertyChanged:
+```csharp
+private string _miPropiedad;
+public string MiPropiedad
+{
+    get => _miPropiedad;
+    set { _miPropiedad = value; OnPropertyChanged(); }
+}
+```
+
 ## 🔐 Seguridad
 - **CryptoHelper**: AES-256 con prefijo `ENC:`. Usado para SMTP y para la clave UI.
 - **ClaveUI**: Contraseña de acceso a la consola, guardada encriptada en `config.json["ClaveUI"]`. Primera vez: se auto-genera con valor "Logistica2026" encriptado.
