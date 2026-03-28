@@ -1,4 +1,10 @@
 # 🗂️ Changelog
+## v4.8 - Versión Estable (2026-03-28)
+
+### 🎯 Estado del Proyecto
+- ✅ **Versión 4.8 declarada como estable** - Todas las funcionalidades principales probadas y funcionando correctamente
+- 🚀 **Próxima versión v5.0**: Inicio de migración a SQLite como base de datos principal
+
 ## v7.1.0 - Features de Productividad (2026-03-28)
 
 ### UI - Mejoras DataGrid
