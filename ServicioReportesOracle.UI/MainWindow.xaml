@@ -22,6 +22,9 @@
         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
             <v:DashboardView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AlertasViewModel}">
+            <v:AlertasView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:GeneralConfigViewModel}">
             <v:GeneralConfigView/>
         </DataTemplate>
@@ -243,9 +246,17 @@
                                    Margin="20,0,20,20"/>
 
                         <RadioButton x:Name="NavBtn0" Style="{StaticResource SidebarButtonStyle}" IsChecked="True" Command="{Binding NavDashboardCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <Grid Margin="0,0,8,0" VerticalAlignment="Center">
-                                    <TextBlock Text="🏠" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="🏠" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavText0" Text="Dashboard" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="NavBtn8" Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavAlertasCommand}">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="🔔" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                     <!-- Badge -->
                                     <Border Background="#F44336" Width="18" Height="18" CornerRadius="9"
                                             HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -270,49 +281,63 @@
                                         </Border.Style>
                                     </Border>
                                 </Grid>
-                                <TextBlock x:Name="NavText0" Text="Dashboard" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="NavText8" Text="Alertas" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavBtn1" Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavGeneralCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="NavText1" Text="Configuración General" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavText1" Text="Configuración General" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavBtn2" Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavTasksCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📋" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="NavText2" Text="Tareas SQL (JSON)" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="📋" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavText2" Text="Tareas SQL (JSON)" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavBtn3" Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavEditorCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="💻" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="NavText3" Text="Editor SQL de Pruebas" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="💻" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavText3" Text="Editor SQL de Pruebas" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavBtn4" Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavLogsCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📜" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="NavText4" Text="Logs del Servicio" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="📜" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavText4" Text="Logs del Servicio" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavBtn5" Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavMlogisHistorialCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📡" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="NavText5" Text="Registros SOAP" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="📡" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavText5" Text="Registros SOAP" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavBtn6" Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavServiceCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔧" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="NavText6" Text="Control del Servicio" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="🔧" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavText6" Text="Control del Servicio" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavBtn7" Style="{StaticResource SidebarButtonStyle}" Command="{Binding NavChangePasswordCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔑" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="NavText7" Text="Cambiar Contraseña" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="🔑" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavText7" Text="Cambiar Contraseña" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                     </StackPanel>
@@ -325,11 +350,13 @@
                                 Style="{StaticResource NavBottomButtonStyle}"
                                 Command="{Binding NavUiSettingsCommand}"
                                 ToolTip="Configuración de Interfaz">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" FontSize="14"
-                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" FontSize="14"
+                                               VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
                                 <TextBlock x:Name="NavTextSettings" Text="Config. de Interfaz"
-                                           VerticalAlignment="Center"/>
+                                           VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </Button>
                         <TextBlock x:Name="VersionText"

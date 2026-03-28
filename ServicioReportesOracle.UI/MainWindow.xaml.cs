@@ -98,6 +98,7 @@ namespace ServicioReportesOracle.UI
             // Textos: mostrar/ocultar
             SidebarTitle.Visibility    = vis;
             SidebarSubtitle.Visibility = vis;
+            NavText0.Visibility        = vis;
             NavText1.Visibility        = vis;
             NavText2.Visibility        = vis;
             NavText3.Visibility        = vis;
@@ -105,17 +106,20 @@ namespace ServicioReportesOracle.UI
             NavText5.Visibility        = vis;
             NavText6.Visibility        = vis;
             NavText7.Visibility        = vis;
+            NavText8.Visibility        = vis;
             NavTextSettings.Visibility = vis;
             VersionText.Visibility     = vis;
 
             // Íconos: ajustar padding del RadioButton para centrarlos en 56px
+            NavBtn0.Padding = padding;
             NavBtn1.Padding = padding;
             NavBtn2.Padding = padding;
             NavBtn3.Padding = padding;
             NavBtn4.Padding = padding;
             NavBtn5.Padding = padding;
             NavBtn6.Padding = padding;
-            NavBtn7.Padding          = padding;
+            NavBtn7.Padding = padding;
+            NavBtn8.Padding = padding;
             NavBtnSettings.Padding   = padding;
 
             // Botón hamburguesa: centrar cuando colapsado, alinear a la derecha cuando expandido

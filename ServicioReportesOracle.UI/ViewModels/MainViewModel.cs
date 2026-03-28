@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -25,6 +26,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         private bool _isUpdatingAlertas;
         private readonly object _alertasLock = new object();
         private string _alertasEnviadasPath;
+        private string _alertasLeidasPath;
 
         public object SelectedViewModel
         {
@@ -71,6 +73,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         public ICommand NavServiceCommand { get; }
         public ICommand NavChangePasswordCommand { get; }
         public ICommand NavUiSettingsCommand { get; }
+        public ICommand NavAlertasCommand { get; }
 
         public static MainViewModel Instance { get; private set; }
 
@@ -87,17 +90,20 @@ namespace ServicioReportesOracle.UI.ViewModels
             NavServiceCommand          = new RelayCommand(_ => SelectedViewModel = new ServiceControlViewModel());
             NavChangePasswordCommand   = new RelayCommand(_ => SelectedViewModel = new ChangePasswordViewModel());
             NavUiSettingsCommand       = new RelayCommand(_ => SelectedViewModel = new UiSettingsViewModel());
+            NavAlertasCommand          = new RelayCommand(_ => SelectedViewModel = new AlertasViewModel());
 
             // Default view
             SelectedViewModel = new DashboardViewModel();
 
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
             string logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\"));
+            string uiSettingsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\"));
+
             _alertasEnviadasPath = Path.Combine(logsDir, "alertas_oracle_enviadas.json");
+            _alertasLeidasPath = Path.Combine(uiSettingsDir, "alertas_leidas.json");
 
             ConfigurarWatcher();
             ConfigurarTimer();
-
             _ = CargarAlertasSidebarAsync();
         }
 
@@ -137,11 +143,39 @@ namespace ServicioReportesOracle.UI.ViewModels
             {
                 await Task.Delay(2000); // 2 segundos de debounce
                 
-                int totalAlertasHoy = 0;
+                int totalAlertas = 0;
+                var idsLeidos = new HashSet<string>();
 
+                // Cargar IDs leídos del día actual
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        if (File.Exists(_alertasLeidasPath))
+                        {
+                            using (var fs = new FileStream(_alertasLeidasPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            using (var sr = new StreamReader(fs))
+                            {
+                                string json = sr.ReadToEnd();
+                                var arr = JArray.Parse(json);
+                                foreach (var token in arr)
+                                {
+                                    string fecha = token["fecha"]?.ToString();
+                                    string id = token["id"]?.ToString();
+                                    if (fecha == DateTime.Today.ToString("yyyy-MM-dd") && !string.IsNullOrEmpty(id))
+                                    {
+                                        idsLeidos.Add(id);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                });
+
+                // Contar alertas del día no leídas
                 if (File.Exists(_alertasEnviadasPath))
                 {
-                    // Intentar leer de modo seguro contra bloqueos del proceso que lo crea
                     string json = null;
                     for (int i = 0; i < 3; i++)
                     {
@@ -159,33 +193,37 @@ namespace ServicioReportesOracle.UI.ViewModels
 
                     if (!string.IsNullOrEmpty(json))
                     {
-                        var obj = JObject.Parse(json);
-                        var arr = obj["alertas"] as JArray;
-                        
-                        if (arr != null)
+                        try
                         {
+                            var arr = JArray.Parse(json);
+                            
                             foreach (var token in arr)
                             {
-                                string timestamp = token["ultima_vez_alertado"]?.ToString();
-                                if (DateTime.TryParse(timestamp, out var dt) && dt.Date == DateTime.Today)
+                                string timestamp = token["timestamp"]?.ToString();
+                                string id = token["id"]?.ToString();
+                                if (DateTime.TryParse(timestamp, out var dt) && dt.Date == DateTime.Today && !string.IsNullOrEmpty(id))
                                 {
-                                    totalAlertasHoy++;
+                                    if (!idsLeidos.Contains(id))
+                                    {
+                                        totalAlertas++;
+                                    }
                                 }
                             }
                         }
+                        catch { }
                     }
                 }
 
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
-                    if (totalAlertasHoy == 0)
+                    if (totalAlertas == 0)
                     {
                         SidebarAlertVisible = false;
                         SidebarAlertText = "";
                     }
                     else
                     {
-                        SidebarAlertText = totalAlertasHoy > 99 ? "99+" : totalAlertasHoy.ToString();
+                        SidebarAlertText = totalAlertas > 99 ? "99+" : totalAlertas.ToString();
                         SidebarAlertVisible = true;
                     }
                 });

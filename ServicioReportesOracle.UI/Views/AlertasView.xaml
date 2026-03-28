@@ -1,0 +1,101 @@
+<UserControl x:Class="ServicioReportesOracle.UI.Views.AlertasView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="900"
+             Foreground="{StaticResource OnSurfaceBrush}">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Cabecera -->
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="Alertas" FontSize="24" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
+            <Button Command="{Binding RefreshCommand}" HorizontalAlignment="Right" VerticalAlignment="Center" 
+                    Background="{StaticResource SurfaceContainerHighBrush}" Foreground="{StaticResource OnSurfaceBrush}"
+                    BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" Padding="15,8"
+                    Style="{x:Null}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🔄" FontFamily="Segoe UI Emoji" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Actualizar" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Lista de alertas -->
+        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Sin alertas -->
+                <TextBlock Foreground="{StaticResource OnSurfaceVariantBrush}" FontStyle="Italic" FontSize="14"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Visibility="{Binding HasAlertas, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
+                           Text="Sin alertas enviadas hoy"/>
+
+                <!-- Lista de alertas estilo WhatsApp -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Alertas}"
+                                  Visibility="{Binding HasAlertas, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource OutlineBrush}" BorderThickness="0,0,0,1" Padding="16,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Ícono tipo -->
+                                        <TextBlock Grid.Column="0" Text="{Binding Icono}" FontFamily="Segoe UI Emoji" 
+                                                   FontSize="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                                        <!-- Contenido -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <!-- Tipo de alerta + ID -->
+                                            <TextBlock FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}">
+                                                <Run Text="{Binding TipoTexto}"/>
+                                                <Run Text=" — "/>
+                                                <Run Text="{Binding Id}" FontWeight="Normal"/>
+                                            </TextBlock>
+
+                                            <!-- Número de comprobante (si existe) -->
+                                            <TextBlock FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,2,0,0">
+                                                <Run Text="Comprobante: "/>
+                                                <Run Text="{Binding Nrocomprobante}" FontWeight="SemiBold"/>
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <!-- Hora -->
+                                        <TextBlock Grid.Column="2" Text="{Binding Timestamp}" FontSize="12" 
+                                                   Foreground="{StaticResource OnSurfaceVariantBrush}"
+                                                   VerticalAlignment="Center" TextAlignment="Right" Margin="12,0,0,0"/>
+                                    </Grid>
+
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#22FFFFFF"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
