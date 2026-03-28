@@ -1,0 +1,32 @@
+# Compilados y artefactos de build
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+**/*.suo
+**/*.cache
+
+# Paquetes NuGet
+**/packages/
+
+# Archivos operativos del servicio (cambian en runtime, no son código)
+**/Logs/
+**/Log_*.txt
+**/mlogis_historial*.json
+**/comparaciones_pendientes.json
+**/alertas_oracle_enviadas.json
+**/alertas_leidas.json
+**/ws_estado.json
+**/ids_history.json
+**/status.json
+
+# Configuración local de UI (no relevante para el servicio)
+**/ui_settings.json
+
+# IDEs
+**/.vscode/
+**/.idea/
+**/.vs/
+
+# Git
+**/.git/
