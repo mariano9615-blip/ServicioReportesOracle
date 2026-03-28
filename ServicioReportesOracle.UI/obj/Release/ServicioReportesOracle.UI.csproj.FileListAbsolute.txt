@@ -7,14 +7,8 @@ C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ClosedXML.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Threading.Tasks.Extensions.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Memory.dll
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\DocumentFormat.OpenXml.Framework.dll
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\DocumentFormat.OpenXml.dll
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\SixLabors.Fonts.dll
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ExcelNumberFormat.dll
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ClosedXML.Parser.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\Microsoft.Bcl.HashCode.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Buffers.dll
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\RBush.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Runtime.CompilerServices.Unsafe.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Numerics.Vectors.dll
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ServicioReportesOracle.pdb
@@ -22,14 +16,6 @@ C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\Newtonsoft.Json.xml
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ClosedXML.pdb
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ClosedXML.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\DocumentFormat.OpenXml.Framework.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\DocumentFormat.OpenXml.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\SixLabors.Fonts.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ExcelNumberFormat.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\ClosedXML.Parser.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\Microsoft.Bcl.HashCode.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\System.Buffers.xml
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\bin\Release\RBush.xml
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\ServicioReportesOracle.UI.csproj.AssemblyReference.cache
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\ServicioReportesOracle.UI.csproj.SuggestedBindingRedirects.cache
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\ServicioReportesOracle.UI.exe.config
@@ -69,3 +55,5 @@ C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Servicio.19C75552.Up2Date
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\ServicioReportesOracle.UI.exe
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\ServicioReportesOracle.UI.pdb
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\MetricasView.baml
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Views\MetricasView.g.cs

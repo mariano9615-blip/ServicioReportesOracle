@@ -16,15 +16,26 @@
         <!-- Cabecera -->
         <Grid Grid.Row="0" Margin="0,0,0,15">
             <TextBlock Text="Alertas" FontSize="24" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-            <Button Command="{Binding RefreshCommand}" HorizontalAlignment="Right" VerticalAlignment="Center" 
-                    Background="{StaticResource SurfaceContainerHighBrush}" Foreground="{StaticResource OnSurfaceBrush}"
-                    BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" Padding="15,8"
-                    Style="{x:Null}">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="🔄" FontFamily="Segoe UI Emoji" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="Actualizar" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Command="{Binding ExportToExcelCommand}" Margin="0,0,10,0"
+                        Background="{StaticResource SurfaceContainerHighBrush}" Foreground="{StaticResource OnSurfaceBrush}"
+                        BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" Padding="15,8"
+                        Style="{x:Null}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📊" FontFamily="Segoe UI Emoji" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Exportar a Excel" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding RefreshCommand}" HorizontalAlignment="Right" VerticalAlignment="Center" 
+                        Background="{StaticResource SurfaceContainerHighBrush}" Foreground="{StaticResource OnSurfaceBrush}"
+                        BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" Padding="15,8"
+                        Style="{x:Null}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🔄" FontFamily="Segoe UI Emoji" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Actualizar" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <!-- Lista de alertas -->

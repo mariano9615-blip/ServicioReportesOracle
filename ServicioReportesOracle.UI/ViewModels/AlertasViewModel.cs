@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using ClosedXML.Excel;
+using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 
 namespace ServicioReportesOracle.UI.ViewModels
@@ -52,6 +54,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         public ICommand RefreshCommand { get; }
         public ICommand MarkAsReadCommand { get; }
+        public ICommand ExportToExcelCommand { get; }
 
         public AlertasViewModel()
         {
@@ -64,6 +67,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
             RefreshCommand = new RelayCommand(_ => _ = CargarAsync());
             MarkAsReadCommand = new RelayCommand(alertaObj => MarkAsRead(alertaObj as AlertaItem));
+            ExportToExcelCommand = new RelayCommand(_ => ExportToExcel());
 
             ConfigurarWatcher();
             _ = CargarAsync();
@@ -245,6 +249,61 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             if (alerta == null) return;
             MarcarTodasComoLeidas(); // Por ahora, marcamos todas como leídas de una vez
+        }
+
+        private void ExportToExcel()
+        {
+            var datos = Alertas.ToList();
+            if (!datos.Any())
+            {
+                MainViewModel.Instance?.ShowNotification("⚠️ No hay datos para exportar", "Error");
+                return;
+            }
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files|*.xlsx",
+                FileName = $"Alertas_Oracle_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            };
+
+            if (dialog.ShowDialog() != true) return;
+
+            try
+            {
+                using (var workbook = new XLWorkbook())
+                {
+                    var worksheet = workbook.Worksheets.Add("Alertas");
+
+                    worksheet.Cell(1, 1).Value = "ID";
+                    worksheet.Cell(1, 2).Value = "Tipo Caso";
+                    worksheet.Cell(1, 3).Value = "Timestamp";
+                    worksheet.Cell(1, 4).Value = "Nrocomprobante";
+
+                    var headerRange = worksheet.Range(1, 1, 1, 4);
+                    headerRange.Style.Font.Bold = true;
+                    headerRange.Style.Fill.BackgroundColor = XLColor.FromArgb(79, 70, 229);
+                    headerRange.Style.Font.FontColor = XLColor.White;
+
+                    int row = 2;
+                    foreach (var item in datos)
+                    {
+                        worksheet.Cell(row, 1).Value = item.Id;
+                        worksheet.Cell(row, 2).Value = item.TipoTexto;
+                        worksheet.Cell(row, 3).Value = item.Timestamp;
+                        worksheet.Cell(row, 4).Value = item.Nrocomprobante;
+                        row++;
+                    }
+
+                    worksheet.Columns().AdjustToContents();
+                    workbook.SaveAs(dialog.FileName);
+                }
+
+                MainViewModel.Instance?.ShowNotification($"✅ Excel exportado: {Path.GetFileName(dialog.FileName)}");
+            }
+            catch (Exception ex)
+            {
+                MainViewModel.Instance?.ShowNotification($"❌ Error al exportar: {ex.Message}", "Error");
+            }
         }
 
         private string LeerArchivoSeguro(string path)

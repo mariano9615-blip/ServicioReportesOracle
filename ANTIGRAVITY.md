@@ -262,6 +262,8 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **ComboBox**: Siempre aplicar el Style del tema oscuro (inline `ComboBox.Style` + `ComboBox.ItemContainerStyle` con template custom). Nunca usar ComboBox sin Style explícito — el default de WPF renderiza texto negro invisible sobre fondo oscuro. Ver `LogsView.xaml` como referencia.
 - **PasswordBox**: No soporta binding directo. Sincronizar en code-behind via `PasswordChanged` → `vm.Property = box.Password`.
 - **RelayCommand**: Acepta `canExecute` opcional. `CanExecuteChanged` usa `CommandManager.RequerySuggested` para re-evaluar automáticamente.
+- **DataGrid Clipboard**: Siempre habilitar `ClipboardCopyMode="IncludeHeader"` y `SelectionMode="Extended"` para permitir Ctrl+C nativo.
+- **Export Excel**: Usar ClosedXML con estilo de headers consistente (indigo `#4F46E5`, texto blanco, negrita). Siempre usar SaveFileDialog.
 
 ## ⛔ Patrones Prohibidos
 - NUNCA usar `dotnet build` — siempre MSBuild.exe directo (falla con MSB4216/GenerateResource en .NET Framework 4.8)

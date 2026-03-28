@@ -39,7 +39,10 @@
         <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="10">
             <DataGrid ItemsSource="{Binding Results}" 
                       AutoGenerateColumns="True" 
-                      IsReadOnly="True"/>
+                      IsReadOnly="True"
+                      ClipboardCopyMode="IncludeHeader"
+                      SelectionMode="Extended"
+                      SelectionUnit="FullRow"/>
         </Border>
     </Grid>
 </UserControl>

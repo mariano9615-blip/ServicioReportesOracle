@@ -10,6 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using ClosedXML.Excel;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using ServicioOracleReportes;
 
@@ -24,6 +26,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         private string _searchText = "";
         private string _lineInfo = "";
         private CorridaItem _selectedCorrida;
+        private RegistroDisplayItem _selectedRegistroUnico;
         private bool _disposed;
 
         private FileSystemWatcher _watcher;
@@ -112,6 +115,17 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _lineInfo = value; OnPropertyChanged(); }
         }
 
+        public RegistroDisplayItem SelectedRegistroUnico
+        {
+            get => _selectedRegistroUnico;
+            set
+            {
+                if (_selectedRegistroUnico == value) return;
+                _selectedRegistroUnico = value;
+                OnPropertyChanged();
+            }
+        }
+
         // ── Comandos ──────────────────────────────────────────────────────────
 
         public ICommand RefreshCommand           { get; }
@@ -119,6 +133,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         public ICommand ToggleModoUnicoCommand   { get; }
         public ICommand ToggleSearchCommand      { get; }
         public ICommand ClearSearchCommand       { get; }
+        public ICommand ExportToExcelCommand     { get; }
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -134,6 +149,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             ToggleModoUnicoCommand   = new RelayCommand(_ => IsModoCorrida = false);
             ToggleSearchCommand      = new RelayCommand(_ => IsSearchVisible = !IsSearchVisible);
             ClearSearchCommand       = new RelayCommand(_ => { SearchText = ""; IsSearchVisible = false; });
+            ExportToExcelCommand     = new RelayCommand(_ => ExportToExcel());
 
             ConfigurarWatcher();
             _ = CargarAsync();
@@ -348,6 +364,93 @@ namespace ServicioReportesOracle.UI.ViewModels
             };
             _watcher.Changed += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
             _watcher.Created  += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
+        }
+
+        private void ExportToExcel()
+        {
+            var datosParaExportar = ObtenerDatosParaExportar();
+            if (!datosParaExportar.Any())
+            {
+                MainViewModel.Instance?.ShowNotification("⚠️ No hay datos para exportar", "Error");
+                return;
+            }
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files|*.xlsx",
+                FileName = $"Historial_SOAP_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            };
+
+            if (dialog.ShowDialog() != true) return;
+
+            try
+            {
+                using (var workbook = new XLWorkbook())
+                {
+                    var worksheet = workbook.Worksheets.Add("Historial");
+
+                    worksheet.Cell(1, 1).Value = "ID";
+                    worksheet.Cell(1, 2).Value = "Nrocomprobante";
+                    worksheet.Cell(1, 3).Value = "FecUpd";
+                    worksheet.Cell(1, 4).Value = "Anulado";
+                    worksheet.Cell(1, 5).Value = "Primera vez visto";
+                    worksheet.Cell(1, 6).Value = "Última vez visto";
+
+                    var headerRange = worksheet.Range(1, 1, 1, 6);
+                    headerRange.Style.Font.Bold = true;
+                    headerRange.Style.Fill.BackgroundColor = XLColor.FromArgb(79, 70, 229);
+                    headerRange.Style.Font.FontColor = XLColor.White;
+
+                    int row = 2;
+                    foreach (var item in datosParaExportar)
+                    {
+                        worksheet.Cell(row, 1).Value = item.Id;
+                        worksheet.Cell(row, 2).Value = item.NroComprobante;
+                        worksheet.Cell(row, 3).Value = item.FecUpd;
+                        worksheet.Cell(row, 4).Value = item.Anulado ? "Sí" : "No";
+                        worksheet.Cell(row, 5).Value = item.PrimeraVezVisto;
+                        worksheet.Cell(row, 6).Value = item.UltimaVezVisto;
+                        row++;
+                    }
+
+                    worksheet.Columns().AdjustToContents();
+                    workbook.SaveAs(dialog.FileName);
+                }
+
+                MainViewModel.Instance?.ShowNotification($"✅ Excel exportado: {Path.GetFileName(dialog.FileName)}");
+            }
+            catch (Exception ex)
+            {
+                MainViewModel.Instance?.ShowNotification($"❌ Error al exportar: {ex.Message}", "Error");
+            }
+        }
+
+        private List<RegistroDisplayItem> ObtenerDatosParaExportar()
+        {
+            if (_isModoCorrida)
+            {
+                if (_selectedCorrida?.Corrida?.Registros == null)
+                {
+                    return new List<RegistroDisplayItem>();
+                }
+
+                return _selectedCorrida.Corrida.Registros
+                    .Select(r => new RegistroDisplayItem(r))
+                    .ToList();
+            }
+
+            if (SelectedRegistroUnico == null || string.IsNullOrWhiteSpace(SelectedRegistroUnico.Id))
+            {
+                MainViewModel.Instance?.ShowNotification("⚠️ Seleccioná un ID para exportar sus apariciones", "Error");
+                return new List<RegistroDisplayItem>();
+            }
+
+            return _historial.Concat(_historialAyer)
+                .Where(c => c.Registros != null)
+                .SelectMany(c => c.Registros)
+                .Where(r => string.Equals(r.Id, SelectedRegistroUnico.Id, StringComparison.OrdinalIgnoreCase))
+                .Select(r => new RegistroDisplayItem(r))
+                .ToList();
         }
 
         // ── IDisposable ───────────────────────────────────────────────────────

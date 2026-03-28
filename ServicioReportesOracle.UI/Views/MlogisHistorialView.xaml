@@ -103,6 +103,19 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Botón Exportar a Excel -->
+                <Button Command="{Binding ExportToExcelCommand}" Margin="0,0,10,0" Padding="15,5"
+                        Background="{StaticResource SurfaceBrush}" Foreground="White"
+                        ToolTip="Exportar datos actuales a Excel">
+                    <Button.Resources>
+                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
+                    </Button.Resources>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📊" FontFamily="Segoe UI Emoji" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Exportar a Excel" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
                 <!-- Botón Buscar (Ctrl+F) -->
                 <Button Command="{Binding ToggleSearchCommand}" Margin="0,0,10,0" Padding="15,5"
                         Background="{StaticResource SurfaceBrush}" Foreground="White"
@@ -351,7 +364,8 @@
                               Visibility="{Binding DataGridCorridaVisibility}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
-                              SelectionMode="Single"
+                              ClipboardCopyMode="IncludeHeader"
+                              SelectionMode="Extended"
                               SelectionUnit="FullRow"
                               CanUserSortColumns="True"
                               CanUserResizeColumns="True"
@@ -410,10 +424,12 @@
                     <DataGrid x:Name="DataGridUnico"
                               Grid.Column="1"
                               ItemsSource="{Binding RegistrosUnicos}"
+                              SelectedItem="{Binding SelectedRegistroUnico, Mode=TwoWay}"
                               Visibility="{Binding DataGridUnicoVisibility}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
-                              SelectionMode="Single"
+                              ClipboardCopyMode="IncludeHeader"
+                              SelectionMode="Extended"
                               SelectionUnit="FullRow"
                               CanUserSortColumns="True"
                               CanUserResizeColumns="True"

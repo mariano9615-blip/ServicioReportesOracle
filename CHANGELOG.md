@@ -1,4 +1,10 @@
 # 🗂️ Changelog
+## v7.1.0 - Features de Productividad (2026-03-28)
+
+### UI - Mejoras DataGrid
+- ⌨️ Habilitado Ctrl+C nativo en todos los DataGrids (formato TSV con headers)
+- 📊 Export Excel en MlogisHistorialView (respeta modo Por Corrida / Por ID)
+- 📊 Export Excel en AlertasView
 - **v7.0.9 (UI)**: Polish visual de `MetricasView`. Sparklines ampliados a 80px con área rellena (`Polygon`) bajo la curva, estado vacío `"Sin datos aun"` cuando hay 0/1 puntos y ocultación de labels `Min/Max` en ese estado. Cards de gráficos ajustadas con mejor aprovechamiento vertical (`MinHeight`), contador `Alertas enviadas hoy` con color semántico (`SuccessBrush`=0, `WarningBrush`=>0) y bloque `FULL vs DELTA` reordenado con labels alineados y barra pill de 12px.
 - **v7.0.8 (UI)**: Nueva vista `MetricasView` + `MetricasViewModel` en `ServicioReportesOracle.UI` con métricas de 48h basadas en `mlogis_historial.json`, `mlogis_historial_ayer.json` y `alertas_oracle_enviadas.json`. Incluye dos sparklines en WPF puro (`Canvas + Polyline`) para IDs por corrida y duración por corrida, contador `corridas hoy / ayer`, contador de alertas de hoy y barra visual FULL vs DELTA de corridas de hoy. Integración en navegación lateral (`MainWindow.xaml` + `MainViewModel`), `FileSystemWatcher` con debounce 2s, y cleanup por `Dispose` al salir de la vista.
 - **v7.0.7 (core)**: Alerta proactiva por crecimiento de `comparaciones_pendientes.json`. Nuevo método `VerificarUmbralPendientes()` al final de `ActualizarComparacionesPendientes()` con umbral configurable (`AlertaPendientes.UmbralCantidad`, default 50), cooldown anti-spam (`AlertaPendientes.CooldownHoras`, default 4), envío de mail de alerta y mail de resolución al normalizar. Estado persistido en `Logs\\pendientes_alerta_estado.json` (`ultimo_envio`, `cantidad_al_enviar`). `MigrarConfigSiFaltan()` inyecta la nueva sección `AlertaPendientes` con plantillas y placeholders (`{CantidadActual}`, `{IdMasAntiguo}`, `{HorasEnBuffer}`, `{Timestamp}`, `{Empresa}`).
