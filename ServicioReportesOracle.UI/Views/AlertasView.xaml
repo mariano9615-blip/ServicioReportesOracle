@@ -55,27 +55,27 @@
                                         </Grid.ColumnDefinitions>
 
                                         <!-- Ícono tipo -->
-                                        <TextBlock Grid.Column="0" Text="{Binding Icono}" FontFamily="Segoe UI Emoji" 
+                                        <TextBlock Grid.Column="0" Text="{Binding Icono, Mode=OneWay}" FontFamily="Segoe UI Emoji"
                                                    FontSize="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
 
                                         <!-- Contenido -->
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <!-- Tipo de alerta + ID -->
                                             <TextBlock FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}">
-                                                <Run Text="{Binding TipoTexto}"/>
+                                                <Run Text="{Binding TipoTexto, Mode=OneWay}"/>
                                                 <Run Text=" — "/>
-                                                <Run Text="{Binding Id}" FontWeight="Normal"/>
+                                                <Run Text="{Binding Id, Mode=OneWay}" FontWeight="Normal"/>
                                             </TextBlock>
 
                                             <!-- Número de comprobante (si existe) -->
                                             <TextBlock FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,2,0,0">
                                                 <Run Text="Comprobante: "/>
-                                                <Run Text="{Binding Nrocomprobante}" FontWeight="SemiBold"/>
+                                                <Run Text="{Binding Nrocomprobante, Mode=OneWay}" FontWeight="SemiBold"/>
                                             </TextBlock>
                                         </StackPanel>
 
                                         <!-- Hora -->
-                                        <TextBlock Grid.Column="2" Text="{Binding Timestamp}" FontSize="12" 
+                                        <TextBlock Grid.Column="2" Text="{Binding Timestamp, Mode=OneWay}" FontSize="12"
                                                    Foreground="{StaticResource OnSurfaceVariantBrush}"
                                                    VerticalAlignment="Center" TextAlignment="Right" Margin="12,0,0,0"/>
                                     </Grid>
