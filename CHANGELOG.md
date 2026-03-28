@@ -1,4 +1,5 @@
 # 🗂️ Changelog
+- **v7.0.5 (UI fix)**: DashboardView.xaml corrige interacción de cards en dashboard. WebService queda solo informativa (sin Command, sin cursor Hand, sin hover) y Estado del Servicio vuelve a ser navegable a ServiceControlView con DashboardCardButtonStyle (hover completo #22FFFFFF sobre toda la card y cursor Hand).
 - **v7.0.4 (UI fix)**: Ajustes visuales en `DashboardView.xaml`. El hover `MouseOver` de cards ahora cubre la card completa (overlay `#22FFFFFF` sobre todo el `Border`), la card `WebService` deja de ser clickeable (sin `Command`, sin cursor `Hand`, sin hover), los contadores `Caso B / Caso A / Anulados` usan `OnSurfaceBrush` (blanco) y los valores quedan alineados al inicio de cada barra de progreso.
 - **v7.0.3 (UI)**: Dashboard con cards navegables y panel inline de pendientes. `DashboardView.xaml` ahora permite click en cards con cursor `Hand` y overlay hover `#22FFFFFF` (estilo tema oscuro): WebService/Estado Servicio navegan a `ServiceControlView`, Última corrida a `MlogisHistorialView`, Alertas hoy a `AlertasView`. La card de pendientes abre/cierra un panel expandible de solo lectura con datos de `Logs\comparaciones_pendientes.json` (columnas `ID`, `Nrocomprobante`, `Primera vez visto` `HH:mm dd/MM`, `Corrida origen`, `Esperando hace` calculado en runtime como `Xh Ym`) y estado vacío `"Sin comparaciones pendientes"`.
 - **v7.0.2**: Fix compatibilidad `alertas_oracle_enviadas.json` formato viejo. `ServicioReportesOracle.cs`: nuevo método `LeerDedupCompatible()` que migra el formato heredado `{"alertas":[{id, campo, ultima_vez_alertado}]}` al array plano actual — evita re-envío de alertas ya enviadas al actualizar desde versiones pre-v6.9.1. `AlertasViewModel.cs`: fallback en `CargarAlertas()` para leer el formato viejo cuando `JArray.Parse` falla, permitiendo mostrar alertas en instalaciones con el archivo heredado.
@@ -23,3 +24,4 @@
 - **v3.7**: Login lockout, encriptación SMTP, validación config, ícono, título custom.
 - **v3.6**: ServiceControlView con UAC manifest y admin check.
 - **v3.5**: Vista ServiceControlView para control del servicio Windows.
+

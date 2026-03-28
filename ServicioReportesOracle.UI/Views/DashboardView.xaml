@@ -175,10 +175,9 @@
             </Button>
 
             <!-- Card Estado del Servicio -->
-            <Border Grid.Column="3"
-                    Background="{StaticResource SurfaceBrush}"
-                    CornerRadius="8"
-                    Padding="16"
+            <Button Grid.Column="3"
+                    Command="{Binding NavigateToServiceControlCommand}"
+                    Style="{StaticResource DashboardCardButtonStyle}"
                     Margin="5,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -196,7 +195,7 @@
 
                     <TextBlock Grid.Row="2" Text="{Binding ServiceStatusSubtext}" FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" TextWrapping="Wrap"/>
                 </Grid>
-            </Border>
+            </Button>
         </Grid>
 
         <!-- FILA 2: Panel de pendientes -->

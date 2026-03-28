@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.0.4)
+## 🚀 Resumen del Proyecto (v7.0.5)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.0.4
+**Versión Actual**: v7.0.5
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -26,8 +26,8 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Vistas**: `DashboardView` (Pantalla principal al iniciar), `GeneralConfigView`, `TasksView` (Gestión ABM), `SqlEditorView` (Testing), `LogsView`, `ServiceControlView`, `ChangePasswordView`.
 - **Diseño**: Tema oscuro premium con notificaciones tipo "Toast" incorporadas.
 - **Modelos**: Estructura anidada para configuración de mails (`Mail.ConError.Asunto`, etc.).
-- **Dashboard (v7.0.4)**:
-  - Cards navegables con el mismo mecanismo del sidebar (`MainViewModel.Nav*Command`): Última corrida → `MlogisHistorialView`, Alertas hoy → `AlertasView`.
+- **Dashboard (v7.0.5)**:
+  - Cards navegables con el mismo mecanismo del sidebar (`MainViewModel.Nav*Command`): Última corrida → `MlogisHistorialView`, Alertas hoy → `AlertasView`, Estado del Servicio → `ServiceControlView`.
   - Card `WebService` solo informativa (no clickeable, sin `Command`, sin cursor `Hand`, sin hover).
   - Card de pendientes expandible inline (toggle por clic): muestra `Logs\comparaciones_pendientes.json` en modo solo lectura con columnas `ID`, `Nrocomprobante`, `Primera vez visto` (`HH:mm dd/MM`), `Corrida origen` (`FULL|DELTA`) y `Esperando hace` (`Xh Ym` recalculado en runtime).
   - Interacción visual de cards navegables: cursor `Hand` y overlay hover `#22FFFFFF` cubriendo la card completa (no solo el contenido interior), sin bordes/efectos extra fuera del tema.
@@ -298,4 +298,5 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.0.4 — Fixes visuales del Dashboard (hover completo, WebService no clickeable, contadores de alertas en blanco y alineados).
+Versión actual: v7.0.5 — Fix puntual Dashboard: WebService se mantiene no clickeable y Estado del Servicio recupera hover completo + cursor Hand + navegación a ServiceControlView.
+
