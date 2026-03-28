@@ -126,12 +126,12 @@ namespace ServicioReportesOracle.UI
             if (_sidebarExpanded)
             {
                 HamburgerBtn.HorizontalAlignment = HorizontalAlignment.Right;
-                HamburgerBtn.Margin = new Thickness(0, 10, 10, 0);
+                HamburgerBtn.Margin = new Thickness(0, 0, 8, 0);
             }
             else
             {
                 HamburgerBtn.HorizontalAlignment = HorizontalAlignment.Center;
-                HamburgerBtn.Margin = new Thickness(0, 10, 0, 0);
+                HamburgerBtn.Margin = new Thickness(0, 0, 0, 0);
             }
         }
     }

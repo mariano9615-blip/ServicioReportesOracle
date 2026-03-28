@@ -223,27 +223,32 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Row 0: Botón hamburguesa -->
-                    <Button x:Name="HamburgerBtn" Grid.Row="0" HorizontalAlignment="Right"
-                            Margin="0,8,8,0"
-                            Style="{StaticResource HamburgerButtonStyle}"
-                            Click="ToggleSidebar_Click"
-                            ToolTip="Contraer/expandir menú">
-                        <TextBlock Text="☰" FontSize="16"
-                                   Foreground="{StaticResource OnSurfaceVariantBrush}"
-                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                    </Button>
+                    <!-- Row 0: Header unificado (☰ + título + subtítulo) -->
+                    <Grid Grid.Row="0" Margin="0,8,0,0">
+                        <StackPanel VerticalAlignment="Center" Margin="20,0,52,6">
+                            <TextBlock x:Name="SidebarTitle"
+                                       Text="Servicio Oracle" FontSize="20" FontWeight="Bold"
+                                       Foreground="{StaticResource OnSurfaceBrush}"
+                                       Margin="0,0,0,2"/>
+                            <TextBlock x:Name="SidebarSubtitle"
+                                       Text="Consola de Gestión" FontSize="12"
+                                       Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                        </StackPanel>
+                        <Button x:Name="HamburgerBtn" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,0,8,0"
+                                Style="{StaticResource HamburgerButtonStyle}"
+                                Click="ToggleSidebar_Click"
+                                ToolTip="Contraer/expandir menú">
+                            <TextBlock Text="☰" FontSize="16"
+                                       Foreground="{StaticResource OnSurfaceVariantBrush}"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Button>
+                    </Grid>
 
                     <!-- Row 1: Contenido de navegación -->
                     <StackPanel x:Name="NavContentPanel" Grid.Row="1" Margin="0">
-                        <TextBlock x:Name="SidebarTitle"
-                                   Text="Servicio Oracle" FontSize="20" FontWeight="Bold"
-                                   Foreground="{StaticResource OnSurfaceBrush}"
-                                   Margin="20,2,20,2"/>
-                        <TextBlock x:Name="SidebarSubtitle"
-                                   Text="Consola de Gestión" FontSize="12"
-                                   Foreground="{StaticResource OnSurfaceVariantBrush}"
-                                   Margin="20,0,20,10"/>
+                        <Border Height="1" Background="{StaticResource OutlineBrush}"
+                                Opacity="0.3" Margin="12,4,12,8"/>
 
                         <RadioButton x:Name="NavBtn0" Style="{StaticResource SidebarButtonStyle}" Padding="15,8" IsChecked="True" Command="{Binding NavDashboardCommand}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
