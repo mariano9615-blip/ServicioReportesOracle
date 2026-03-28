@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -31,6 +32,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         private const int DebounceMs = 2000;
         private readonly SemaphoreSlim _refreshLock = new SemaphoreSlim(1, 1);
         private DispatcherTimer _timeAgoTimer;
+        private DispatcherTimer _serviceStatusTimer;
         private bool _disposed;
 
         // WS Status
@@ -40,6 +42,11 @@ namespace ServicioReportesOracle.UI.ViewModels
         private int _wsCaidasHoy;
         private string _wsDetalleError;
         private bool _wsHasErrorDetail;
+
+        // Service Status
+        private SolidColorBrush _serviceStatusColor;
+        private string _serviceStatusText;
+        private string _serviceStatusSubtext;
 
         // Last Run
         private string _lastRunBadge;
@@ -90,6 +97,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             ConfigurarWatcher();
             ConfigurarTimer();
 
+            RefreshServiceStatus();
             _ = CargarAsync();
         }
 
@@ -101,6 +109,10 @@ namespace ServicioReportesOracle.UI.ViewModels
         public int WsCaidasHoy { get => _wsCaidasHoy; set { _wsCaidasHoy = value; OnPropertyChanged(); } }
         public string WsDetalleError { get => _wsDetalleError; set { _wsDetalleError = value; OnPropertyChanged(); } }
         public bool WsHasErrorDetail { get => _wsHasErrorDetail; set { _wsHasErrorDetail = value; OnPropertyChanged(); } }
+
+        public SolidColorBrush ServiceStatusColor { get => _serviceStatusColor; set { _serviceStatusColor = value; OnPropertyChanged(); } }
+        public string ServiceStatusText { get => _serviceStatusText; set { _serviceStatusText = value; OnPropertyChanged(); } }
+        public string ServiceStatusSubtext { get => _serviceStatusSubtext; set { _serviceStatusSubtext = value; OnPropertyChanged(); } }
 
         public string LastRunBadge { get => _lastRunBadge; set { _lastRunBadge = value; OnPropertyChanged(); } }
         public SolidColorBrush LastRunBadgeColor { get => _lastRunBadgeColor; set { _lastRunBadgeColor = value; OnPropertyChanged(); } }
@@ -518,6 +530,78 @@ namespace ServicioReportesOracle.UI.ViewModels
             }
         }
 
+        private void RefreshServiceStatus()
+        {
+            try
+            {
+                using (var sc = new ServiceController("ServicioReportesOracle"))
+                {
+                    var status = sc.Status;
+
+                    string statusText;
+                    Color color;
+
+                    switch (status)
+                    {
+                        case ServiceControllerStatus.Running:
+                            statusText = "En ejecución";
+                            color = (Color)ColorConverter.ConvertFromString("#4CAF50");
+                            break;
+
+                        case ServiceControllerStatus.Stopped:
+                            statusText = "Detenido";
+                            color = (Color)ColorConverter.ConvertFromString("#F44336");
+                            break;
+
+                        case ServiceControllerStatus.StartPending:
+                            statusText = "Iniciando...";
+                            color = (Color)ColorConverter.ConvertFromString("#F59E0B");
+                            break;
+
+                        case ServiceControllerStatus.StopPending:
+                            statusText = "Deteniéndose...";
+                            color = (Color)ColorConverter.ConvertFromString("#F59E0B");
+                            break;
+
+                        case ServiceControllerStatus.Paused:
+                            statusText = "Pausado";
+                            color = (Color)ColorConverter.ConvertFromString("#F59E0B");
+                            break;
+
+                        default:
+                            statusText = status.ToString();
+                            color = (Color)ColorConverter.ConvertFromString("#F59E0B");
+                            break;
+                    }
+
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        ServiceStatusText = statusText;
+                        ServiceStatusColor = new SolidColorBrush(color);
+                        ServiceStatusSubtext = "ServicioReportesOracle";
+                    });
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    ServiceStatusText = "No disponible";
+                    ServiceStatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
+                    ServiceStatusSubtext = "Servicio no encontrado";
+                });
+            }
+            catch
+            {
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    ServiceStatusText = "No disponible";
+                    ServiceStatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
+                    ServiceStatusSubtext = "Error al leer estado";
+                });
+            }
+        }
+
         private string LeerArchivoSeguro(string path)
         {
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -569,6 +653,10 @@ namespace ServicioReportesOracle.UI.ViewModels
             _timeAgoTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(60) };
             _timeAgoTimer.Tick += (s, e) => ActualizarTimeAgoTimer();
             _timeAgoTimer.Start();
+
+            _serviceStatusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+            _serviceStatusTimer.Tick += (s, e) => RefreshServiceStatus();
+            _serviceStatusTimer.Start();
         }
 
         public void Dispose()
@@ -578,9 +666,11 @@ namespace ServicioReportesOracle.UI.ViewModels
             try { _watcher?.Dispose(); } catch { }
             try { _debounceTimer?.Dispose(); } catch { }
             try { _timeAgoTimer?.Stop(); } catch { }
+            try { _serviceStatusTimer?.Stop(); } catch { }
             _watcher = null;
             _debounceTimer = null;
             _timeAgoTimer = null;
+            _serviceStatusTimer = null;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
