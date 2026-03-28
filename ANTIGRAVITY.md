@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.0.7)
+## 🚀 Resumen del Proyecto (v7.0.8)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.0.7
+**Versión Actual**: v7.0.8
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -23,7 +23,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 
 ### 2. 💎 ServicioReportesOracle.UI (WPF)
 - **Arquitectura**: MVVM pura.
-- **Vistas**: `DashboardView` (Pantalla principal al iniciar), `GeneralConfigView`, `TasksView` (Gestión ABM), `SqlEditorView` (Testing), `LogsView`, `ServiceControlView`, `ChangePasswordView`.
+- **Vistas**: `DashboardView` (Pantalla principal al iniciar), `GeneralConfigView`, `TasksView` (Gestión ABM), `SqlEditorView` (Testing), `LogsView`, `MlogisHistorialView`, `MetricasView`, `ServiceControlView`, `ChangePasswordView`.
 - **Diseño**: Tema oscuro premium con notificaciones tipo "Toast" incorporadas.
 - **Modelos**: Estructura anidada para configuración de mails (`Mail.ConError.Asunto`, etc.).
 - **Dashboard (v7.0.5)**:
@@ -32,6 +32,11 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - Card de pendientes expandible inline (toggle por clic): muestra `Logs\comparaciones_pendientes.json` en modo solo lectura con columnas `ID`, `Nrocomprobante`, `Primera vez visto` (`HH:mm dd/MM`), `Corrida origen` (`FULL|DELTA`) y `Esperando hace` (`Xh Ym` recalculado en runtime).
   - Interacción visual de cards navegables: cursor `Hand` y overlay hover `#22FFFFFF` cubriendo la card completa (no solo el contenido interior), sin bordes/efectos extra fuera del tema.
   - Sección Alertas hoy: contadores en `OnSurfaceBrush` y alineados al inicio de cada barra de progreso.
+- **Métricas (v7.0.8)**:
+  - Vista dedicada `MetricasView` con métricas de las últimas 48h usando `Logs\mlogis_historial.json`, `Logs\mlogis_historial_ayer.json` y `Logs\alertas_oracle_enviadas.json`.
+  - Gráficos sin dependencias externas (WPF puro): sparklines sobre `Canvas + Polyline` para `IDs procesados por corrida` y `duración por corrida`.
+  - KPIs: `corridas hoy vs ayer`, `alertas enviadas hoy`, y barra de distribución `FULL vs DELTA` de hoy.
+  - `MetricasViewModel` usa `FileSystemWatcher` con debounce 2s (`mlogis_historial*.json` + `alertas_oracle_enviadas.json`) y refresco en Dispatcher.
 
 ### 3. 🧪 TestSoap (Console)
 - Herramienta rápida para debuggear la conectividad con el WS de Mlogis sin levantar todo el servicio.
@@ -333,5 +338,5 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.0.7 — Alerta proactiva de `comparaciones_pendientes.json` con umbral + cooldown configurables, mail de resolución al normalizar y estado persistido en `pendientes_alerta_estado.json`.
+Versión actual: v7.0.8 — Nueva `MetricasView` en UI con sparklines (WPF puro), KPIs de corridas/alertas y distribución FULL vs DELTA, integrada al sidebar.
 

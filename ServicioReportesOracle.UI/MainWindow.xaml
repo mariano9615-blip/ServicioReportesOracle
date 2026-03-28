@@ -40,6 +40,9 @@
         <DataTemplate DataType="{x:Type vm:MlogisHistorialViewModel}">
             <v:MlogisHistorialView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:MetricasViewModel}">
+            <v:MetricasView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:ServiceControlViewModel}">
             <v:ServiceControlView/>
         </DataTemplate>
@@ -327,6 +330,14 @@
                                     <TextBlock Text="📡" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                 </Grid>
                                 <TextBlock x:Name="NavText5" Text="Registros SOAP" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="NavBtn9" Style="{StaticResource SidebarButtonStyle}" Padding="15,8" Command="{Binding NavMetricasCommand}">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="📈" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavText9" Text="Métricas" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="NavBtn6" Style="{StaticResource SidebarButtonStyle}" Padding="15,8" Command="{Binding NavServiceCommand}">

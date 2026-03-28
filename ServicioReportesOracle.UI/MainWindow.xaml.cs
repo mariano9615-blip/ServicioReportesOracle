@@ -104,6 +104,7 @@ namespace ServicioReportesOracle.UI
             NavText3.Visibility        = vis;
             NavText4.Visibility        = vis;
             NavText5.Visibility        = vis;
+            NavText9.Visibility        = vis;
             NavText6.Visibility        = vis;
             NavText7.Visibility        = vis;
             NavText8.Visibility        = vis;
@@ -117,6 +118,7 @@ namespace ServicioReportesOracle.UI
             NavBtn3.Padding = padding;
             NavBtn4.Padding = padding;
             NavBtn5.Padding = padding;
+            NavBtn9.Padding = padding;
             NavBtn6.Padding = padding;
             NavBtn7.Padding = padding;
             NavBtn8.Padding = padding;

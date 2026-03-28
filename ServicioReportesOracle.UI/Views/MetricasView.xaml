@@ -1,0 +1,207 @@
+<UserControl x:Class="ServicioReportesOracle.UI.Views.MetricasView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="700"
+             d:DesignWidth="900"
+             Foreground="{StaticResource OnSurfaceBrush}">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="Métricas (48 horas)"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"
+                       Foreground="{StaticResource OnSurfaceBrush}"/>
+
+            <Button Command="{Binding RefreshCommand}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Background="{StaticResource SurfaceContainerHighBrush}"
+                    Foreground="{StaticResource OnSurfaceBrush}"
+                    BorderBrush="{StaticResource OutlineBrush}"
+                    BorderThickness="1"
+                    Padding="15,8"
+                    Style="{x:Null}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🔄"
+                               FontFamily="Segoe UI Emoji"
+                               Margin="0,0,8,0"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="Actualizar"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Text="IDs procesados por corrida (últimas 20)"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"
+                               Margin="0,0,0,10"/>
+
+                    <Canvas Width="200" Height="60"
+                            Background="{StaticResource SurfaceContainerHighBrush}">
+                        <Line X1="0" Y1="59" X2="200" Y2="59"
+                              Stroke="{StaticResource OutlineBrush}"
+                              StrokeThickness="1"/>
+                        <Polyline Points="{Binding IdsSparklinePoints}"
+                                  Stroke="{StaticResource PrimaryBrush}"
+                                  StrokeThickness="2"/>
+                    </Canvas>
+
+                    <TextBlock Text="{Binding IdsSparklineLabel}"
+                               FontSize="12"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="8,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="Duración por corrida en segundos (últimas 20)"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"
+                               Margin="0,0,0,10"/>
+
+                    <Canvas Width="200" Height="60"
+                            Background="{StaticResource SurfaceContainerHighBrush}">
+                        <Line X1="0" Y1="59" X2="200" Y2="59"
+                              Stroke="{StaticResource OutlineBrush}"
+                              StrokeThickness="1"/>
+                        <Polyline Points="{Binding DuracionSparklinePoints}"
+                                  Stroke="{StaticResource WarningBrush}"
+                                  StrokeThickness="2"/>
+                    </Canvas>
+
+                    <TextBlock Text="{Binding DuracionSparklineLabel}"
+                               FontSize="12"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock Text="Corridas hoy vs ayer"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                    <TextBlock Text="{Binding CorridasHoyVsAyer}"
+                               FontSize="36"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource OnSurfaceBrush}"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="8,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="Alertas enviadas hoy"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                    <TextBlock Text="{Binding AlertasHoy}"
+                               FontSize="36"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource OnSurfaceBrush}"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="3"
+                Background="{StaticResource SurfaceBrush}"
+                CornerRadius="8"
+                Padding="16">
+            <StackPanel>
+                <TextBlock Text="Distribución FULL vs DELTA (hoy)"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource OnSurfaceVariantBrush}"
+                           Margin="0,0,0,10"/>
+
+                <Canvas Width="260"
+                        Height="24"
+                        Background="{StaticResource SurfaceContainerHighBrush}">
+                    <Border Width="{Binding FullBarWidth}"
+                            Height="24"
+                            Background="{StaticResource PrimaryBrush}"
+                            Canvas.Left="0"
+                            Canvas.Top="0"/>
+                    <Border Width="{Binding DeltaBarWidth}"
+                            Height="24"
+                            Background="{StaticResource WarningBrush}"
+                            Canvas.Left="{Binding FullBarWidth}"
+                            Canvas.Top="0"/>
+                </Canvas>
+
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding FullHoy, StringFormat='FULL: {0}'}"
+                               Foreground="{StaticResource OnSurfaceBrush}"/>
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding DeltaHoy, StringFormat='DELTA: {0}'}"
+                               Foreground="{StaticResource OnSurfaceBrush}"/>
+                </Grid>
+                <Grid Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding FullPorcentaje, StringFormat='FULL: {0}%'}"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding DeltaPorcentaje, StringFormat='DELTA: {0}%'}"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

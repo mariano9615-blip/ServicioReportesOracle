@@ -95,6 +95,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\MetricasView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Views\ServiceControlView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -149,6 +153,9 @@
     <Compile Include="Views\MlogisHistorialView.xaml.cs">
       <DependentUpon>MlogisHistorialView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\MetricasView.xaml.cs">
+      <DependentUpon>MetricasView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\AlertasView.xaml.cs">
       <DependentUpon>AlertasView.xaml</DependentUpon>
     </Compile>
@@ -168,6 +175,7 @@
     <Compile Include="ViewModels\SqlEditorViewModel.cs" />
     <Compile Include="ViewModels\LogsViewModel.cs" />
     <Compile Include="ViewModels\MlogisHistorialViewModel.cs" />
+    <Compile Include="ViewModels\MetricasViewModel.cs" />
     <Compile Include="ViewModels\ServiceControlViewModel.cs" />
     <Compile Include="ViewModels\ChangePasswordViewModel.cs" />
     <Compile Include="ViewModels\UiSettingsViewModel.cs" />
