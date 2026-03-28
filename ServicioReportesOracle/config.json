@@ -18,5 +18,14 @@
   "Dominio": "CB30511534492",
   "UrlAutentificacion": "https://coopbit.bit.com.ar/DkMServer.services/SessionManager.asmx",
   "UrlSoapSmartFarm": "https://inter-coopbit.bit.com.ar/wsSmartFarm/wsSmartFarm.asmx",
-  "DelayComparacionMinutos": 10
+  "DelayComparacionMinutos": 10,
+  "CircuitBreakerUmbral": 3,
+  "CircuitBreakerTimeoutMinutos": 15,
+  "CircuitBreakerAlerta": {
+    "Destinatarios": [],
+    "AsuntoCaido": "⚠️ [{Empresa}] Oracle no disponible — {Fecha}",
+    "CuerpoCaido": "El Circuit Breaker de Oracle se abrió por fallos consecutivos de conexión.\n\nEmpresa: {Empresa}\nDetectado: {Timestamp}\nFallos consecutivos: {FallosConsecutivos}\n\nLas corridas que requieren Oracle se omitirán hasta que se recupere la conexión.",
+    "AsuntoRecuperado": "✅ [{Empresa}] Oracle recuperado — {Fecha}",
+    "CuerpoRecuperado": "La conexión Oracle se recuperó y el Circuit Breaker volvió a CLOSED.\n\nEmpresa: {Empresa}\nRecuperado: {Timestamp}\nFallos consecutivos previos: {FallosConsecutivos}\n\nLas corridas Oracle se reanudan normalmente."
+  }
 }

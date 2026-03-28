@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuracion.cs" />
+    <Compile Include="OracleCircuitBreaker.cs" />
     <Compile Include="MlogisHistorial.cs" />
     <Compile Include="CryptoHelper.cs" />
     <Compile Include="ConsultaSQL.cs" />

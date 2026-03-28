@@ -32,6 +32,7 @@ namespace ServicioOracleReportes
         private System.Threading.Timer _debounceConsultas;
         private string _configPath;
         private string _consultasPath;
+        private OracleCircuitBreaker _oracleCircuitBreaker;
 
 
         protected override void OnStart(string[] args)
@@ -74,6 +75,11 @@ namespace ServicioOracleReportes
                 _rutaLogs = Path.Combine(basePath, "Logs");
                 Directory.CreateDirectory(_rutaLogs);
                 MigrarArchivosOperativos();
+                _oracleCircuitBreaker = new OracleCircuitBreaker(
+                    Path.Combine(_rutaLogs, "oracle_circuit_state.json"),
+                    configuracion.CircuitBreakerUmbral,
+                    configuracion.CircuitBreakerTimeoutMinutos,
+                    EscribirLog);
 
                 IniciarFileWatcher(basePath);
 
@@ -730,9 +736,13 @@ namespace ServicioOracleReportes
                 const int chunkSize = 999;
                 int totalChunks = (ids.Count + chunkSize - 1) / chunkSize;
 
-                using (var conexion = new OracleConnection(configuracion.ConnectionString))
+                using (var conexion = AbrirConexionOracleConCircuitBreaker("CompararConOracle"))
                 {
-                    conexion.Open();
+                    if (conexion == null)
+                    {
+                        EscribirLog("⚠️ [Oracle] Comparación omitida por Circuit Breaker OPEN/HALF-OPEN.");
+                        return 0;
+                    }
 
                     for (int chunk = 0; chunk < totalChunks; chunk++)
                     {
@@ -1209,9 +1219,13 @@ namespace ServicioOracleReportes
         {
             EscribirLog("Verificando consultas por frecuencia...");
 
-            using (OracleConnection conexion = new OracleConnection(configuracion.ConnectionString))
+            using (OracleConnection conexion = AbrirConexionOracleConCircuitBreaker("EjecutarConsultasSegunFrecuencia"))
             {
-                conexion.Open();
+                if (conexion == null)
+                {
+                    EscribirLog("⚠️ [CircuitBreaker] Corrida Oracle omitida por circuito abierto.");
+                    return;
+                }
 
                 foreach (var consulta in consultas)
                 {
@@ -1562,6 +1576,167 @@ namespace ServicioOracleReportes
             }
         }
 
+        private OracleConnection AbrirConexionOracleConCircuitBreaker(string origen)
+        {
+            if (_oracleCircuitBreaker == null)
+            {
+                var directa = new OracleConnection(configuracion.ConnectionString);
+                directa.Open();
+                return directa;
+            }
+
+            var decision = _oracleCircuitBreaker.EvaluarAcceso(DateTime.Now);
+            if (!decision.Permitir)
+            {
+                EscribirLog($"⚠️ [CircuitBreaker] {origen}: ejecución omitida. {decision.Motivo}");
+                IntentarEnviarAlertaCaidaCircuitBreaker(decision.Estado?.FallosConsecutivos ?? 0, origen);
+                return null;
+            }
+
+            if (decision.RequierePrueba && !EjecutarPruebaHalfOpen(origen))
+            {
+                EscribirLog($"⚠️ [CircuitBreaker] {origen}: prueba HALF-OPEN falló. Operación Oracle omitida.");
+                return null;
+            }
+
+            OracleConnection conexion = null;
+            try
+            {
+                conexion = new OracleConnection(configuracion.ConnectionString);
+                conexion.Open();
+
+                var transition = _oracleCircuitBreaker.RegistrarConexionExitosa(DateTime.Now, esPruebaHalfOpen: false);
+                ProcesarTransicionCircuitBreaker(transition, origen);
+                return conexion;
+            }
+            catch (Exception ex)
+            {
+                conexion?.Dispose();
+                var transition = _oracleCircuitBreaker.RegistrarFalloConexion(DateTime.Now, esPruebaHalfOpen: false);
+                EscribirLog($"❌ [CircuitBreaker] {origen}: fallo de conexión Oracle: {ex.Message}");
+                ProcesarTransicionCircuitBreaker(transition, origen);
+                return null;
+            }
+        }
+
+        private bool EjecutarPruebaHalfOpen(string origen)
+        {
+            EscribirLog($"🧪 [CircuitBreaker] {origen}: ejecutando prueba HALF-OPEN (SELECT 1 FROM DUAL).");
+            try
+            {
+                using (var conexion = new OracleConnection(configuracion.ConnectionString))
+                {
+                    conexion.Open();
+                    using (var cmd = new OracleCommand("SELECT 1 FROM DUAL", conexion))
+                    {
+                        cmd.ExecuteScalar();
+                    }
+                }
+
+                var transition = _oracleCircuitBreaker.RegistrarConexionExitosa(DateTime.Now, esPruebaHalfOpen: true);
+                ProcesarTransicionCircuitBreaker(transition, origen);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                var transition = _oracleCircuitBreaker.RegistrarFalloConexion(DateTime.Now, esPruebaHalfOpen: true);
+                EscribirLog($"❌ [CircuitBreaker] {origen}: prueba HALF-OPEN fallida: {ex.Message}");
+                ProcesarTransicionCircuitBreaker(transition, origen);
+                return false;
+            }
+        }
+
+        private void ProcesarTransicionCircuitBreaker(OracleCircuitTransition transition, string origen)
+        {
+            if (transition == null) return;
+
+            if (transition.DebeAlertarCaido)
+                IntentarEnviarAlertaCaidaCircuitBreaker(transition.FallosConsecutivos, origen);
+
+            if (transition.DebeAlertarRecuperado)
+                EnviarMailCircuitBreaker(esRecuperacion: true, transition.FallosConsecutivos);
+        }
+
+        private void IntentarEnviarAlertaCaidaCircuitBreaker(int fallosConsecutivos, string origen)
+        {
+            if (_oracleCircuitBreaker == null) return;
+            if (!_oracleCircuitBreaker.IntentarMarcarAlertaCaidaEnviada()) return;
+
+            EscribirLog($"📣 [CircuitBreaker] Alerta de circuito OPEN habilitada para envío (origen={origen}, fallos={fallosConsecutivos}).");
+            EnviarMailCircuitBreaker(esRecuperacion: false, fallosConsecutivos: fallosConsecutivos);
+        }
+
+        private void EnviarMailCircuitBreaker(bool esRecuperacion, int fallosConsecutivos)
+        {
+            try
+            {
+                var cb = configuracion.CircuitBreakerAlerta ?? new CircuitBreakerAlertaConfig();
+                var destinatarios = cb.Destinatarios;
+                if (destinatarios == null || destinatarios.Count == 0)
+                {
+                    EscribirLog("⚠️ [CircuitBreaker] CircuitBreakerAlerta.Destinatarios está vacío. Mail omitido.");
+                    return;
+                }
+
+                DateTime ahora = DateTime.Now;
+                string empresa = configuracion.Empresa ?? "";
+                string fecha = ahora.ToString("dd/MM/yyyy HH:mm");
+                string timestamp = ahora.ToString("dd/MM/yyyy HH:mm:ss");
+                string fallos = fallosConsecutivos.ToString();
+
+                string asuntoTemplate = esRecuperacion ? cb.AsuntoRecuperado : cb.AsuntoCaido;
+                string cuerpoTemplate = esRecuperacion ? cb.CuerpoRecuperado : cb.CuerpoCaido;
+
+                string asunto = (asuntoTemplate ?? "")
+                    .Replace("{Empresa}", empresa)
+                    .Replace("{Fecha}", fecha)
+                    .Replace("{Timestamp}", timestamp)
+                    .Replace("{FallosConsecutivos}", fallos);
+
+                string cuerpo = (cuerpoTemplate ?? "")
+                    .Replace("{Empresa}", empresa)
+                    .Replace("{Fecha}", fecha)
+                    .Replace("{Timestamp}", timestamp)
+                    .Replace("{FallosConsecutivos}", fallos);
+
+                string claveSMTP = CryptoHelper.IsEncrypted(configuracion.ClaveSMTP)
+                    ? CryptoHelper.Decrypt(configuracion.ClaveSMTP)
+                    : configuracion.ClaveSMTP;
+
+                var destsUnicos = new HashSet<string>(
+                    destinatarios.Where(d => !string.IsNullOrWhiteSpace(d)).Select(d => d.Trim()),
+                    StringComparer.OrdinalIgnoreCase);
+
+                using (var cliente = new SmtpClient(configuracion.ServidorSMTP, configuracion.PuertoSMTP))
+                {
+                    cliente.Credentials = new NetworkCredential(configuracion.UsuarioSMTP, claveSMTP);
+                    cliente.EnableSsl = true;
+
+                    using (var mensaje = new MailMessage())
+                    {
+                        mensaje.From = new MailAddress(configuracion.Remitente);
+                        mensaje.Subject = asunto;
+                        mensaje.Body = cuerpo;
+                        mensaje.IsBodyHtml = false;
+                        foreach (var dest in destsUnicos)
+                            mensaje.To.Add(dest);
+                        if (mensaje.To.Count == 0)
+                        {
+                            EscribirLog("⚠️ [CircuitBreaker] Sin destinatarios válidos. Mail omitido.");
+                            return;
+                        }
+                        cliente.Send(mensaje);
+                    }
+                }
+
+                EscribirLog($"📧 [CircuitBreaker] Mail de {(esRecuperacion ? "recuperación" : "caída")} enviado a {string.Join(", ", destsUnicos)}");
+            }
+            catch (Exception ex)
+            {
+                EscribirLog($"❌ [CircuitBreaker] Error enviando mail: {ex.Message}");
+            }
+        }
+
         private void GuardarExcel(DataTable tabla, string ruta, string hoja)
         {
             using (var wb = new XLWorkbook())
@@ -1826,15 +2001,8 @@ namespace ServicioOracleReportes
                 var agregados = new List<string>();
                 var eliminados = new List<string>();
 
-                // Agregar atributos faltantes
-                foreach (var prop in defaults.Properties())
-                {
-                    if (!actual.ContainsKey(prop.Name))
-                    {
-                        actual[prop.Name] = prop.Value;
-                        agregados.Add(prop.Name);
-                    }
-                }
+                // Agregar atributos faltantes (incluye objetos anidados)
+                AgregarPropiedadesFaltantesRecursivo(actual, defaults, agregados, prefijo: "");
 
                 // Eliminar claves obsoletas
                 foreach (var clave in _clavesObsoletas)
@@ -1860,6 +2028,28 @@ namespace ServicioOracleReportes
             catch (Exception ex)
             {
                 EscribirLog("⚠️ Error en migración de Config.json: " + ex.Message);
+            }
+        }
+
+        private void AgregarPropiedadesFaltantesRecursivo(JObject actual, JObject defaults, List<string> agregados, string prefijo)
+        {
+            foreach (var prop in defaults.Properties())
+            {
+                string ruta = string.IsNullOrWhiteSpace(prefijo) ? prop.Name : $"{prefijo}.{prop.Name}";
+                JToken existente;
+                bool existe = actual.TryGetValue(prop.Name, out existente);
+
+                if (!existe || existente == null || existente.Type == JTokenType.Null)
+                {
+                    actual[prop.Name] = prop.Value.DeepClone();
+                    agregados.Add(ruta);
+                    continue;
+                }
+
+                if (prop.Value is JObject defObj && existente is JObject actObj)
+                {
+                    AgregarPropiedadesFaltantesRecursivo(actObj, defObj, agregados, ruta);
+                }
             }
         }
 
@@ -1907,6 +2097,9 @@ namespace ServicioOracleReportes
                 lock (lockObj)
                 {
                     configuracion = nueva;
+                    _oracleCircuitBreaker?.ActualizarPolitica(
+                        configuracion.CircuitBreakerUmbral,
+                        configuracion.CircuitBreakerTimeoutMinutos);
                 }
                 EscribirLog("🔄 Config.json recargado en caliente.");
             }

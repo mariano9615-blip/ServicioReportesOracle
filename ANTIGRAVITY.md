@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.0.5)
+## 🚀 Resumen del Proyecto (v7.0.6)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.0.5
+**Versión Actual**: v7.0.6
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -57,6 +57,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 | `ids_history.json` | IDs vistos por SOAP (compatibilidad legacy con `EjecutarComparacionMlogis`). |
 | `status.json` | Estado de errores/resueltos del flujo legacy `ComparacionMlogisOracle`. |
 | `ws_estado.json` | Estado del health check del WebService SOAP (último estado, timestamps, flag de alerta enviada). |
+| `oracle_circuit_state.json` | Estado persistido del Circuit Breaker Oracle (`closed/open/half_open`, fallos, timestamp de apertura, flag de alerta). |
 | `Log_<DiaSemana>.txt` | Logs de ejecución del servicio (rotación semanal). |
 
 > **Migración automática**: al iniciar, el servicio mueve los 5 archivos operativos de la raíz a `Logs\` si existen allí (instalaciones existentes).
@@ -178,6 +179,25 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - `AsuntoRecuperado` / `CuerpoRecuperado`: plantillas para mail de recuperación. Agrega placeholder `{UltimaVezCaido}`.
 - **Editable desde la UI**: vista Configuración General → sección "Configuración de Alertas Health Check", con campo Destinatarios y tabs "Plantilla CAÍDO" / "Plantilla RECUPERADO".
 
+## ⚡ Circuit Breaker Oracle
+
+- **Trigger**: se evalúa antes de cualquier apertura de `OracleConnection` en el core (`EjecutarConsultasSegunFrecuencia()` y `CompararConOracle()`, incluyendo `EjecutarComparacionMlogis()`/consultas individuales al compartir conexión).
+- **Estados**:
+  - `closed`: ejecución normal de Oracle.
+  - `open`: se saltean corridas Oracle sin intentar conexión.
+  - `half_open`: se ejecuta una prueba `SELECT 1 FROM DUAL`.
+- **Umbral de apertura**: `CircuitBreakerUmbral` en `config.json` (default 3 fallos consecutivos de conexión).
+- **Timeout**: `CircuitBreakerTimeoutMinutos` en `config.json` (default 15). Al cumplirse, pasa a `half_open`.
+- **Prueba HALF-OPEN**:
+  - Si falla: vuelve a `open` y reinicia `timestamp_apertura`.
+  - Si funciona: vuelve a `closed`, resetea `fallos_consecutivos` y envía mail de recuperación.
+- **Persistencia**: `Logs\oracle_circuit_state.json` con campos `estado`, `fallos_consecutivos`, `timestamp_apertura`, `alerta_enviada`.
+- **Alertas SMTP** (`config.json` → `CircuitBreakerAlerta`):
+  - `Destinatarios`, `AsuntoCaido`, `CuerpoCaido`, `AsuntoRecuperado`, `CuerpoRecuperado`.
+  - Placeholders soportados: `{Empresa}`, `{Fecha}`, `{Timestamp}`, `{FallosConsecutivos}`.
+  - **Anti-spam**: en `open` se envía una sola alerta de caída por ciclo; no se reenvía mientras `alerta_enviada=true`.
+- **Logging**: todas las transiciones/eventos del breaker se registran con prefijo `[CircuitBreaker]` en `Log_<DiaSemana>.txt`.
+
 ## 🗂️ Rotación de mlogis_historial.json
 
 - Al escribir `mlogis_historial.json` después de cada corrida, se aplica rotación diaria:
@@ -298,5 +318,5 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.0.5 — Fix puntual Dashboard: WebService se mantiene no clickeable y Estado del Servicio recupera hover completo + cursor Hand + navegación a ServiceControlView.
+Versión actual: v7.0.6 — Circuit Breaker Oracle persistido con estados `closed/open/half_open`, umbral+timeout configurables, prueba `SELECT 1 FROM DUAL` en HALF-OPEN y alertas SMTP de caída/recuperación.
 

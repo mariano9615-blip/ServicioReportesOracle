@@ -3,6 +3,25 @@ using System.Collections.Generic;
 
 namespace ServicioOracleReportes
 {
+    public class CircuitBreakerAlertaConfig
+    {
+        public List<string> Destinatarios { get; set; } = new List<string>();
+        public string AsuntoCaido { get; set; } = "⚠️ [{Empresa}] Oracle no disponible — {Fecha}";
+        public string CuerpoCaido { get; set; } =
+            "El Circuit Breaker de Oracle se abrió por fallos consecutivos de conexión.\n\n" +
+            "Empresa: {Empresa}\n" +
+            "Detectado: {Timestamp}\n" +
+            "Fallos consecutivos: {FallosConsecutivos}\n\n" +
+            "Las corridas que requieren Oracle se omitirán hasta que se recupere la conexión.";
+        public string AsuntoRecuperado { get; set; } = "✅ [{Empresa}] Oracle recuperado — {Fecha}";
+        public string CuerpoRecuperado { get; set; } =
+            "La conexión Oracle se recuperó y el Circuit Breaker volvió a CLOSED.\n\n" +
+            "Empresa: {Empresa}\n" +
+            "Recuperado: {Timestamp}\n" +
+            "Fallos consecutivos previos: {FallosConsecutivos}\n\n" +
+            "Las corridas Oracle se reanudan normalmente.";
+    }
+
     public class HealthCheckSoapConfig
     {
         public List<string> Destinatarios { get; set; } = new List<string> { "mdemichelis@bit.com.ar" };
@@ -45,5 +64,10 @@ namespace ServicioOracleReportes
 
         // Health Check del WebService SOAP
         public HealthCheckSoapConfig HealthCheckSoap { get; set; } = new HealthCheckSoapConfig();
+
+        // Circuit Breaker Oracle
+        public int CircuitBreakerUmbral { get; set; } = 3;
+        public int CircuitBreakerTimeoutMinutos { get; set; } = 15;
+        public CircuitBreakerAlertaConfig CircuitBreakerAlerta { get; set; } = new CircuitBreakerAlertaConfig();
     }
 }
