@@ -967,14 +967,7 @@ namespace ServicioOracleReportes
             try
             {
                 // Cargar historial de deduplicación (array acumulativo diario)
-                JArray dedupArray;
-                try
-                {
-                    dedupArray = File.Exists(dedupPath)
-                        ? JArray.Parse(File.ReadAllText(dedupPath)) as JArray ?? new JArray()
-                        : new JArray();
-                }
-                catch { dedupArray = new JArray(); }
+                JArray dedupArray = LeerDedupCompatible(dedupPath);
 
                 // Construir set de claves ya enviadas HOY: "id|tipo_caso"
                 var dedupHoy = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1079,14 +1072,7 @@ namespace ServicioOracleReportes
                 try
                 {
                     // Re-leer del disco para no sobrepisar entradas escritas por otra corrida paralela
-                    JArray arrayActual;
-                    try
-                    {
-                        arrayActual = File.Exists(dedupPath)
-                            ? JArray.Parse(File.ReadAllText(dedupPath)) as JArray ?? new JArray()
-                            : new JArray();
-                    }
-                    catch { arrayActual = new JArray(); }
+                    JArray arrayActual = LeerDedupCompatible(dedupPath);
 
                     // Purgar entradas de días anteriores (mantener solo las de hoy)
                     var arrayPurgado = new JArray();
@@ -1120,6 +1106,49 @@ namespace ServicioOracleReportes
             {
                 EscribirLog("❌ Error en EnviarAlertaOracleConsolidada: " + ex.Message);
             }
+        }
+
+        // Lee alertas_oracle_enviadas.json soportando el formato viejo {"alertas":[...]} y el nuevo array plano.
+        // Si encuentra el formato viejo, migra los campos: ultima_vez_alertado → timestamp, campo → tipo_caso.
+        private JArray LeerDedupCompatible(string path)
+        {
+            if (!File.Exists(path)) return new JArray();
+            string content;
+            try { content = File.ReadAllText(path); } catch { return new JArray(); }
+            if (string.IsNullOrWhiteSpace(content)) return new JArray();
+
+            // Formato nuevo: array plano
+            try
+            {
+                var arr = JArray.Parse(content);
+                if (arr != null) return arr;
+            }
+            catch { }
+
+            // Formato viejo: {"alertas": [...]}
+            try
+            {
+                var obj = JObject.Parse(content);
+                var viejas = obj["alertas"] as JArray;
+                if (viejas == null) return new JArray();
+                var migrado = new JArray();
+                foreach (var v in viejas)
+                {
+                    string ts  = v["ultima_vez_alertado"]?.ToString() ?? DateTime.Today.ToString("o");
+                    string campo = v["campo"]?.ToString() ?? "";
+                    // "nrocomprobante" corresponde a Caso A; cualquier otro campo también default A
+                    string tipoCaso = "A";
+                    migrado.Add(new JObject
+                    {
+                        ["id"]             = v["id"]?.ToString() ?? "",
+                        ["tipo_caso"]      = tipoCaso,
+                        ["timestamp"]      = ts,
+                        ["nrocomprobante"] = ""
+                    });
+                }
+                return migrado;
+            }
+            catch { return new JArray(); }
         }
 
         private class AlertaOracleItem

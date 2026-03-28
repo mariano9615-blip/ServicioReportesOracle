@@ -99,6 +99,32 @@ namespace ServicioReportesOracle.UI.ViewModels
                     JArray arr = null;
                     try { arr = JArray.Parse(json); } catch { /* formato inválido */ }
 
+                    // Fallback: formato viejo {"alertas": [{id, campo, ultima_vez_alertado}]}
+                    if (arr == null)
+                    {
+                        try
+                        {
+                            var obj = JObject.Parse(json);
+                            var viejas = obj["alertas"] as JArray;
+                            if (viejas != null)
+                            {
+                                arr = new JArray();
+                                foreach (var v in viejas)
+                                {
+                                    string ts = v["ultima_vez_alertado"]?.ToString();
+                                    arr.Add(new JObject
+                                    {
+                                        ["id"]             = v["id"]?.ToString() ?? "-",
+                                        ["tipo_caso"]      = "A",
+                                        ["timestamp"]      = ts ?? DateTime.Today.ToString("o"),
+                                        ["nrocomprobante"] = ""
+                                    });
+                                }
+                            }
+                        }
+                        catch { /* absorber */ }
+                    }
+
                     if (arr != null)
                     {
                         foreach (var token in arr)
