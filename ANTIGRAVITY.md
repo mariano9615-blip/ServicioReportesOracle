@@ -224,6 +224,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - NUNCA modificar propiedades bindeadas a la UI desde threads secundarios — siempre usar Application.Current.Dispatcher.InvokeAsync()
 - NUNCA usar binding Mode=TwoWay sobre propiedades de solo lectura en modelos — usar Mode=OneWay explícito en DataTemplates
 - NUNCA escribir en los archivos operativos de Logs\ desde la UI — esos archivos son exclusivos del servicio core (excepción: alertas_leidas.json y ui_settings.json que son de la UI)
+- NUNCA añadir `OnPropertyChanged` suelto en el await posterior a `Task.Run()` si el setter de la propiedad ya lo hace — genera un segundo notify desfasado que puede leer estado intermedio (race condition)
 
 ## 📎 Snippets de Referencia
 SNIPPET 1 — FileSystemWatcher con debounce 2s y Dispatcher:
@@ -291,4 +292,4 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.0 — DashboardView agregado como pantalla principal por defecto al iniciar la UI.
+Versión actual: v7.0.1 — Fix race condition HasAlertas en AlertasViewModel.
