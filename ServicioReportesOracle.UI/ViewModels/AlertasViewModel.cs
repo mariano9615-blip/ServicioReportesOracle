@@ -16,6 +16,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 {
     public class AlertasViewModel : INotifyPropertyChanged, IDisposable
     {
+        private readonly string _logsDir;
         private readonly string _alertasEnviadasPath;
         private readonly string _alertasLeidasPath;
         private FileSystemWatcher _watcher;
@@ -27,7 +28,24 @@ namespace ServicioReportesOracle.UI.ViewModels
         public ObservableCollection<AlertaItem> Alertas { get; } = new ObservableCollection<AlertaItem>();
 
         private bool _hasAlertas;
-        public bool HasAlertas { get => _hasAlertas; set { _hasAlertas = value; OnPropertyChanged(); } }
+        public bool HasAlertas
+        {
+            get => _hasAlertas;
+            set
+            {
+                if (_hasAlertas == value) return;
+
+                var dispatcher = Application.Current?.Dispatcher;
+                if (dispatcher != null && !dispatcher.CheckAccess())
+                {
+                    dispatcher.InvokeAsync(() => HasAlertas = value);
+                    return;
+                }
+
+                _hasAlertas = value;
+                OnPropertyChanged();
+            }
+        }
 
         public ICommand RefreshCommand { get; }
         public ICommand MarkAsReadCommand { get; }
@@ -35,11 +53,11 @@ namespace ServicioReportesOracle.UI.ViewModels
         public AlertasViewModel()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            string logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs"));
-            string uiSettingsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle"));
+            _logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs"));
 
-            _alertasEnviadasPath = Path.Combine(logsDir, "alertas_oracle_enviadas.json");
-            _alertasLeidasPath = Path.Combine(uiSettingsDir, "alertas_leidas.json");
+            // Misma resolución base que DashboardViewModel: todo desde Logs del core.
+            _alertasEnviadasPath = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
+            _alertasLeidasPath = Path.Combine(_logsDir, "alertas_leidas.json");
 
             RefreshCommand = new RelayCommand(_ => _ = CargarAsync());
             MarkAsReadCommand = new RelayCommand(alertaObj => MarkAsRead(alertaObj as AlertaItem));
@@ -57,10 +75,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             try
             {
                 await Task.Run(() => CargarAlertas());
-                Application.Current?.Dispatcher.InvokeAsync(() =>
-                {
-                    OnPropertyChanged(nameof(HasAlertas));
-                });
+                Application.Current?.Dispatcher.InvokeAsync(() => OnPropertyChanged(nameof(HasAlertas)));
             }
             catch { /* absorber */ }
             finally
@@ -222,8 +237,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             _watcher = null;
             _debounceTimer = null;
 
-            string logsDir = Path.GetDirectoryName(_alertasEnviadasPath);
-            if (string.IsNullOrEmpty(logsDir) || !Directory.Exists(logsDir)) return;
+            if (string.IsNullOrEmpty(_logsDir) || !Directory.Exists(_logsDir)) return;
 
             _debounceTimer = new Timer(_ =>
             {
@@ -231,7 +245,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                 Application.Current?.Dispatcher.BeginInvoke(new Action(() => _ = CargarAsync()));
             }, null, Timeout.Infinite, Timeout.Infinite);
 
-            _watcher = new FileSystemWatcher(logsDir)
+            _watcher = new FileSystemWatcher(_logsDir)
             {
                 Filter = "alertas_oracle_enviadas.json",
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
