@@ -53,58 +53,168 @@
                     Background="{StaticResource SurfaceBrush}"
                     CornerRadius="8"
                     Padding="16"
+                    MinHeight="190"
                     Margin="0,0,8,0">
-                <StackPanel>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
                     <TextBlock Text="IDs procesados por corrida (últimas 20)"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
                                Margin="0,0,0,10"/>
 
-                    <Canvas Width="200" Height="60"
-                            Background="{StaticResource SurfaceContainerHighBrush}">
-                        <Line X1="0" Y1="59" X2="200" Y2="59"
-                              Stroke="{StaticResource OutlineBrush}"
-                              StrokeThickness="1"/>
-                        <Polyline Points="{Binding IdsSparklinePoints}"
-                                  Stroke="{StaticResource PrimaryBrush}"
-                                  StrokeThickness="2"/>
-                    </Canvas>
+                    <Grid Grid.Row="1"
+                          VerticalAlignment="Stretch"
+                          MinHeight="80">
+                        <Viewbox Stretch="Fill" StretchDirection="Both">
+                            <Canvas Width="320" Height="80"
+                                    Background="{StaticResource SurfaceContainerHighBrush}">
+                                <Canvas.Style>
+                                    <Style TargetType="Canvas">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TieneDatosCore}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Canvas.Style>
+                                <Line X1="0" Y1="79" X2="320" Y2="79"
+                                      Stroke="{StaticResource OutlineBrush}"
+                                      StrokeThickness="1"/>
+                                <Polygon Points="{Binding IdsSparklineFillPoints}"
+                                         Fill="{StaticResource PrimaryBrush}"
+                                         Opacity="0.15"/>
+                                <Polyline Points="{Binding IdsSparklinePoints}"
+                                          Stroke="{StaticResource PrimaryBrush}"
+                                          StrokeThickness="2"/>
+                            </Canvas>
+                        </Viewbox>
+
+                        <TextBlock Text="Sin datos aun"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource OnSurfaceBrush}"
+                                   Opacity="0.4">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding TieneDatosCore}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
 
                     <TextBlock Text="{Binding IdsSparklineLabel}"
+                               Grid.Row="2"
                                FontSize="12"
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
-                               Margin="0,8,0,0"/>
-                </StackPanel>
+                               Margin="0,8,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding TieneDatosCore}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </Border>
 
             <Border Grid.Column="1"
                     Background="{StaticResource SurfaceBrush}"
                     CornerRadius="8"
                     Padding="16"
+                    MinHeight="190"
                     Margin="8,0,0,0">
-                <StackPanel>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
                     <TextBlock Text="Duración por corrida en segundos (últimas 20)"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
                                Margin="0,0,0,10"/>
 
-                    <Canvas Width="200" Height="60"
-                            Background="{StaticResource SurfaceContainerHighBrush}">
-                        <Line X1="0" Y1="59" X2="200" Y2="59"
-                              Stroke="{StaticResource OutlineBrush}"
-                              StrokeThickness="1"/>
-                        <Polyline Points="{Binding DuracionSparklinePoints}"
-                                  Stroke="{StaticResource WarningBrush}"
-                                  StrokeThickness="2"/>
-                    </Canvas>
+                    <Grid Grid.Row="1"
+                          VerticalAlignment="Stretch"
+                          MinHeight="80">
+                        <Viewbox Stretch="Fill" StretchDirection="Both">
+                            <Canvas Width="320" Height="80"
+                                    Background="{StaticResource SurfaceContainerHighBrush}">
+                                <Canvas.Style>
+                                    <Style TargetType="Canvas">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TieneDatosUI}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Canvas.Style>
+                                <Line X1="0" Y1="79" X2="320" Y2="79"
+                                      Stroke="{StaticResource OutlineBrush}"
+                                      StrokeThickness="1"/>
+                                <Polygon Points="{Binding DuracionSparklineFillPoints}"
+                                         Fill="{StaticResource WarningBrush}"
+                                         Opacity="0.15"/>
+                                <Polyline Points="{Binding DuracionSparklinePoints}"
+                                          Stroke="{StaticResource WarningBrush}"
+                                          StrokeThickness="2"/>
+                            </Canvas>
+                        </Viewbox>
+
+                        <TextBlock Text="Sin datos aun"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource OnSurfaceBrush}"
+                                   Opacity="0.4">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding TieneDatosUI}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
 
                     <TextBlock Text="{Binding DuracionSparklineLabel}"
+                               Grid.Row="2"
                                FontSize="12"
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
-                               Margin="0,8,0,0"/>
-                </StackPanel>
+                               Margin="0,8,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding TieneDatosUI}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </Border>
         </Grid>
 
@@ -145,7 +255,7 @@
                     <TextBlock Text="{Binding AlertasHoy}"
                                FontSize="36"
                                FontWeight="Bold"
-                               Foreground="{StaticResource OnSurfaceBrush}"
+                               Foreground="{Binding ColorAlertas}"
                                Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
@@ -155,53 +265,84 @@
                 Background="{StaticResource SurfaceBrush}"
                 CornerRadius="8"
                 Padding="16">
-            <StackPanel>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <TextBlock Text="Distribución FULL vs DELTA (hoy)"
                            FontSize="14"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource OnSurfaceVariantBrush}"
                            Margin="0,0,0,10"/>
 
-                <Canvas Width="260"
-                        Height="24"
-                        Background="{StaticResource SurfaceContainerHighBrush}">
-                    <Border Width="{Binding FullBarWidth}"
-                            Height="24"
-                            Background="{StaticResource PrimaryBrush}"
-                            Canvas.Left="0"
-                            Canvas.Top="0"/>
-                    <Border Width="{Binding DeltaBarWidth}"
-                            Height="24"
-                            Background="{StaticResource WarningBrush}"
-                            Canvas.Left="{Binding FullBarWidth}"
-                            Canvas.Top="0"/>
-                </Canvas>
+                <Grid Grid.Row="1" Margin="0,0,0,6" Width="260">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="FULL"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource OnSurfaceBrush}"
+                               HorizontalAlignment="Left"/>
+                    <TextBlock Grid.Column="1"
+                               Text="DELTA"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource OnSurfaceBrush}"
+                               HorizontalAlignment="Right"/>
+                </Grid>
 
-                <Grid Margin="0,10,0,0">
+                <Border Grid.Row="2"
+                        Height="12"
+                        Width="260"
+                        CornerRadius="6"
+                        Background="{StaticResource SurfaceContainerHighBrush}">
+                    <Canvas Width="260"
+                            Height="12"
+                            HorizontalAlignment="Stretch"
+                            ClipToBounds="True">
+                        <Border Width="{Binding FullBarWidth}"
+                                Height="12"
+                                Background="{StaticResource PrimaryBrush}"
+                                Canvas.Left="0"
+                                Canvas.Top="0"/>
+                        <Border Width="{Binding DeltaBarWidth}"
+                                Height="12"
+                                Background="{StaticResource WarningBrush}"
+                                Canvas.Left="{Binding FullBarWidth}"
+                                Canvas.Top="0"/>
+                    </Canvas>
+                </Border>
+
+                <Grid Grid.Row="3" Margin="0,6,0,0" Width="260">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
-                               Text="{Binding FullHoy, StringFormat='FULL: {0}'}"
-                               Foreground="{StaticResource OnSurfaceBrush}"/>
+                               Foreground="{StaticResource OnSurfaceVariantBrush}">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} corridas - {1}%">
+                                <Binding Path="FullHoy"/>
+                                <Binding Path="FullPorcentaje"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
                     <TextBlock Grid.Column="1"
-                               Text="{Binding DeltaHoy, StringFormat='DELTA: {0}'}"
-                               Foreground="{StaticResource OnSurfaceBrush}"/>
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"
+                               HorizontalAlignment="Right">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} corridas - {1}%">
+                                <Binding Path="DeltaHoy"/>
+                                <Binding Path="DeltaPorcentaje"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
                 </Grid>
-                <Grid Margin="0,4,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="1*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding FullPorcentaje, StringFormat='FULL: {0}%'}"
-                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
-                    <TextBlock Grid.Column="1"
-                               Text="{Binding DeltaPorcentaje, StringFormat='DELTA: {0}%'}"
-                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
-                </Grid>
-            </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

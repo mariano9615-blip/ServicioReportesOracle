@@ -29,7 +29,9 @@ namespace ServicioReportesOracle.UI.ViewModels
         private bool _disposed;
 
         private PointCollection _idsSparklinePoints = new PointCollection();
+        private PointCollection _idsSparklineFillPoints = new PointCollection();
         private PointCollection _duracionSparklinePoints = new PointCollection();
+        private PointCollection _duracionSparklineFillPoints = new PointCollection();
         private string _corridasHoyVsAyer = "0 hoy / 0 ayer";
         private int _alertasHoy;
         private int _fullHoy;
@@ -40,6 +42,8 @@ namespace ServicioReportesOracle.UI.ViewModels
         private double _deltaBarWidth;
         private string _idsSparklineLabel = "Sin datos";
         private string _duracionSparklineLabel = "Sin datos";
+        private bool _tieneDatosCore;
+        private bool _tieneDatosUI;
 
         public ICommand RefreshCommand { get; }
 
@@ -55,6 +59,18 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _duracionSparklinePoints = value; OnPropertyChanged(); }
         }
 
+        public PointCollection IdsSparklineFillPoints
+        {
+            get => _idsSparklineFillPoints;
+            set { _idsSparklineFillPoints = value; OnPropertyChanged(); }
+        }
+
+        public PointCollection DuracionSparklineFillPoints
+        {
+            get => _duracionSparklineFillPoints;
+            set { _duracionSparklineFillPoints = value; OnPropertyChanged(); }
+        }
+
         public string CorridasHoyVsAyer
         {
             get => _corridasHoyVsAyer;
@@ -64,8 +80,17 @@ namespace ServicioReportesOracle.UI.ViewModels
         public int AlertasHoy
         {
             get => _alertasHoy;
-            set { _alertasHoy = value; OnPropertyChanged(); }
+            set
+            {
+                _alertasHoy = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ColorAlertas));
+            }
         }
+
+        public Brush ColorAlertas => AlertasHoy == 0
+            ? ResolveBrush("SuccessBrush", "OnSurfaceBrush")
+            : ResolveBrush("WarningBrush", "OnSurfaceBrush");
 
         public int FullHoy
         {
@@ -115,6 +140,18 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _duracionSparklineLabel = value; OnPropertyChanged(); }
         }
 
+        public bool TieneDatosCore
+        {
+            get => _tieneDatosCore;
+            set { _tieneDatosCore = value; OnPropertyChanged(); }
+        }
+
+        public bool TieneDatosUI
+        {
+            get => _tieneDatosUI;
+            set { _tieneDatosUI = value; OnPropertyChanged(); }
+        }
+
         public MetricasViewModel()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
@@ -156,8 +193,15 @@ namespace ServicioReportesOracle.UI.ViewModels
 
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
-                    IdsSparklinePoints = BuildSparklinePoints(idsSerie, 200, 60);
-                    DuracionSparklinePoints = BuildSparklinePoints(duracionSerie, 200, 60);
+                    var idsPoints = BuildSparklinePoints(idsSerie, 320, 80);
+                    var duracionPoints = BuildSparklinePoints(duracionSerie, 320, 80);
+
+                    IdsSparklinePoints = idsPoints;
+                    DuracionSparklinePoints = duracionPoints;
+                    IdsSparklineFillPoints = BuildSparklineFill(idsPoints, 79);
+                    DuracionSparklineFillPoints = BuildSparklineFill(duracionPoints, 79);
+                    TieneDatosCore = idsPoints.Count > 1;
+                    TieneDatosUI = duracionPoints.Count > 1;
                     CorridasHoyVsAyer = $"{totalHoy} hoy / {totalAyer} ayer";
                     FullHoy = fullHoy;
                     DeltaHoy = deltaHoy;
@@ -267,6 +311,30 @@ namespace ServicioReportesOracle.UI.ViewModels
             }
 
             return pts;
+        }
+
+        private static PointCollection BuildSparklineFill(PointCollection linePoints, double bottomY)
+        {
+            var fill = new PointCollection();
+            if (linePoints == null || linePoints.Count < 2) return fill;
+
+            var first = linePoints[0];
+            var last = linePoints[linePoints.Count - 1];
+            fill.Add(new Point(first.X, bottomY));
+            foreach (var point in linePoints)
+                fill.Add(point);
+            fill.Add(new Point(last.X, bottomY));
+            return fill;
+        }
+
+        private static Brush ResolveBrush(string primaryKey, string fallbackKey)
+        {
+            var app = Application.Current;
+            if (app == null) return Brushes.White;
+
+            return app.TryFindResource(primaryKey) as Brush
+                   ?? app.TryFindResource(fallbackKey) as Brush
+                   ?? Brushes.White;
         }
 
         private void ConfigurarWatcher()

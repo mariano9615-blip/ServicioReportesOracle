@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.0.8)
+## 🚀 Resumen del Proyecto (v7.0.9)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.0.8
+**Versión Actual**: v7.0.9
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -37,6 +37,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - Gráficos sin dependencias externas (WPF puro): sparklines sobre `Canvas + Polyline` para `IDs procesados por corrida` y `duración por corrida`.
   - KPIs: `corridas hoy vs ayer`, `alertas enviadas hoy`, y barra de distribución `FULL vs DELTA` de hoy.
   - `MetricasViewModel` usa `FileSystemWatcher` con debounce 2s (`mlogis_historial*.json` + `alertas_oracle_enviadas.json`) y refresco en Dispatcher.
+  - **Polish visual (v7.0.9)**: sparklines con área rellena (`Polygon` + `Opacity 0.15`), canvas ampliado (80px), estado vacío `"Sin datos aun"` cuando no hay serie suficiente, ocultación de labels `Min/Max` sin datos, color semántico en `AlertasHoy` (`SuccessBrush` cuando es 0, `WarningBrush` cuando es >0) y layout alineado de distribución `FULL/DELTA` con barra tipo pill.
 
 ### 3. 🧪 TestSoap (Console)
 - Herramienta rápida para debuggear la conectividad con el WS de Mlogis sin levantar todo el servicio.
@@ -338,5 +339,5 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.0.8 — Nueva `MetricasView` en UI con sparklines (WPF puro), KPIs de corridas/alertas y distribución FULL vs DELTA, integrada al sidebar.
+Versión actual: v7.0.9 — Polish visual de `MetricasView`: sparklines más legibles con fill y estados vacíos, color semántico para alertas de hoy y redistribución FULL/DELTA alineada con barra.
 
