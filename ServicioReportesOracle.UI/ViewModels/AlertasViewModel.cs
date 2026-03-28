@@ -44,8 +44,11 @@ namespace ServicioReportesOracle.UI.ViewModels
 
                 _hasAlertas = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(HasNoAlertas));
             }
         }
+
+        public bool HasNoAlertas => !_hasAlertas;
 
         public ICommand RefreshCommand { get; }
         public ICommand MarkAsReadCommand { get; }
@@ -75,7 +78,6 @@ namespace ServicioReportesOracle.UI.ViewModels
             try
             {
                 await Task.Run(() => CargarAlertas());
-                Application.Current?.Dispatcher.InvokeAsync(() => OnPropertyChanged(nameof(HasAlertas)));
             }
             catch { /* absorber */ }
             finally
@@ -94,21 +96,20 @@ namespace ServicioReportesOracle.UI.ViewModels
                 if (File.Exists(_alertasEnviadasPath))
                 {
                     string json = LeerArchivoSeguro(_alertasEnviadasPath);
-                    var obj = JObject.Parse(json);
-                    var arr = obj["alertas"] as JArray;
+                    JArray arr = null;
+                    try { arr = JArray.Parse(json); } catch { /* formato inválido */ }
 
                     if (arr != null)
                     {
                         foreach (var token in arr)
                         {
-                            string timestampStr = token["ultima_vez_alertado"]?.ToString();
+                            string timestampStr = token["timestamp"]?.ToString();
                             if (DateTime.TryParse(timestampStr, out var dt) && dt.Date == hoy)
                             {
                                 string id = token["id"]?.ToString() ?? "-";
-                                string campo = token["campo"]?.ToString();
-                                string tipoCaso = string.IsNullOrEmpty(campo) ? "B" : "A";
+                                string tipoCaso = token["tipo_caso"]?.ToString() ?? "B";
                                 string timestamp = dt.ToString("HH:mm");
-                                string nrocomprobante = token["valor_oracle"]?.ToString() ?? "";
+                                string nrocomprobante = token["nrocomprobante"]?.ToString() ?? "";
 
                                 var item = new AlertaItem
                                 {
@@ -177,12 +178,12 @@ namespace ServicioReportesOracle.UI.ViewModels
                 if (File.Exists(_alertasEnviadasPath))
                 {
                     string json = LeerArchivoSeguro(_alertasEnviadasPath);
-                    var envObj = JObject.Parse(json);
-                    var arr = envObj["alertas"] as JArray;
+                    JArray arr = null;
+                    try { arr = JArray.Parse(json); } catch { }
                     if (arr == null) arr = new JArray();
                     foreach (var token in arr)
                     {
-                        string timestampStr = token["ultima_vez_alertado"]?.ToString();
+                        string timestampStr = token["timestamp"]?.ToString();
                         if (DateTime.TryParse(timestampStr, out var dt) && dt.Date == DateTime.Today)
                         {
                             string id = token["id"]?.ToString() ?? "";
