@@ -141,7 +141,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - **Dedup**: clave = `id + tipo_caso + DateTime.Today`. Si ya existe una entrada con esa clave para hoy, la alerta no se reenvía.
   - **Acumulación**: al escribir, se re-lee el array del disco, se purgan entradas cuyo `timestamp.Date < DateTime.Today` (para no crecer indefinidamente) y se agregan las nuevas alertas de la corrida actual.
   - **Primera corrida del día**: la purga de entradas del día anterior ocurre automáticamente en la primera escritura del día.
-- **Nota**: el formato cambió en v6.9.1 de `{"alertas": [...]}` a un array plano `[...]` con campos `id`, `tipo_caso`, `timestamp`, `nrocomprobante`. Archivos con el formato anterior son descartados y regenerados automáticamente.
+- **Nota**: el formato cambió en v6.9.1 de `{"alertas": [...]}` a un array plano `[...]` con campos `id`, `tipo_caso`, `timestamp`, `nrocomprobante`. Archivos con el formato anterior son migrados automáticamente por `LeerDedupCompatible()` (servicio) y por el fallback en `CargarAlertas()` (UI) — mapeo: `ultima_vez_alertado → timestamp`, `campo → tipo_caso` (default "A").
 
 ### consultas_soap.json
 - **Ubicación**: raíz del directorio de ejecución del servicio core.
@@ -292,4 +292,4 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.0.1 — Fix race condition HasAlertas en AlertasViewModel.
+Versión actual: v7.0.2 — Fix compatibilidad alertas_oracle_enviadas.json formato viejo (migración a array plano v6.9.1).
