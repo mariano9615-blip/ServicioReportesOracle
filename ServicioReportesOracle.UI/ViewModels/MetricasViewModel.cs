@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using ServicioOracleReportes;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -15,6 +16,19 @@ using System.Windows.Media;
 
 namespace ServicioReportesOracle.UI.ViewModels
 {
+    /// <summary>Dato de una barra individual en el gráfico de barras.</summary>
+    public class BarItem
+    {
+        /// <summary>Altura en píxeles (máximo = MaxBarHeightPx de BuildBarItems).</summary>
+        public double BarHeightPx { get; set; }
+
+        /// <summary>Valor real para el tooltip.</summary>
+        public string Tooltip { get; set; }
+
+        /// <summary>Color de la barra (heredado del gráfico).</summary>
+        public Brush Fill { get; set; }
+    }
+
     public class MetricasViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly string _logsDir;
@@ -28,10 +42,11 @@ namespace ServicioReportesOracle.UI.ViewModels
         private const int DebounceMs = 2000;
         private bool _disposed;
 
-        private PointCollection _idsSparklinePoints = new PointCollection();
-        private PointCollection _idsSparklineFillPoints = new PointCollection();
-        private PointCollection _duracionSparklinePoints = new PointCollection();
-        private PointCollection _duracionSparklineFillPoints = new PointCollection();
+        // ── Barras IDs ──────────────────────────────────────────────────────────
+        private ObservableCollection<BarItem> _idsBarItems = new ObservableCollection<BarItem>();
+        private ObservableCollection<BarItem> _duracionBarItems = new ObservableCollection<BarItem>();
+
+        // ── KPIs ────────────────────────────────────────────────────────────────
         private string _corridasHoyVsAyer = "0 hoy / 0 ayer";
         private int _alertasHoy;
         private int _fullHoy;
@@ -40,35 +55,24 @@ namespace ServicioReportesOracle.UI.ViewModels
         private double _deltaPorcentaje;
         private double _fullBarWidth;
         private double _deltaBarWidth;
-        private string _idsSparklineLabel = "Sin datos";
-        private string _duracionSparklineLabel = "Sin datos";
+        private string _idsBarLabel    = "Sin datos";
+        private string _duracionBarLabel = "Sin datos";
         private bool _tieneDatosCore;
         private bool _tieneDatosUI;
 
         public ICommand RefreshCommand { get; }
 
-        public PointCollection IdsSparklinePoints
+        // ── Propiedades bindables ────────────────────────────────────────────────
+        public ObservableCollection<BarItem> IdsBarItems
         {
-            get => _idsSparklinePoints;
-            set { _idsSparklinePoints = value; OnPropertyChanged(); }
+            get => _idsBarItems;
+            set { _idsBarItems = value; OnPropertyChanged(); }
         }
 
-        public PointCollection DuracionSparklinePoints
+        public ObservableCollection<BarItem> DuracionBarItems
         {
-            get => _duracionSparklinePoints;
-            set { _duracionSparklinePoints = value; OnPropertyChanged(); }
-        }
-
-        public PointCollection IdsSparklineFillPoints
-        {
-            get => _idsSparklineFillPoints;
-            set { _idsSparklineFillPoints = value; OnPropertyChanged(); }
-        }
-
-        public PointCollection DuracionSparklineFillPoints
-        {
-            get => _duracionSparklineFillPoints;
-            set { _duracionSparklineFillPoints = value; OnPropertyChanged(); }
+            get => _duracionBarItems;
+            set { _duracionBarItems = value; OnPropertyChanged(); }
         }
 
         public string CorridasHoyVsAyer
@@ -128,16 +132,16 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _deltaBarWidth = value; OnPropertyChanged(); }
         }
 
-        public string IdsSparklineLabel
+        public string IdsBarLabel
         {
-            get => _idsSparklineLabel;
-            set { _idsSparklineLabel = value; OnPropertyChanged(); }
+            get => _idsBarLabel;
+            set { _idsBarLabel = value; OnPropertyChanged(); }
         }
 
-        public string DuracionSparklineLabel
+        public string DuracionBarLabel
         {
-            get => _duracionSparklineLabel;
-            set { _duracionSparklineLabel = value; OnPropertyChanged(); }
+            get => _duracionBarLabel;
+            set { _duracionBarLabel = value; OnPropertyChanged(); }
         }
 
         public bool TieneDatosCore
@@ -156,9 +160,9 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
             _logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs"));
-            _historialPath = Path.Combine(_logsDir, "mlogis_historial.json");
+            _historialPath     = Path.Combine(_logsDir, "mlogis_historial.json");
             _historialAyerPath = Path.Combine(_logsDir, "mlogis_historial_ayer.json");
-            _alertasPath = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
+            _alertasPath       = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
 
             RefreshCommand = new RelayCommand(_ => _ = CargarAsync());
             ConfigurarWatcher();
@@ -170,53 +174,65 @@ namespace ServicioReportesOracle.UI.ViewModels
             if (!await _refreshLock.WaitAsync(0)) return;
             try
             {
-                var hoy = await LeerHistorialAsync(_historialPath);
+                var hoy  = await LeerHistorialAsync(_historialPath);
                 var ayer = await LeerHistorialAsync(_historialAyerPath);
                 var combinadas = hoy.Concat(ayer)
                                     .OrderBy(c => c.FechaEjecucion)
                                     .ToList();
 
-                int skip = Math.Max(0, combinadas.Count - 20);
+                int skip     = Math.Max(0, combinadas.Count - 20);
                 var ultimas20 = combinadas.Skip(skip).ToList();
-                var idsSerie = ultimas20.Select(c => (double)(c.Registros?.Count ?? 0)).ToList();
-                var duracionSerie = ultimas20.Select(CalcularDuracionSegundos).ToList();
 
-                int totalHoy = hoy.Count;
-                int totalAyer = ayer.Count;
-                int fullHoy = hoy.Count(c => (c.Tipo ?? "").IndexOf("FULL", StringComparison.OrdinalIgnoreCase) >= 0);
-                int deltaHoy = hoy.Count - fullHoy;
+                var idsSerie      = ultimas20.Select(c => (double)(c.Registros?.Count ?? 0)).ToList();
+                var duracionSerie = ultimas20.Select(c => c.DuracionSegundos).ToList();
+
+                int totalHoy    = hoy.Count;
+                int totalAyer   = ayer.Count;
+                int fullHoy     = hoy.Count(c => (c.Tipo ?? "").IndexOf("FULL", StringComparison.OrdinalIgnoreCase) >= 0);
+                int deltaHoy    = hoy.Count - fullHoy;
                 int totalTipoHoy = Math.Max(1, fullHoy + deltaHoy);
-                double fullPct = (fullHoy * 100.0) / totalTipoHoy;
+                double fullPct  = (fullHoy  * 100.0) / totalTipoHoy;
                 double deltaPct = 100.0 - fullPct;
 
                 int alertasHoy = await ContarAlertasHoyAsync();
 
+                // Resolver brushes (debe hacerse en UI thread)
+                Brush primaryBrush = null;
+                Brush warningBrush = null;
+
+                await Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    primaryBrush = ResolveBrush("PrimaryBrush", "OnSurfaceBrush");
+                    warningBrush = ResolveBrush("WarningBrush", "OnSurfaceBrush");
+                });
+
+                var idsBarItems      = BuildBarItems(idsSerie,      primaryBrush, v => $"{v:0} IDs");
+                var duracionBarItems = BuildBarItems(duracionSerie,  warningBrush, v => $"{v:0.0}s");
+
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
-                    var idsPoints = BuildSparklinePoints(idsSerie, 320, 80);
-                    var duracionPoints = BuildSparklinePoints(duracionSerie, 320, 80);
+                    IdsBarItems     = new ObservableCollection<BarItem>(idsBarItems);
+                    DuracionBarItems = new ObservableCollection<BarItem>(duracionBarItems);
 
-                    IdsSparklinePoints = idsPoints;
-                    DuracionSparklinePoints = duracionPoints;
-                    IdsSparklineFillPoints = BuildSparklineFill(idsPoints, 79);
-                    DuracionSparklineFillPoints = BuildSparklineFill(duracionPoints, 79);
-                    TieneDatosCore = idsPoints.Count > 1;
-                    TieneDatosUI = duracionPoints.Count > 1;
+                    TieneDatosCore = idsBarItems.Count > 0;
+                    TieneDatosUI   = duracionBarItems.Count > 0;
+
                     CorridasHoyVsAyer = $"{totalHoy} hoy / {totalAyer} ayer";
-                    FullHoy = fullHoy;
-                    DeltaHoy = deltaHoy;
-                    FullPorcentaje = Math.Round(fullPct, 1);
+                    FullHoy     = fullHoy;
+                    DeltaHoy    = deltaHoy;
+                    FullPorcentaje  = Math.Round(fullPct, 1);
                     DeltaPorcentaje = Math.Round(deltaPct, 1);
-                    FullBarWidth = Math.Round(260 * (fullPct / 100.0), 2);
-                    DeltaBarWidth = Math.Round(260 * (deltaPct / 100.0), 2);
+                    FullBarWidth    = Math.Round(260 * (fullPct  / 100.0), 2);
+                    DeltaBarWidth   = Math.Round(260 * (deltaPct / 100.0), 2);
                     AlertasHoy = alertasHoy;
 
-                    IdsSparklineLabel = idsSerie.Count == 0
+                    IdsBarLabel = idsSerie.Count == 0
                         ? "Sin corridas en la ventana"
-                        : $"Min {idsSerie.Min():0} / Max {idsSerie.Max():0}";
-                    DuracionSparklineLabel = duracionSerie.Count == 0
+                        : $"Min {idsSerie.Min():0} / Max {idsSerie.Max():0} IDs";
+
+                    DuracionBarLabel = duracionSerie.Count == 0
                         ? "Sin datos de duración"
-                        : $"Min {duracionSerie.Min():0.0}s / Max {duracionSerie.Max():0.0}s";
+                        : $"Min {duracionSerie.Min():0.1}s / Max {duracionSerie.Max():0.1}s";
                 });
             }
             catch
@@ -227,6 +243,35 @@ namespace ServicioReportesOracle.UI.ViewModels
             {
                 _refreshLock.Release();
             }
+        }
+
+        /// <summary>
+        /// Construye la colección de BarItem con alturas pre-calculadas en píxeles
+        /// (la barra del valor máximo siempre ocupa <paramref name="maxHeightPx"/> px).
+        /// </summary>
+        private static List<BarItem> BuildBarItems(
+            IReadOnlyList<double> valores,
+            Brush fill,
+            Func<double, string> tooltipFmt,
+            double maxHeightPx = 82)
+        {
+            var result = new List<BarItem>();
+            if (valores == null || valores.Count == 0) return result;
+
+            double max = valores.Max();
+
+            foreach (double v in valores)
+            {
+                double ratio = max > 0 ? v / max : 0;
+                result.Add(new BarItem
+                {
+                    BarHeightPx = Math.Max(2, ratio * maxHeightPx), // mínimo 2px para que sea visible
+                    Tooltip     = tooltipFmt(v),
+                    Fill        = fill
+                });
+            }
+
+            return result;
         }
 
         private async Task<List<MlogisCorrida>> LeerHistorialAsync(string path)
@@ -279,54 +324,6 @@ namespace ServicioReportesOracle.UI.ViewModels
             }
         }
 
-        private static double CalcularDuracionSegundos(MlogisCorrida corrida)
-        {
-            if (corrida?.Registros == null || corrida.Registros.Count == 0)
-                return 0;
-
-            // Estimación con timestamps de registros de la corrida (misma fuente de historial).
-            var minTs = corrida.Registros.Min(r => r.PrimeraVezVisto);
-            var maxTs = corrida.Registros.Max(r => r.UltimaVezVisto);
-            var segundos = (maxTs - minTs).TotalSeconds;
-            return segundos < 0 ? 0 : segundos;
-        }
-
-        private static PointCollection BuildSparklinePoints(IReadOnlyList<double> valores, double width, double height)
-        {
-            var pts = new PointCollection();
-            if (valores == null || valores.Count == 0) return pts;
-
-            double min = valores.Min();
-            double max = valores.Max();
-            double range = Math.Abs(max - min);
-            double xStep = valores.Count > 1 ? width / (valores.Count - 1.0) : 0;
-
-            for (int i = 0; i < valores.Count; i++)
-            {
-                double x = valores.Count == 1 ? width / 2.0 : i * xStep;
-                double y = range < 0.0001
-                    ? height / 2.0
-                    : height - ((valores[i] - min) / range) * height;
-                pts.Add(new Point(x, y));
-            }
-
-            return pts;
-        }
-
-        private static PointCollection BuildSparklineFill(PointCollection linePoints, double bottomY)
-        {
-            var fill = new PointCollection();
-            if (linePoints == null || linePoints.Count < 2) return fill;
-
-            var first = linePoints[0];
-            var last = linePoints[linePoints.Count - 1];
-            fill.Add(new Point(first.X, bottomY));
-            foreach (var point in linePoints)
-                fill.Add(point);
-            fill.Add(new Point(last.X, bottomY));
-            return fill;
-        }
-
         private static Brush ResolveBrush(string primaryKey, string fallbackKey)
         {
             var app = Application.Current;
@@ -343,8 +340,8 @@ namespace ServicioReportesOracle.UI.ViewModels
             try { _watcherAlertas?.Dispose(); } catch { }
             _debounceTimer?.Dispose();
             _watcherHistorial = null;
-            _watcherAlertas = null;
-            _debounceTimer = null;
+            _watcherAlertas   = null;
+            _debounceTimer    = null;
 
             if (string.IsNullOrWhiteSpace(_logsDir) || !Directory.Exists(_logsDir))
                 return;
@@ -357,7 +354,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
             _watcherHistorial = new FileSystemWatcher(_logsDir)
             {
-                Filter = "mlogis_historial*.json",
+                Filter       = "mlogis_historial*.json",
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
                 EnableRaisingEvents = true
             };
@@ -366,7 +363,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
             _watcherAlertas = new FileSystemWatcher(_logsDir)
             {
-                Filter = "alertas_oracle_enviadas.json",
+                Filter       = "alertas_oracle_enviadas.json",
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
                 EnableRaisingEvents = true
             };
@@ -382,8 +379,8 @@ namespace ServicioReportesOracle.UI.ViewModels
             try { _watcherAlertas?.Dispose(); } catch { }
             try { _debounceTimer?.Dispose(); } catch { }
             _watcherHistorial = null;
-            _watcherAlertas = null;
-            _debounceTimer = null;
+            _watcherAlertas   = null;
+            _debounceTimer    = null;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

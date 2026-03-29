@@ -8,6 +8,23 @@
              d:DesignWidth="900"
              Foreground="{StaticResource OnSurfaceBrush}">
 
+    <UserControl.Resources>
+        <!-- Estilo de cada barra vertical -->
+        <Style x:Key="BarItemStyle" TargetType="Border">
+            <Setter Property="Background"        Value="{Binding Fill}"/>
+            <Setter Property="CornerRadius"      Value="2,2,0,0"/>
+            <Setter Property="Margin"            Value="1.5,0"/>
+            <Setter Property="Height"            Value="{Binding BarHeightPx}"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="ToolTip"           Value="{Binding Tooltip}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.75"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,6 +33,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- ── Título + botón Actualizar ── -->
         <Grid Grid.Row="0" Margin="0,0,0,15">
             <TextBlock Text="Métricas (48 horas)"
                        FontSize="24"
@@ -43,12 +61,14 @@
             </Button>
         </Grid>
 
+        <!-- ── Fila 1: gráficos de barras ── -->
         <Grid Grid.Row="1" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
+            <!-- IDs procesados por corrida -->
             <Border Grid.Column="0"
                     Background="{StaticResource SurfaceBrush}"
                     CornerRadius="8"
@@ -68,34 +88,40 @@
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
                                Margin="0,0,0,10"/>
 
-                    <Grid Grid.Row="1"
-                          VerticalAlignment="Stretch"
-                          MinHeight="80">
-                        <Viewbox Stretch="Fill" StretchDirection="Both">
-                            <Canvas Width="320" Height="80"
-                                    Background="{StaticResource SurfaceContainerHighBrush}">
-                                <Canvas.Style>
-                                    <Style TargetType="Canvas">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding TieneDatosCore}" Value="False">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Canvas.Style>
-                                <Line X1="0" Y1="79" X2="320" Y2="79"
-                                      Stroke="{StaticResource OutlineBrush}"
-                                      StrokeThickness="1"/>
-                                <Polygon Points="{Binding IdsSparklineFillPoints}"
-                                         Fill="{StaticResource PrimaryBrush}"
-                                         Opacity="0.15"/>
-                                <Polyline Points="{Binding IdsSparklinePoints}"
-                                          Stroke="{StaticResource PrimaryBrush}"
-                                          StrokeThickness="2"/>
-                            </Canvas>
-                        </Viewbox>
+                    <!-- Gráfico de barras IDs -->
+                    <Grid Grid.Row="1" MinHeight="90">
+                        <!-- Área de barras (solo cuando hay datos) -->
+                        <Border Background="{StaticResource SurfaceContainerHighBrush}"
+                                CornerRadius="4"
+                                Padding="4,4,4,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding TieneDatosCore}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <ItemsControl ItemsSource="{Binding IdsBarItems}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <!-- Contenedor que establece la altura total disponible -->
+                                        <Grid>
+                                            <Border Style="{StaticResource BarItemStyle}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
 
+                        <!-- Placeholder "Sin datos aun" -->
                         <TextBlock Text="Sin datos aun"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -114,7 +140,8 @@
                         </TextBlock>
                     </Grid>
 
-                    <TextBlock Text="{Binding IdsSparklineLabel}"
+                    <!-- Label Min/Max IDs -->
+                    <TextBlock Text="{Binding IdsBarLabel}"
                                Grid.Row="2"
                                FontSize="12"
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
@@ -133,6 +160,7 @@
                 </Grid>
             </Border>
 
+            <!-- Duración por corrida -->
             <Border Grid.Column="1"
                     Background="{StaticResource SurfaceBrush}"
                     CornerRadius="8"
@@ -152,34 +180,38 @@
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
                                Margin="0,0,0,10"/>
 
-                    <Grid Grid.Row="1"
-                          VerticalAlignment="Stretch"
-                          MinHeight="80">
-                        <Viewbox Stretch="Fill" StretchDirection="Both">
-                            <Canvas Width="320" Height="80"
-                                    Background="{StaticResource SurfaceContainerHighBrush}">
-                                <Canvas.Style>
-                                    <Style TargetType="Canvas">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding TieneDatosUI}" Value="False">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Canvas.Style>
-                                <Line X1="0" Y1="79" X2="320" Y2="79"
-                                      Stroke="{StaticResource OutlineBrush}"
-                                      StrokeThickness="1"/>
-                                <Polygon Points="{Binding DuracionSparklineFillPoints}"
-                                         Fill="{StaticResource WarningBrush}"
-                                         Opacity="0.15"/>
-                                <Polyline Points="{Binding DuracionSparklinePoints}"
-                                          Stroke="{StaticResource WarningBrush}"
-                                          StrokeThickness="2"/>
-                            </Canvas>
-                        </Viewbox>
+                    <!-- Gráfico de barras Duración -->
+                    <Grid Grid.Row="1" MinHeight="90">
+                        <Border Background="{StaticResource SurfaceContainerHighBrush}"
+                                CornerRadius="4"
+                                Padding="4,4,4,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding TieneDatosUI}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <ItemsControl ItemsSource="{Binding DuracionBarItems}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Border Style="{StaticResource BarItemStyle}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
 
+                        <!-- Placeholder "Sin datos aun" -->
                         <TextBlock Text="Sin datos aun"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -198,7 +230,8 @@
                         </TextBlock>
                     </Grid>
 
-                    <TextBlock Text="{Binding DuracionSparklineLabel}"
+                    <!-- Label Min/Max Duración -->
+                    <TextBlock Text="{Binding DuracionBarLabel}"
                                Grid.Row="2"
                                FontSize="12"
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
@@ -218,6 +251,7 @@
             </Border>
         </Grid>
 
+        <!-- ── Fila 2: KPIs numéricos ── -->
         <Grid Grid.Row="2" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
@@ -261,6 +295,7 @@
             </Border>
         </Grid>
 
+        <!-- ── Fila 3: Distribución FULL/DELTA ── -->
         <Border Grid.Row="3"
                 Background="{StaticResource SurfaceBrush}"
                 CornerRadius="8"

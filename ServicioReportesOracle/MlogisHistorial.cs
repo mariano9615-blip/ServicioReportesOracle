@@ -18,6 +18,9 @@ namespace ServicioOracleReportes
         [JsonProperty("tipo")]
         public string Tipo { get; set; } = "";
 
+        [JsonProperty("duracion_segundos")]
+        public double DuracionSegundos { get; set; } = 0;
+
         [JsonProperty("registros")]
         public List<MlogisRegistro> Registros { get; set; } = new List<MlogisRegistro>();
     }

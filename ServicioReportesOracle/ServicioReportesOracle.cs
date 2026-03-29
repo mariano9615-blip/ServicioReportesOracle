@@ -467,6 +467,7 @@ namespace ServicioOracleReportes
                     nuevaCorrida.Registros.Add(registro);
                 }
 
+                nuevaCorrida.DuracionSegundos = sw.Elapsed.TotalSeconds;
                 historial.Corridas.Add(nuevaCorrida);
 
                 // Rotación diaria: hoy → mlogis_historial.json | ayer → mlogis_historial_ayer.json | anteriores → descartadas
