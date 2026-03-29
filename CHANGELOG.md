@@ -5,7 +5,19 @@
 - ✅ **Versión 4.8 declarada como estable** - Todas las funcionalidades principales probadas y funcionando correctamente
 - 🚀 **Próxima versión v5.0**: Inicio de migración a SQLite como base de datos principal
 
-## v7.1.0 - Features de Productividad (2026-03-28)
+## v7.1.0 - Fix Duración Corridas + Gráficos de Barras (2026-03-28)
+
+### 🐛 Fix crítico — Duración reportada incorrectamente
+- **Causa raíz diagnosticada**: `MetricasViewModel.CalcularDuracionSegundos()` calculaba `maxUltimaVezVisto - minPrimeraVezVisto` de los **registros individuales** de la corrida, no la duración de la corrida en sí. `PrimeraVezVisto`/`UltimaVezVisto` son timestamps de cuándo se vio el ID por primera/última vez históricamente → un ID presente desde el inicio del día producía una "duración" de ~13h (46,635 segundos). El **Stopwatch** en `InvocacionSoapMlogis()` era correcto pero su valor nunca se persistía en el JSON.
+- **Fix en core** (`MlogisHistorial.cs`): nuevo campo `duracion_segundos` (double, `JsonProperty`) en `MlogisCorrida`.
+- **Fix en core** (`ServicioReportesOracle.cs`): `nuevaCorrida.DuracionSegundos = sw.Elapsed.TotalSeconds` antes de añadir la corrida al historial — el Stopwatch arranca al inicio de `InvocacionSoapMlogis()` y mide toda la corrida SOAP incluida la comparación Oracle.
+- **Fix en UI** (`MetricasViewModel.cs`): `CalcularDuracionSegundos()` eliminado; la serie de duración lee `c.DuracionSegundos` directamente. Corridas históricas (sin el campo) muestran 0s como fallback por default del campo.
+
+### 🎨 Refactorización — Gráficos de barras verticales
+- **`MetricasViewModel.cs`**: reemplaza `PointCollection`/sparklines por `ObservableCollection<BarItem>` (`IdsBarItems`, `DuracionBarItems`). `BarItem` expone `BarHeightPx` (altura en px pre-calculada, máximo 82px normalizado al valor máximo de la serie, mínimo 2px visible), `Tooltip` (valor exacto) y `Fill` (brush del tema). Eliminados `BuildSparklinePoints`, `BuildSparklineFill`, `PointCollection`. Nuevo método `BuildBarItems()`.
+- **`MetricasView.xaml`**: reemplaza `Canvas + Polyline + Polygon` por `ItemsControl` con `UniformGrid(Rows=1)` distribuyendo las barras equidistantes, `Border` con `CornerRadius="2,2,0,0"` y `VerticalAlignment="Bottom"`. Hover reduce `Opacity` a 0.75. Sin converters ni dependencias externas (WPF puro). Labels renombrados: `IdsBarLabel` / `DuracionBarLabel`.
+
+## v7.1.0 - Features de Productividad + Fix Duración SOAP (2026-03-28)
 
 ### UI - Mejoras DataGrid
 - ⌨️ Habilitado Ctrl+C nativo en todos los DataGrids (formato TSV con headers)

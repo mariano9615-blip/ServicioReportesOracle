@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.0.9)
+## 🚀 Resumen del Proyecto (v7.1.0)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.0.9
+**Versión Actual**: v7.1.0
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -32,12 +32,13 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - Card de pendientes expandible inline (toggle por clic): muestra `Logs\comparaciones_pendientes.json` en modo solo lectura con columnas `ID`, `Nrocomprobante`, `Primera vez visto` (`HH:mm dd/MM`), `Corrida origen` (`FULL|DELTA`) y `Esperando hace` (`Xh Ym` recalculado en runtime).
   - Interacción visual de cards navegables: cursor `Hand` y overlay hover `#22FFFFFF` cubriendo la card completa (no solo el contenido interior), sin bordes/efectos extra fuera del tema.
   - Sección Alertas hoy: contadores en `OnSurfaceBrush` y alineados al inicio de cada barra de progreso.
-- **Métricas (v7.0.8)**:
+- **Métricas (v7.1.0)**:
   - Vista dedicada `MetricasView` con métricas de las últimas 48h usando `Logs\mlogis_historial.json`, `Logs\mlogis_historial_ayer.json` y `Logs\alertas_oracle_enviadas.json`.
-  - Gráficos sin dependencias externas (WPF puro): sparklines sobre `Canvas + Polyline` para `IDs procesados por corrida` y `duración por corrida`.
+  - **Gráficos de barras verticales** (WPF puro, sin dependencias externas): `ItemsControl + UniformGrid` con `BarItem { BarHeightPx, Tooltip, Fill }` para `IDs procesados por corrida` y `duración por corrida`.
+  - Las alturas de barra se pre-calculan en el ViewModel (sin converters en XAML); hover reduce opacidad; tooltip muestra el valor exacto por barra.
+  - **Duración correcta**: `MlogisCorrida` expone `duracion_segundos` (double). El core escribe `nuevaCorrida.DuracionSegundos = sw.Elapsed.TotalSeconds` antes de persistir el historial. El ViewModel lee este campo directamente en lugar del cálculo erróneo con timestamps de registros individuales que reportaba hasta 46,635 segundos (13h).
   - KPIs: `corridas hoy vs ayer`, `alertas enviadas hoy`, y barra de distribución `FULL vs DELTA` de hoy.
   - `MetricasViewModel` usa `FileSystemWatcher` con debounce 2s (`mlogis_historial*.json` + `alertas_oracle_enviadas.json`) y refresco en Dispatcher.
-  - **Polish visual (v7.0.9)**: sparklines con área rellena (`Polygon` + `Opacity 0.15`), canvas ampliado (80px), estado vacío `"Sin datos aun"` cuando no hay serie suficiente, ocultación de labels `Min/Max` sin datos, color semántico en `AlertasHoy` (`SuccessBrush` cuando es 0, `WarningBrush` cuando es >0) y layout alineado de distribución `FULL/DELTA` con barra tipo pill.
 
 ### 3. 🧪 TestSoap (Console)
 - Herramienta rápida para debuggear la conectividad con el WS de Mlogis sin levantar todo el servicio.
@@ -341,5 +342,5 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.0.9 — Polish visual de `MetricasView`: sparklines más legibles con fill y estados vacíos, color semántico para alertas de hoy y redistribución FULL/DELTA alineada con barra.
+Versión actual: v7.1.0 — Fix duración corridas SOAP (persistir `duracion_segundos` desde Stopwatch en core); refactorización de sparklines a gráficos de barras verticales en `MetricasView` con `BarItem` y `BarHeightPx` pre-calculado.
 
