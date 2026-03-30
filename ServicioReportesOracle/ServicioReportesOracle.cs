@@ -78,7 +78,6 @@ namespace ServicioOracleReportes
                 _rutaJson = Path.Combine(_rutaLogs, "json");
                 Directory.CreateDirectory(_rutaJson);
                 MigrarArchivosOperativos();
-                MigrarJsonsASubcarpeta();
                 _oracleCircuitBreaker = new OracleCircuitBreaker(
                     Path.Combine(_rutaJson, "oracle_circuit_state.json"),
                     configuracion.CircuitBreakerUmbral,
@@ -2446,47 +2445,6 @@ namespace ServicioOracleReportes
                     }
                 }
             }
-        }
-
-        // ── Migración de JSONs operativos de Logs\ a Logs\json\ ──────────────
-        private void MigrarJsonsASubcarpeta()
-        {
-            var archivosAMigrar = new[]
-            {
-                "mlogis_historial.json",
-                "mlogis_historial_ayer.json",
-                "comparaciones_pendientes.json",
-                "alertas_smtp_enviadas.json",
-                "alertas_oracle_enviadas.json",
-                "ids_history.json",
-                "status.json",
-                "ws_estado.json",
-                "oracle_circuit_state.json",
-                "pendientes_alerta_estado.json"
-            };
-
-            int migrados = 0;
-            foreach (var archivo in archivosAMigrar)
-            {
-                string pathViejo = Path.Combine(_rutaLogs, archivo);
-                string pathNuevo = Path.Combine(_rutaJson, archivo);
-
-                if (File.Exists(pathViejo) && !File.Exists(pathNuevo))
-                {
-                    try
-                    {
-                        File.Move(pathViejo, pathNuevo);
-                        migrados++;
-                    }
-                    catch (Exception ex)
-                    {
-                        EscribirLog($"⚠️ [Migración] Error al mover {archivo} a json\\: {ex.Message}");
-                    }
-                }
-            }
-
-            if (migrados > 0)
-                EscribirLog($"📦 [Migración] {migrados} archivo(s) JSON migrado(s) a Logs\\json\\");
         }
 
         // ── Health check del WebService SOAP ─────────────────────────────────

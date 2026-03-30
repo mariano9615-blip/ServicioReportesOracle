@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Windows;
 
 namespace ServicioReportesOracle.UI
@@ -7,6 +8,15 @@ namespace ServicioReportesOracle.UI
     {
         private void App_Startup(object sender, StartupEventArgs e)
         {
+            // ── Migración: mover JSONs de Logs\ a Logs\json\ ─────────────────────
+            try
+            {
+                var baseDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\ServicioReportesOracle"));
+                Helpers.JsonMigrator.MigrarJsonsASubcarpeta(baseDir);
+            }
+            catch { /* silencioso — no bloquear el arranque */ }
+            // ─────────────────────────────────────────────────────────────────────
+
             // ── Diagnóstico temporal: capturar excepciones no manejadas ──────────
             AppDomain.CurrentDomain.UnhandledException += (s, ex) =>
             {

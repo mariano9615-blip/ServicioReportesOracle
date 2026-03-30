@@ -165,6 +165,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GridLengthAnimation.cs" />
+    <Compile Include="Helpers\JsonMigrator.cs" />
     <Compile Include="Helpers\UiSettingsService.cs" />
     <Compile Include="Models\AlertaSMTP.cs" />
     <Compile Include="Models\ConfigModel.cs" />
