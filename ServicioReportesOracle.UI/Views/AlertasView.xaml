@@ -91,8 +91,8 @@
                     <Setter Property="Foreground" Value="{StaticResource OnSurfaceBrush}"/>
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}"/>
-                            <Setter Property="Foreground" Value="{StaticResource OnSurfaceBrush}"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Foreground" Value="White"/>
                         </Trigger>
                     </Style.Triggers>
                 </Style>
@@ -101,13 +101,13 @@
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
                     <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
-                    <Setter Property="Foreground" Value="{StaticResource OnSurfaceBrush}"/>
                     <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="#22FFFFFF"/>
-                        </Trigger>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}"/>
                         </Trigger>
                     </Style.Triggers>
                 </Style>
