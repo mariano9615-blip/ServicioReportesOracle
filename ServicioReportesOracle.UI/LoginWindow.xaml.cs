@@ -29,6 +29,7 @@ namespace ServicioReportesOracle.UI
         {
             InitializeComponent();
             DataContext = this;
+            this.Loaded += (s, e) => PasswordBox.Focus();
         }
 
         private void LoginButton_Click(object sender, RoutedEventArgs e)
