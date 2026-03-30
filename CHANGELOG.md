@@ -1,4 +1,10 @@
 # 🗂️ Changelog
+## v7.1.2 - Fix log SMTP recuperación WS (2026-03-30)
+
+### 🐛 Bug — Retorno de EnviarMailWS(esRecuperacion: true) ignorado
+- **Causa**: En el bloque de recuperación, la llamada `EnviarMailWS(esRecuperacion: true, ...)` no capturaba el `bool` retornado, logueando siempre "Mail enviado" aunque el SMTP hubiera fallado.
+- **Fix**: Resultado capturado en `bool mailEnviado`; el log usa expresión ternaria: "Mail enviado" si `true`, "FALLO al enviar mail SMTP" si `false`.
+
 ## v7.1.1 - Fix WS Health Check (2026-03-30)
 
 ### 🐛 Bug 1 — UltimaVezCaido no se actualizaba tras la primera caída

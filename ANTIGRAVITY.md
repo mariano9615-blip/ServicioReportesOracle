@@ -4,7 +4,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 
 ## 🚀 Resumen del Proyecto (v7.1.0)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.1.1
+**Versión Actual**: v7.1.2
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -342,5 +342,5 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.1.1 — Fix WS health check: `UltimaVezCaido` se actualiza siempre (no solo en primera caída); `AlertaCaidaEnviada` se resetea al cambiar de día; `EnviarMailWS()` retorna `bool` y el flag solo se setea si el SMTP fue exitoso.
+Versión actual: v7.1.2 — Fix log SMTP en mail de recuperación WS: retorno de `EnviarMailWS(esRecuperacion: true)` ahora capturado y logueado correctamente ("Mail enviado" vs "FALLO al enviar mail SMTP").
 
