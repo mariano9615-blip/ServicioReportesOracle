@@ -25,6 +25,7 @@ namespace ServicioOracleReportes
         private bool enEjecucion = false;
         private DateTime ultimoWriteTimeConsultas = DateTime.MinValue;
         private string _rutaLogs;
+        private string _rutaJson;
 
         // Hot-reload
         private FileSystemWatcher _fileWatcher;
@@ -74,9 +75,12 @@ namespace ServicioOracleReportes
 
                 _rutaLogs = Path.Combine(basePath, "Logs");
                 Directory.CreateDirectory(_rutaLogs);
+                _rutaJson = Path.Combine(_rutaLogs, "json");
+                Directory.CreateDirectory(_rutaJson);
                 MigrarArchivosOperativos();
+                MigrarJsonsASubcarpeta();
                 _oracleCircuitBreaker = new OracleCircuitBreaker(
-                    Path.Combine(_rutaLogs, "oracle_circuit_state.json"),
+                    Path.Combine(_rutaJson, "oracle_circuit_state.json"),
                     configuracion.CircuitBreakerUmbral,
                     configuracion.CircuitBreakerTimeoutMinutos,
                     EscribirLog);
@@ -337,7 +341,7 @@ namespace ServicioOracleReportes
                 }
 
                 // ── Cambio 3: Cargar/crear historial estructurado ─────────────
-                string historialPath = Path.Combine(_rutaLogs, "mlogis_historial.json");
+                string historialPath = Path.Combine(_rutaJson, "mlogis_historial.json");
                 MlogisHistorial historial;
 
                 if (File.Exists(historialPath))
@@ -480,7 +484,7 @@ namespace ServicioOracleReportes
 
                 if (corridasAyer.Count > 0)
                 {
-                    string historialAyerPath = Path.Combine(_rutaLogs, "mlogis_historial_ayer.json");
+                    string historialAyerPath = Path.Combine(_rutaJson, "mlogis_historial_ayer.json");
                     var historialAyer = new MlogisHistorial { Corridas = corridasAyer };
                     File.WriteAllText(historialAyerPath, JsonConvert.SerializeObject(historialAyer, Formatting.Indented));
                 }
@@ -492,7 +496,7 @@ namespace ServicioOracleReportes
 
                 // ── Mantener ids_history.json para compatibilidad con EjecutarComparacionMlogis ──
                 var idsActualesSoap = new HashSet<string>(mlogisRecords.Select(r => r.Id));
-                string historyPath  = Path.Combine(_rutaLogs, "ids_history.json");
+                string historyPath  = Path.Combine(_rutaJson, "ids_history.json");
                 var historia = File.Exists(historyPath)
                     ? JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(File.ReadAllText(historyPath))
                     : new Dictionary<string, DateTime>();
@@ -510,7 +514,7 @@ namespace ServicioOracleReportes
                     EnviarAlertaCambioSoap(reg, cambio, tipo, fechaEjecucion, soapConfigPath);
 
                 // ── Buffer de comparaciones pendientes ────────────────────────
-                string pendientesPath = Path.Combine(_rutaLogs, "comparaciones_pendientes.json");
+                string pendientesPath = Path.Combine(_rutaJson, "comparaciones_pendientes.json");
                 var regsParaPendientes = esFull ? registrosParaPendientes : nuevaCorrida.Registros;
                 ActualizarComparacionesPendientes(pendientesPath, regsParaPendientes, tipo, esFull, fechaEjecucion);
 
@@ -881,7 +885,7 @@ namespace ServicioOracleReportes
                 // Enviar alertas consolidadas con deduplicación
                 if (alertasOracle.Count > 0)
                 {
-                    string dedupPath = Path.Combine(_rutaLogs, "alertas_oracle_enviadas.json");
+                    string dedupPath = Path.Combine(_rutaJson, "alertas_oracle_enviadas.json");
                     EnviarAlertaOracleConsolidada(alertasOracle, soapConfigPath, tipo, fechaEjecucion, dedupPath);
                 }
 
@@ -977,7 +981,7 @@ namespace ServicioOracleReportes
                 int umbral = cfg.UmbralCantidad > 0 ? cfg.UmbralCantidad : 50;
                 int cooldownHoras = cfg.CooldownHoras > 0 ? cfg.CooldownHoras : 4;
                 int cantidadActual = pendientesArr?.Count ?? 0;
-                string estadoPath = Path.Combine(_rutaLogs, "pendientes_alerta_estado.json");
+                string estadoPath = Path.Combine(_rutaJson, "pendientes_alerta_estado.json");
 
                 PendientesAlertaEstado estado;
                 try
@@ -1320,7 +1324,7 @@ namespace ServicioOracleReportes
         {
             try
             {
-                var alertasFile = Path.Combine(_rutaLogs, "alertas_smtp_enviadas.json");
+                var alertasFile = Path.Combine(_rutaJson, "alertas_smtp_enviadas.json");
                 var registro = new JObject
                 {
                     ["timestamp"]      = DateTime.Now.ToString("yyyy-MM-dd'T'HH:mm:ss"),
@@ -1523,7 +1527,7 @@ namespace ServicioOracleReportes
                 // Guardar IDs de Oracle encontrados actualmente (para visibilidad)
                 string oracleIdsPath = Path.Combine(basePath, "mlogis_oracle_ids.json");
                 File.WriteAllText(oracleIdsPath, JsonConvert.SerializeObject(idsOracle.ToList(), Formatting.Indented));
-                string historyPath = Path.Combine(_rutaLogs, "ids_history.json");
+                string historyPath = Path.Combine(_rutaJson, "ids_history.json");
                 if (!File.Exists(historyPath)) return;
 
                 var historia = JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(File.ReadAllText(historyPath));
@@ -1536,7 +1540,7 @@ namespace ServicioOracleReportes
                     .Select(kv => kv.Key)
                     .ToList();
 
-                string statusPath = Path.Combine(_rutaLogs, "status.json");
+                string statusPath = Path.Combine(_rutaJson, "status.json");
                 var statusGlobal = File.Exists(statusPath)
                     ? JsonConvert.DeserializeObject<Dictionary<string, ConsultaStatus>>(File.ReadAllText(statusPath)) ?? new Dictionary<string, ConsultaStatus>()
                     : new Dictionary<string, ConsultaStatus>();
@@ -2444,10 +2448,51 @@ namespace ServicioOracleReportes
             }
         }
 
+        // ── Migración de JSONs operativos de Logs\ a Logs\json\ ──────────────
+        private void MigrarJsonsASubcarpeta()
+        {
+            var archivosAMigrar = new[]
+            {
+                "mlogis_historial.json",
+                "mlogis_historial_ayer.json",
+                "comparaciones_pendientes.json",
+                "alertas_smtp_enviadas.json",
+                "alertas_oracle_enviadas.json",
+                "ids_history.json",
+                "status.json",
+                "ws_estado.json",
+                "oracle_circuit_state.json",
+                "pendientes_alerta_estado.json"
+            };
+
+            int migrados = 0;
+            foreach (var archivo in archivosAMigrar)
+            {
+                string pathViejo = Path.Combine(_rutaLogs, archivo);
+                string pathNuevo = Path.Combine(_rutaJson, archivo);
+
+                if (File.Exists(pathViejo) && !File.Exists(pathNuevo))
+                {
+                    try
+                    {
+                        File.Move(pathViejo, pathNuevo);
+                        migrados++;
+                    }
+                    catch (Exception ex)
+                    {
+                        EscribirLog($"⚠️ [Migración] Error al mover {archivo} a json\\: {ex.Message}");
+                    }
+                }
+            }
+
+            if (migrados > 0)
+                EscribirLog($"📦 [Migración] {migrados} archivo(s) JSON migrado(s) a Logs\\json\\");
+        }
+
         // ── Health check del WebService SOAP ─────────────────────────────────
         private async Task<bool> VerificarWebService()
         {
-            string wsEstadoPath = Path.Combine(_rutaLogs, "ws_estado.json");
+            string wsEstadoPath = Path.Combine(_rutaJson, "ws_estado.json");
 
             WsEstado estado;
             try
