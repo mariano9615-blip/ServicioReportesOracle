@@ -140,7 +140,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         public MlogisHistorialViewModel()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            string logsDir  = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs"));
+            string logsDir  = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\json"));
             _historialPath     = Path.Combine(logsDir, "mlogis_historial.json");
             _historialAyerPath = Path.Combine(logsDir, "mlogis_historial_ayer.json");
 

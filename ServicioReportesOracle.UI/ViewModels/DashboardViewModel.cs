@@ -93,7 +93,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         public DashboardViewModel()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            _logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs"));
+            _logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\json"));
             _wsEstadoPath = Path.Combine(_logsDir, "ws_estado.json");
             _historialPath = Path.Combine(_logsDir, "mlogis_historial.json");
             _historialAyerPath = Path.Combine(_logsDir, "mlogis_historial_ayer.json");

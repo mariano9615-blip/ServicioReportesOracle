@@ -281,7 +281,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             try
             {
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
-                string wsPath = Path.GetFullPath(Path.Combine(basePath, "..\\ServicioReportesOracle\\Logs\\ws_estado.json"));
+                string wsPath = Path.GetFullPath(Path.Combine(basePath, "..\\ServicioReportesOracle\\Logs\\json\\ws_estado.json"));
 
                 if (!File.Exists(wsPath))
                 {

@@ -10,7 +10,7 @@ namespace ServicioReportesOracle.UI.Helpers
         private static string GetPath()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            return Path.Combine(basePath, "..\\ServicioReportesOracle\\ui_settings.json");
+            return Path.Combine(basePath, "..\\ServicioReportesOracle\\Logs\\json\\ui_settings.json");
         }
 
         public UiSettingsModel Load()

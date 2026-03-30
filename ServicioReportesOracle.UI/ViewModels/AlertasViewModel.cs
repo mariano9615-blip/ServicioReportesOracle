@@ -59,7 +59,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             try
             {
-                var path = Path.Combine(baseDir, "Logs", "alertas_smtp_enviadas.json");
+                var path = Path.Combine(baseDir, "Logs", "json", "alertas_smtp_enviadas.json");
                 if (!File.Exists(path))
                 {
                     Alertas = new ObservableCollection<AlertaSMTP>();
@@ -104,7 +104,7 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         private void IniciarWatcher()
         {
-            var logDir = Path.Combine(baseDir, "Logs");
+            var logDir = Path.Combine(baseDir, "Logs", "json");
             if (!Directory.Exists(logDir)) return;
 
             _watcher = new FileSystemWatcher(logDir)

@@ -98,11 +98,10 @@ namespace ServicioReportesOracle.UI.ViewModels
             SelectedViewModel = new DashboardViewModel();
 
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            string logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\"));
-            string uiSettingsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\"));
+            string logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\json"));
 
             _alertasEnviadasPath = Path.Combine(logsDir, "alertas_oracle_enviadas.json");
-            _alertasLeidasPath = Path.Combine(uiSettingsDir, "alertas_leidas.json");
+            _alertasLeidasPath = Path.Combine(logsDir, "alertas_leidas.json");
 
             ConfigurarWatcher();
             ConfigurarTimer();

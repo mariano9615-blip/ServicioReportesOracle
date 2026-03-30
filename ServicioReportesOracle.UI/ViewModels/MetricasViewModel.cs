@@ -159,7 +159,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         public MetricasViewModel()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            _logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs"));
+            _logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\json"));
             _historialPath     = Path.Combine(_logsDir, "mlogis_historial.json");
             _historialAyerPath = Path.Combine(_logsDir, "mlogis_historial_ayer.json");
             _alertasPath       = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
