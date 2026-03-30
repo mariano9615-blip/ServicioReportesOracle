@@ -1669,7 +1669,7 @@ namespace ServicioOracleReportes
             // ============================
             //   STATUS.JSON
             // ============================
-            string statusPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "status.json");
+            string statusPath = Path.Combine(_rutaJson, "status.json");
 
             var statusGlobal = File.Exists(statusPath)
                 ? JsonConvert.DeserializeObject<Dictionary<string, ConsultaStatus>>(File.ReadAllText(statusPath))
