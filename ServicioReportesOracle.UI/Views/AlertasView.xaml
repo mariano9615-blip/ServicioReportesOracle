@@ -114,13 +114,40 @@
             </DataGrid.RowStyle>
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Fecha"        Binding="{Binding TimestampFormateado}" Width="120"/>
-                <DataGridTextColumn Header="Tipo"         Binding="{Binding TipoAmigable}"        Width="200"/>
-                <DataGridTextColumn Header="ID Ref."      Binding="{Binding IdReferencia}"        Width="140"/>
-                <DataGridTextColumn Header="Destinatarios" Binding="{Binding DestinatariosStr}"   Width="250"/>
-                <DataGridTextColumn Header="Asunto"       Binding="{Binding Asunto}"              Width="300"/>
-                <DataGridTextColumn Header="Detalle"      Binding="{Binding Detalle}"             Width="*"/>
-                <DataGridTextColumn Header="Origen"       Binding="{Binding Origen}"              Width="150"/>
+                <DataGridTextColumn Header="Fecha" Binding="{Binding TimestampFormateado}" Width="120"/>
+
+                <DataGridTextColumn Header="Tipo" Binding="{Binding TipoAmigable}" Width="220"/>
+
+                <DataGridTextColumn Header="Asunto" Binding="{Binding Asunto}" Width="400">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="ToolTip" Value="{Binding Asunto}"/>
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Detalle" Binding="{Binding Detalle}" Width="*">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="ToolTip" Value="{Binding Detalle}"/>
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="ID Ref." Binding="{Binding IdReferencia}" Width="140"/>
+
+                <DataGridTextColumn Header="Destinatarios" Binding="{Binding DestinatariosStr}" Width="250">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="ToolTip" Value="{Binding DestinatariosStr}"/>
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Origen" Binding="{Binding Origen}" Width="150"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>
