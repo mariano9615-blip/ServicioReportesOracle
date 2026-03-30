@@ -1123,6 +1123,13 @@ namespace ServicioOracleReportes
                         mensaje.IsBodyHtml = false;
                         foreach (var d in destsUnicos) mensaje.To.Add(d);
                         cliente.Send(mensaje);
+                        RegistrarAlertaEnviada(
+                            tipo: esResolucion ? "pendientes_resuelto" : "pendientes_umbral",
+                            idReferencia: null,
+                            destinatarios: destsUnicos.ToList(),
+                            asunto: asunto,
+                            detalle: $"Cantidad: {cantidadActual}, ID más antiguo: {idMasAntiguo}",
+                            origen: "MonitorPendientes");
                     }
                 }
 
@@ -1251,6 +1258,14 @@ namespace ServicioOracleReportes
                             mensaje.IsBodyHtml = false;
                             foreach (var d in destinatarios) mensaje.To.Add(d);
                             cliente.Send(mensaje);
+                            foreach (var alertaItem in alertasNuevas)
+                                RegistrarAlertaEnviada(
+                                    tipo: $"oracle_caso_{alertaItem.TipoCaso.ToLower()}",
+                                    idReferencia: alertaItem.Registro.Id,
+                                    destinatarios: destinatarios,
+                                    asunto: asunto,
+                                    detalle: $"Nrocomprobante: {alertaItem.Registro.NroComprobante ?? "N/A"}",
+                                    origen: "CompararConOracle");
                         }
                     }
 
@@ -1297,6 +1312,49 @@ namespace ServicioOracleReportes
             catch (Exception ex)
             {
                 EscribirLog("❌ Error en EnviarAlertaOracleConsolidada: " + ex.Message);
+            }
+        }
+
+        private void RegistrarAlertaEnviada(string tipo, string idReferencia,
+            List<string> destinatarios, string asunto, string detalle, string origen)
+        {
+            try
+            {
+                var alertasFile = Path.Combine(_rutaLogs, "alertas_smtp_enviadas.json");
+                var registro = new JObject
+                {
+                    ["timestamp"]      = DateTime.Now.ToString("yyyy-MM-dd'T'HH:mm:ss"),
+                    ["tipo"]           = tipo,
+                    ["id_referencia"]  = idReferencia,
+                    ["destinatarios"]  = JArray.FromObject(destinatarios ?? new List<string>()),
+                    ["asunto"]         = asunto,
+                    ["detalle"]        = detalle,
+                    ["origen"]         = origen
+                };
+
+                JObject container;
+                if (File.Exists(alertasFile))
+                {
+                    var json = File.ReadAllText(alertasFile);
+                    container = JObject.Parse(json);
+                    var alertas = container["alertas"] as JArray ?? new JArray();
+                    var cutoff = DateTime.Today.AddDays(-7);
+                    var filtradas = alertas
+                        .Where(a => DateTime.TryParse(a["timestamp"]?.ToString(), out DateTime ts) && ts >= cutoff)
+                        .ToList();
+                    container["alertas"] = JArray.FromObject(filtradas);
+                }
+                else
+                {
+                    container = new JObject { ["alertas"] = new JArray() };
+                }
+
+                (container["alertas"] as JArray).Add(registro);
+                File.WriteAllText(alertasFile, container.ToString(Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                EscribirLog($"⚠️ Error al registrar alerta enviada: {ex.Message}");
             }
         }
 
@@ -1908,6 +1966,15 @@ namespace ServicioOracleReportes
                             return;
                         }
                         cliente.Send(mensaje);
+                        RegistrarAlertaEnviada(
+                            tipo: esRecuperacion ? "oracle_recuperado" : "oracle_caido",
+                            idReferencia: null,
+                            destinatarios: destsUnicos.ToList(),
+                            asunto: asunto,
+                            detalle: esRecuperacion
+                                ? "Prueba SELECT 1 FROM DUAL exitosa"
+                                : $"Fallos consecutivos: {fallosConsecutivos}",
+                            origen: "CircuitBreaker");
                     }
                 }
 
@@ -1950,6 +2017,13 @@ namespace ServicioOracleReportes
 
                         mensaje.Attachments.Add(new Attachment(archivo));
                         cliente.Send(mensaje);
+                        RegistrarAlertaEnviada(
+                            tipo: "tarea_sql",
+                            idReferencia: consulta.Nombre,
+                            destinatarios: consulta.Destinatarios,
+                            asunto: mensaje.Subject,
+                            detalle: $"Adjunto: {Path.GetFileName(archivo)}",
+                            origen: "TareaSQL");
 
                         // 🔥 LOG COMPLETO POR CONSULTA
                         EscribirLog($"[ENVÍO INDIVIDUAL] Consulta '{consulta.Nombre}' enviada OK. Dest: {string.Join(", ", consulta.Destinatarios)} | Archivo: {archivo}");
@@ -2137,6 +2211,15 @@ namespace ServicioOracleReportes
 
                         // Enviar mail
                         cliente.Send(mensaje);
+                        RegistrarAlertaEnviada(
+                            tipo: "tarea_sql",
+                            idReferencia: consulta.Nombre,
+                            destinatarios: consulta.Destinatarios ?? new List<string>(),
+                            asunto: asunto,
+                            detalle: hayErrores
+                                ? $"{ids.Count} IDs con errores"
+                                : "Sin errores",
+                            origen: "TareaSQL");
 
                         EscribirLog($"[TRACKING] Correo enviado OK → {consulta.Nombre}. Estado: {(hayErrores ? "Con errores" : "Sin errores")}");
                     }
@@ -2701,6 +2784,15 @@ namespace ServicioOracleReportes
                             mensaje.To.Add(dest);
                         if (mensaje.To.Count == 0) { EscribirLog("⚠️ [WS] Sin destinatarios válidos. Mail omitido."); return true; }
                         cliente.Send(mensaje);
+                        RegistrarAlertaEnviada(
+                            tipo: esRecuperacion ? "ws_recuperado" : "ws_caido",
+                            idReferencia: null,
+                            destinatarios: destsUnicos.ToList(),
+                            asunto: asunto,
+                            detalle: esRecuperacion
+                                ? $"Caído desde {caidoDesde}"
+                                : $"Error: {detalleError}",
+                            origen: "HealthCheckSoap");
                     }
                 }
 
