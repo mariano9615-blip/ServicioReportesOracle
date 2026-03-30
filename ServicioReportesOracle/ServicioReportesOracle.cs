@@ -2428,6 +2428,7 @@ namespace ServicioOracleReportes
                 estado.CaidasHoy          = 0;
                 estado.RecuperacionesHoy  = 0;
                 estado.FechaContadores    = DateTime.Today;
+                estado.AlertaCaidaEnviada = false; // v7.1.1 — resetear flag al cambiar de día
             }
 
             if (!wsDisponible)
@@ -2438,17 +2439,23 @@ namespace ServicioOracleReportes
 
                 estado.UltimoEstado = "caido";
                 estado.DetalleError = "Sin respuesta HTTP (Timeout o servidor no disponible)";
-                if (estado.UltimaVezCaido == null)
-                    estado.UltimaVezCaido = ahora;
+                estado.UltimaVezCaido = ahora; // v7.1.1 — actualizar siempre, no solo en la primera caída
 
                 estado.CaidasHoy++;
                 AgregarEventoHistorial(estado, "caida", estado.DetalleError, ahora);
 
                 if (!estado.AlertaCaidaEnviada)
                 {
-                    EnviarMailWS(esRecuperacion: false, estado: estado);
-                    estado.AlertaCaidaEnviada = true;
-                    EscribirLog($"⚠️ [WS] WebService SOAP no disponible. Alerta enviada. Caídas hoy: {estado.CaidasHoy}");
+                    bool mailEnviado = EnviarMailWS(esRecuperacion: false, estado: estado);
+                    if (mailEnviado)
+                    {
+                        estado.AlertaCaidaEnviada = true;
+                        EscribirLog($"⚠️ [WS] WebService SOAP no disponible. Alerta enviada. Caídas hoy: {estado.CaidasHoy}");
+                    }
+                    else
+                    {
+                        EscribirLog($"⚠️ [WS] WebService SOAP no disponible. FALLO al enviar alerta SMTP. Se reintentará en la próxima corrida. Caídas hoy: {estado.CaidasHoy}");
+                    }
                 }
                 else
                 {
@@ -2470,17 +2477,23 @@ namespace ServicioOracleReportes
                 estado.UltimoEstado   = "auth_error";
                 estado.DetalleError   = authDetalle;
                 estado.UltimoErrorXml = authXml;
-                if (estado.UltimaVezCaido == null)
-                    estado.UltimaVezCaido = ahora;
+                estado.UltimaVezCaido = ahora; // v7.1.1 — actualizar siempre, no solo en la primera caída
 
                 estado.CaidasHoy++;
                 AgregarEventoHistorial(estado, "caida", authDetalle, ahora);
 
                 if (!estado.AlertaCaidaEnviada)
                 {
-                    EnviarMailWS(esRecuperacion: false, estado: estado);
-                    estado.AlertaCaidaEnviada = true;
-                    EscribirLog($"⚠️ [WS] Error de autenticación SOAP: {authDetalle}. Alerta enviada. Caídas hoy: {estado.CaidasHoy}");
+                    bool mailEnviado = EnviarMailWS(esRecuperacion: false, estado: estado);
+                    if (mailEnviado)
+                    {
+                        estado.AlertaCaidaEnviada = true;
+                        EscribirLog($"⚠️ [WS] Error de autenticación SOAP: {authDetalle}. Alerta enviada. Caídas hoy: {estado.CaidasHoy}");
+                    }
+                    else
+                    {
+                        EscribirLog($"⚠️ [WS] Error de autenticación SOAP: {authDetalle}. FALLO al enviar alerta SMTP. Se reintentará en la próxima corrida.");
+                    }
                 }
                 else
                 {
@@ -2622,7 +2635,7 @@ namespace ServicioOracleReportes
                     .Replace("&amp;", "&").Replace("&quot;", "\"").Replace("&apos;", "'");
         }
 
-        private void EnviarMailWS(bool esRecuperacion, WsEstado estado)
+        private bool EnviarMailWS(bool esRecuperacion, WsEstado estado)
         {
             try
             {
@@ -2631,7 +2644,7 @@ namespace ServicioOracleReportes
                 if (destinatarios == null || destinatarios.Count == 0)
                 {
                     EscribirLog("⚠️ [WS] HealthCheckSoap.Destinatarios está vacío. Mail de health check omitido.");
-                    return;
+                    return true; // sin destinatarios: no es un fallo SMTP, no reintentar
                 }
 
                 DateTime ahora    = DateTime.Now;
@@ -2684,16 +2697,18 @@ namespace ServicioOracleReportes
                         mensaje.IsBodyHtml = false;
                         foreach (var dest in destsUnicos)
                             mensaje.To.Add(dest);
-                        if (mensaje.To.Count == 0) { EscribirLog("⚠️ [WS] Sin destinatarios válidos. Mail omitido."); return; }
+                        if (mensaje.To.Count == 0) { EscribirLog("⚠️ [WS] Sin destinatarios válidos. Mail omitido."); return true; }
                         cliente.Send(mensaje);
                     }
                 }
 
                 EscribirLog($"📧 Mail WS {(esRecuperacion ? "recuperación" : "caída")} enviado a {string.Join(", ", destsUnicos)}");
+                return true;
             }
             catch (Exception ex)
             {
                 EscribirLog($"❌ Error enviando mail WS: {ex.Message}");
+                return false;
             }
         }
 
