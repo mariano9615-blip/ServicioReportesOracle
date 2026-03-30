@@ -1,4 +1,18 @@
 # 🗂️ Changelog
+## v7.1.1 - Fix WS Health Check (2026-03-30)
+
+### 🐛 Bug 1 — UltimaVezCaido no se actualizaba tras la primera caída
+- **Causa**: `if (estado.UltimaVezCaido == null)` impedía actualizar el timestamp en caídas sucesivas, reportando siempre la primera caída como "última".
+- **Fix**: Eliminada la condición — `estado.UltimaVezCaido = ahora;` se asigna siempre, en ambas ramas (`caido` y `auth_error`).
+
+### 🐛 Bug 2 — AlertaCaidaEnviada no se reseteaba al cambiar de día
+- **Causa**: El bloque de reset diario de contadores (`CaidasHoy`, `RecuperacionesHoy`) no incluía `AlertaCaidaEnviada`, por lo que al comenzar un nuevo día con el WS caído no se enviaba alerta nueva.
+- **Fix**: Agregado `estado.AlertaCaidaEnviada = false;` en el bloque de reset diario (`v7.1.1`).
+
+### 🐛 Bug 3 — AlertaCaidaEnviada se seteaba true aunque SMTP fallara silenciosamente
+- **Causa**: `EnviarMailWS()` tenía tipo de retorno `void` y capturaba la excepción SMTP internamente, pero el llamador seteaba `AlertaCaidaEnviada = true` incondicionalmente.
+- **Fix**: `EnviarMailWS()` ahora retorna `bool` (`true` = enviado OK o sin destinatarios configurados, `false` = excepción SMTP). Los dos call sites con `esRecuperacion: false` usan el resultado para setear el flag solo si el mail fue enviado; en caso contrario loguean "FALLO al enviar alerta SMTP. Se reintentará en la próxima corrida."
+
 ## v4.8 - Versión Estable (2026-03-28)
 
 ### 🎯 Estado del Proyecto
