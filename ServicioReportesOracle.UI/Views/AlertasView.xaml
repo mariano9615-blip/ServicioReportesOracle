@@ -103,7 +103,7 @@
                     <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                            <Setter Property="Background" Value="#4F46E5"/>
                             <Setter Property="Foreground" Value="White"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
