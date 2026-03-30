@@ -2515,8 +2515,10 @@ namespace ServicioOracleReportes
                 // Anti-spam: solo enviar mail de recuperación si se había avisado de la caída
                 if (estado.AlertaCaidaEnviada)
                 {
-                    EnviarMailWS(esRecuperacion: true, estado: estado);
-                    EscribirLog($"✅ [WS] WebService SOAP recuperado. Mail enviado. Recuperaciones hoy: {estado.RecuperacionesHoy}");
+                    bool mailEnviado = EnviarMailWS(esRecuperacion: true, estado: estado);
+                    EscribirLog(mailEnviado
+                        ? $"✅ [WS] WebService SOAP recuperado. Mail enviado. Recuperaciones hoy: {estado.RecuperacionesHoy}"
+                        : $"✅ [WS] WebService SOAP recuperado. FALLO al enviar mail SMTP. Recuperaciones hoy: {estado.RecuperacionesHoy}");
                 }
                 else
                 {
