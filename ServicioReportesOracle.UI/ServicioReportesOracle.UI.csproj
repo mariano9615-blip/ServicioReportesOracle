@@ -166,6 +166,7 @@
   <ItemGroup>
     <Compile Include="GridLengthAnimation.cs" />
     <Compile Include="Helpers\UiSettingsService.cs" />
+    <Compile Include="Models\AlertaSMTP.cs" />
     <Compile Include="Models\ConfigModel.cs" />
     <Compile Include="Models\UiSettingsModel.cs" />
     <Compile Include="Models\ConsultaTaskModel.cs" />

@@ -13,100 +13,115 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Cabecera -->
-        <Grid Grid.Row="0" Margin="0,0,0,15">
-            <TextBlock Text="Alertas" FontSize="24" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button Command="{Binding ExportToExcelCommand}" Margin="0,0,10,0"
-                        Background="{StaticResource SurfaceContainerHighBrush}" Foreground="{StaticResource OnSurfaceBrush}"
-                        BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" Padding="15,8"
-                        Style="{x:Null}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="📊" FontFamily="Segoe UI Emoji" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Exportar a Excel" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding RefreshCommand}" HorizontalAlignment="Right" VerticalAlignment="Center" 
-                        Background="{StaticResource SurfaceContainerHighBrush}" Foreground="{StaticResource OnSurfaceBrush}"
-                        BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" Padding="15,8"
-                        Style="{x:Null}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🔄" FontFamily="Segoe UI Emoji" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Actualizar" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <TextBlock Text="💌 Alertas SMTP Enviadas"
+                           FontSize="24" FontWeight="Bold"
+                           Foreground="{StaticResource OnSurfaceBrush}"/>
+                <TextBlock Text="{Binding TotalAlertas, StringFormat=' ({0} total)'}"
+                           FontSize="16" Margin="8,0,0,0"
+                           Foreground="{StaticResource OnSurfaceBrush}"
+                           VerticalAlignment="Bottom"/>
+                <TextBlock Text="{Binding AlertasHoy, StringFormat=' | {0} hoy'}"
+                           FontSize="14" Margin="4,0,0,0"
+                           Foreground="{StaticResource OnSurfaceBrush}"
+                           Opacity="0.7"
+                           VerticalAlignment="Bottom"/>
             </StackPanel>
+
+            <Button Grid.Column="1" Content="📊 Exportar a Excel"
+                    Command="{Binding ExportarCommand}"
+                    Background="{StaticResource SurfaceContainerHighBrush}"
+                    Foreground="{StaticResource OnSurfaceBrush}"
+                    BorderBrush="{StaticResource OutlineBrush}"
+                    BorderThickness="1"
+                    Style="{x:Null}"
+                    Margin="0,0,8,0" Padding="12,8"/>
+
+            <Button Grid.Column="2" Content="🔄 Actualizar"
+                    Command="{Binding ActualizarCommand}"
+                    Background="{StaticResource SurfaceContainerHighBrush}"
+                    Foreground="{StaticResource OnSurfaceBrush}"
+                    BorderBrush="{StaticResource OutlineBrush}"
+                    BorderThickness="1"
+                    Style="{x:Null}"
+                    Padding="12,8"/>
         </Grid>
 
-        <!-- Lista de alertas -->
-        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Alertas}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  CanUserResizeRows="False"
+                  CanUserSortColumns="True"
+                  SelectionMode="Extended"
+                  ClipboardCopyMode="IncludeHeader"
+                  Background="{StaticResource SurfaceBrush}"
+                  BorderBrush="{StaticResource OutlineBrush}"
+                  BorderThickness="1"
+                  GridLinesVisibility="Horizontal"
+                  HorizontalGridLinesBrush="{StaticResource OutlineBrush}"
+                  RowBackground="{StaticResource SurfaceBrush}"
+                  AlternatingRowBackground="#1A1A1A"
+                  Foreground="{StaticResource OnSurfaceBrush}">
 
-                <!-- Sin alertas -->
-                <TextBlock Foreground="{StaticResource OnSurfaceVariantBrush}" FontStyle="Italic" FontSize="14"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="{Binding HasNoAlertas, Converter={StaticResource BoolToVisibilityConverter}}"
-                           Text="Sin alertas enviadas hoy"/>
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Padding" Value="12,8"/>
+                    <Setter Property="BorderThickness" Value="0,0,1,0"/>
+                    <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
 
-                <!-- Lista de alertas estilo WhatsApp -->
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding Alertas}"
-                                  Visibility="{Binding HasAlertas, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border BorderBrush="{StaticResource OutlineBrush}" BorderThickness="0,0,0,1" Padding="16,12">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="12,6"/>
+                    <Setter Property="Foreground" Value="{StaticResource OnSurfaceBrush}"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource OnSurfaceBrush}"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.CellStyle>
 
-                                        <!-- Ícono tipo -->
-                                        <TextBlock Grid.Column="0" Text="{Binding Icono, Mode=OneWay}" FontFamily="Segoe UI Emoji"
-                                                   FontSize="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource OnSurfaceBrush}"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#22FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
 
-                                        <!-- Contenido -->
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <!-- Tipo de alerta + ID -->
-                                            <TextBlock FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource OnSurfaceBrush}">
-                                                <Run Text="{Binding TipoTexto, Mode=OneWay}"/>
-                                                <Run Text=" — "/>
-                                                <Run Text="{Binding Id, Mode=OneWay}" FontWeight="Normal"/>
-                                            </TextBlock>
-
-                                            <!-- Número de comprobante (si existe) -->
-                                            <TextBlock FontSize="12" Foreground="{StaticResource OnSurfaceVariantBrush}" Margin="0,2,0,0">
-                                                <Run Text="Comprobante: "/>
-                                                <Run Text="{Binding Nrocomprobante, Mode=OneWay}" FontWeight="SemiBold"/>
-                                            </TextBlock>
-                                        </StackPanel>
-
-                                        <!-- Hora -->
-                                        <TextBlock Grid.Column="2" Text="{Binding Timestamp, Mode=OneWay}" FontSize="12"
-                                                   Foreground="{StaticResource OnSurfaceVariantBrush}"
-                                                   VerticalAlignment="Center" TextAlignment="Right" Margin="12,0,0,0"/>
-                                    </Grid>
-
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Style.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#22FFFFFF"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </Grid>
-        </Border>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Fecha"        Binding="{Binding TimestampFormateado}" Width="120"/>
+                <DataGridTextColumn Header="Tipo"         Binding="{Binding TipoAmigable}"        Width="200"/>
+                <DataGridTextColumn Header="ID Ref."      Binding="{Binding IdReferencia}"        Width="140"/>
+                <DataGridTextColumn Header="Destinatarios" Binding="{Binding DestinatariosStr}"   Width="250"/>
+                <DataGridTextColumn Header="Asunto"       Binding="{Binding Asunto}"              Width="300"/>
+                <DataGridTextColumn Header="Detalle"      Binding="{Binding Detalle}"             Width="*"/>
+                <DataGridTextColumn Header="Origen"       Binding="{Binding Origen}"              Width="150"/>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </UserControl>

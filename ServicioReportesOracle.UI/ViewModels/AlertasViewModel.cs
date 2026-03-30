@@ -5,397 +5,196 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Threading;
 using ClosedXML.Excel;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
+using ServicioReportesOracle.UI.Models;
 
 namespace ServicioReportesOracle.UI.ViewModels
 {
     public class AlertasViewModel : INotifyPropertyChanged, IDisposable
     {
-        private readonly string _logsDir;
-        private readonly string _alertasEnviadasPath;
-        private readonly string _alertasLeidasPath;
+        private readonly string baseDir;
         private FileSystemWatcher _watcher;
-        private Timer _debounceTimer;
-        private const int DebounceMs = 2000;
-        private readonly SemaphoreSlim _refreshLock = new SemaphoreSlim(1, 1);
-        private bool _disposed;
+        private System.Timers.Timer _debounceTimer;
 
-        public ObservableCollection<AlertaItem> Alertas { get; } = new ObservableCollection<AlertaItem>();
-
-        private bool _hasAlertas;
-        public bool HasAlertas
+        private ObservableCollection<AlertaSMTP> _alertas;
+        public ObservableCollection<AlertaSMTP> Alertas
         {
-            get => _hasAlertas;
-            set
-            {
-                if (_hasAlertas == value) return;
-
-                var dispatcher = Application.Current?.Dispatcher;
-                if (dispatcher != null && !dispatcher.CheckAccess())
-                {
-                    dispatcher.InvokeAsync(() => HasAlertas = value);
-                    return;
-                }
-
-                _hasAlertas = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(HasNoAlertas));
-            }
+            get => _alertas;
+            set { _alertas = value; OnPropertyChanged(); }
         }
 
-        public bool HasNoAlertas => !_hasAlertas;
+        private int _totalAlertas;
+        public int TotalAlertas
+        {
+            get => _totalAlertas;
+            set { _totalAlertas = value; OnPropertyChanged(); }
+        }
 
-        public ICommand RefreshCommand { get; }
-        public ICommand MarkAsReadCommand { get; }
-        public ICommand ExportToExcelCommand { get; }
+        private int _alertasHoy;
+        public int AlertasHoy
+        {
+            get => _alertasHoy;
+            set { _alertasHoy = value; OnPropertyChanged(); }
+        }
+
+        public ICommand ActualizarCommand { get; }
+        public ICommand ExportarCommand { get; }
 
         public AlertasViewModel()
         {
-            string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            _logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs"));
+            baseDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\ServicioReportesOracle"));
 
-            // Misma resolución base que DashboardViewModel: todo desde Logs del core.
-            _alertasEnviadasPath = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
-            _alertasLeidasPath = Path.Combine(_logsDir, "alertas_leidas.json");
+            ActualizarCommand = new RelayCommand(_ => CargarAlertas());
+            ExportarCommand = new RelayCommand(_ => ExportarExcel());
 
-            RefreshCommand = new RelayCommand(_ => _ = CargarAsync());
-            MarkAsReadCommand = new RelayCommand(alertaObj => MarkAsRead(alertaObj as AlertaItem));
-            ExportToExcelCommand = new RelayCommand(_ => ExportToExcel());
-
-            ConfigurarWatcher();
-            _ = CargarAsync();
-            
-            // Marcar todas como leídas al entrar a la vista
-            MarcarTodasComoLeidas();
-        }
-
-        private async Task CargarAsync()
-        {
-            if (!await _refreshLock.WaitAsync(0)) return;
-            try
-            {
-                await Task.Run(() => CargarAlertas());
-            }
-            catch { /* absorber */ }
-            finally
-            {
-                _refreshLock.Release();
-            }
+            CargarAlertas();
+            IniciarWatcher();
         }
 
         private void CargarAlertas()
         {
             try
             {
-                var hoy = DateTime.Today;
-                var alertasHoy = new List<AlertaItem>();
-
-                if (File.Exists(_alertasEnviadasPath))
+                var path = Path.Combine(baseDir, "Logs", "alertas_smtp_enviadas.json");
+                if (!File.Exists(path))
                 {
-                    string json = LeerArchivoSeguro(_alertasEnviadasPath);
-                    JArray arr = null;
-                    try { arr = JArray.Parse(json); } catch { /* formato inválido */ }
-
-                    // Fallback: formato viejo {"alertas": [{id, campo, ultima_vez_alertado}]}
-                    if (arr == null)
-                    {
-                        try
-                        {
-                            var obj = JObject.Parse(json);
-                            var viejas = obj["alertas"] as JArray;
-                            if (viejas != null)
-                            {
-                                arr = new JArray();
-                                foreach (var v in viejas)
-                                {
-                                    string ts = v["ultima_vez_alertado"]?.ToString();
-                                    arr.Add(new JObject
-                                    {
-                                        ["id"]             = v["id"]?.ToString() ?? "-",
-                                        ["tipo_caso"]      = "A",
-                                        ["timestamp"]      = ts ?? DateTime.Today.ToString("o"),
-                                        ["nrocomprobante"] = ""
-                                    });
-                                }
-                            }
-                        }
-                        catch { /* absorber */ }
-                    }
-
-                    if (arr != null)
-                    {
-                        foreach (var token in arr)
-                        {
-                            string timestampStr = token["timestamp"]?.ToString();
-                            if (DateTime.TryParse(timestampStr, out var dt) && dt.Date == hoy)
-                            {
-                                string id = token["id"]?.ToString() ?? "-";
-                                string tipoCaso = token["tipo_caso"]?.ToString() ?? "B";
-                                string timestamp = dt.ToString("HH:mm");
-                                string nrocomprobante = token["nrocomprobante"]?.ToString() ?? "";
-
-                                var item = new AlertaItem
-                                {
-                                    Id = id,
-                                    TipoCaso = tipoCaso,
-                                    Timestamp = timestamp,
-                                    Nrocomprobante = nrocomprobante,
-                                    FechaCompleta = dt
-                                };
-
-                                alertasHoy.Add(item);
-                            }
-                        }
-                    }
+                    Alertas = new ObservableCollection<AlertaSMTP>();
+                    TotalAlertas = 0;
+                    AlertasHoy = 0;
+                    return;
                 }
 
-                // Ordenar de más reciente a más antigua
-                var alertasOrdenadas = alertasHoy.OrderByDescending(a => a.FechaCompleta).ToList();
+                string json;
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var reader = new StreamReader(fs))
+                    json = reader.ReadToEnd();
+
+                var container = JObject.Parse(json);
+                var alertas = (container["alertas"] as JArray ?? new JArray())
+                    .Select(a => new AlertaSMTP
+                    {
+                        Timestamp     = DateTime.Parse(a["timestamp"].ToString()),
+                        Tipo          = a["tipo"]?.ToString() ?? "",
+                        IdReferencia  = a["id_referencia"]?.ToString(),
+                        Destinatarios = a["destinatarios"]?.ToObject<List<string>>() ?? new List<string>(),
+                        Asunto        = a["asunto"]?.ToString() ?? "",
+                        Detalle       = a["detalle"]?.ToString() ?? "",
+                        Origen        = a["origen"]?.ToString() ?? ""
+                    })
+                    .OrderByDescending(a => a.Timestamp)
+                    .ToList();
 
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
-                    Alertas.Clear();
-                    foreach (var alerta in alertasOrdenadas)
-                    {
-                        Alertas.Add(alerta);
-                    }
-                    HasAlertas = Alertas.Count > 0;
+                    Alertas = new ObservableCollection<AlertaSMTP>(alertas);
+                    TotalAlertas = alertas.Count;
+                    AlertasHoy = alertas.Count(a => a.Timestamp.Date == DateTime.Today);
                 });
             }
-            catch
+            catch (Exception ex)
             {
                 Application.Current?.Dispatcher.InvokeAsync(() =>
-                {
-                    Alertas.Clear();
-                    HasAlertas = false;
-                });
+                    MainViewModel.Instance.ShowNotification($"Error al cargar alertas: {ex.Message}"));
             }
         }
 
-        private void MarcarTodasComoLeidas()
+        private void IniciarWatcher()
         {
-            try
+            var logDir = Path.Combine(baseDir, "Logs");
+            if (!Directory.Exists(logDir)) return;
+
+            _watcher = new FileSystemWatcher(logDir)
             {
-                var hoy = DateTime.Today.ToString("yyyy-MM-dd");
-                var idsActuales = new HashSet<string>();
+                Filter = "alertas_smtp_enviadas.json",
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime,
+                EnableRaisingEvents = true
+            };
+            _watcher.Changed += OnArchivoChanged;
+            _watcher.Created += OnArchivoChanged;
 
-                // Leer alertas leídas existentes
-                var leidasExistentes = new List<JObject>();
-                if (File.Exists(_alertasLeidasPath))
-                {
-                    string json = LeerArchivoSeguro(_alertasLeidasPath);
-                    var arr = JArray.Parse(json);
-                    foreach (var token in arr)
-                    {
-                        string fecha = token["fecha"]?.ToString();
-                        if (fecha == hoy)
-                        {
-                            leidasExistentes.Add((JObject)token);
-                            idsActuales.Add(token["id"]?.ToString() ?? "");
-                        }
-                    }
-                }
-
-                // Agregar alertas del día actual que no estén en leídas
-                bool cambios = false;
-                if (File.Exists(_alertasEnviadasPath))
-                {
-                    string json = LeerArchivoSeguro(_alertasEnviadasPath);
-                    JArray arr = null;
-                    try { arr = JArray.Parse(json); } catch { }
-                    if (arr == null) arr = new JArray();
-                    foreach (var token in arr)
-                    {
-                        string timestampStr = token["timestamp"]?.ToString();
-                        if (DateTime.TryParse(timestampStr, out var dt) && dt.Date == DateTime.Today)
-                        {
-                            string id = token["id"]?.ToString() ?? "";
-                            if (!idsActuales.Contains(id) && !string.IsNullOrEmpty(id))
-                            {
-                                leidasExistentes.Add(JObject.FromObject(new { id, fecha = hoy }));
-                                idsActuales.Add(id);
-                                cambios = true;
-                            }
-                        }
-                    }
-                }
-
-                // Limpiar entradas de días anteriores y guardar
-                if (cambios || leidasExistentes.Count > 0)
-                {
-                    var leidasLimpiadas = leidasExistentes
-                        .Where(obj =>
-                        {
-                            string f = obj["fecha"]?.ToString();
-                            return f == hoy;
-                        })
-                        .ToList();
-
-                    var arr = new JArray(leidasLimpiadas);
-                    GuardarArchivoSeguro(_alertasLeidasPath, arr.ToString());
-                }
-            }
-            catch { /* absorber */ }
+            _debounceTimer = new System.Timers.Timer(2000) { AutoReset = false };
+            _debounceTimer.Elapsed += (s, e) =>
+                Application.Current?.Dispatcher.InvokeAsync(() => CargarAlertas());
         }
 
-        private void MarkAsRead(AlertaItem alerta)
+        private void OnArchivoChanged(object sender, FileSystemEventArgs e)
         {
-            if (alerta == null) return;
-            MarcarTodasComoLeidas(); // Por ahora, marcamos todas como leídas de una vez
+            _debounceTimer?.Stop();
+            _debounceTimer?.Start();
         }
 
-        private void ExportToExcel()
+        private void ExportarExcel()
         {
-            var datos = Alertas.ToList();
-            if (!datos.Any())
+            if (Alertas == null || Alertas.Count == 0)
             {
-                MainViewModel.Instance?.ShowNotification("⚠️ No hay datos para exportar", "Error");
+                MainViewModel.Instance.ShowNotification("No hay alertas para exportar.");
                 return;
             }
 
             var dialog = new SaveFileDialog
             {
                 Filter = "Excel Files|*.xlsx",
-                FileName = $"Alertas_Oracle_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                FileName = $"Alertas_SMTP_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
             };
 
             if (dialog.ShowDialog() != true) return;
 
             try
             {
-                using (var workbook = new XLWorkbook())
+                using (var wb = new XLWorkbook())
                 {
-                    var worksheet = workbook.Worksheets.Add("Alertas");
+                    var ws = wb.Worksheets.Add("Alertas");
 
-                    worksheet.Cell(1, 1).Value = "ID";
-                    worksheet.Cell(1, 2).Value = "Tipo Caso";
-                    worksheet.Cell(1, 3).Value = "Timestamp";
-                    worksheet.Cell(1, 4).Value = "Nrocomprobante";
+                    ws.Cell(1, 1).Value = "Fecha";
+                    ws.Cell(1, 2).Value = "Tipo";
+                    ws.Cell(1, 3).Value = "ID Referencia";
+                    ws.Cell(1, 4).Value = "Destinatarios";
+                    ws.Cell(1, 5).Value = "Asunto";
+                    ws.Cell(1, 6).Value = "Detalle";
+                    ws.Cell(1, 7).Value = "Origen";
 
-                    var headerRange = worksheet.Range(1, 1, 1, 4);
-                    headerRange.Style.Font.Bold = true;
-                    headerRange.Style.Fill.BackgroundColor = XLColor.FromArgb(79, 70, 229);
+                    var headerRange = ws.Range("A1:G1");
+                    headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#4F46E5");
                     headerRange.Style.Font.FontColor = XLColor.White;
+                    headerRange.Style.Font.Bold = true;
 
                     int row = 2;
-                    foreach (var item in datos)
+                    foreach (var a in Alertas)
                     {
-                        worksheet.Cell(row, 1).Value = item.Id;
-                        worksheet.Cell(row, 2).Value = item.TipoTexto;
-                        worksheet.Cell(row, 3).Value = item.Timestamp;
-                        worksheet.Cell(row, 4).Value = item.Nrocomprobante;
+                        ws.Cell(row, 1).Value = a.TimestampFormateado;
+                        ws.Cell(row, 2).Value = a.TipoAmigable;
+                        ws.Cell(row, 3).Value = a.IdReferencia ?? "";
+                        ws.Cell(row, 4).Value = a.DestinatariosStr;
+                        ws.Cell(row, 5).Value = a.Asunto;
+                        ws.Cell(row, 6).Value = a.Detalle;
+                        ws.Cell(row, 7).Value = a.Origen;
                         row++;
                     }
 
-                    worksheet.Columns().AdjustToContents();
-                    workbook.SaveAs(dialog.FileName);
+                    ws.Columns().AdjustToContents();
+                    wb.SaveAs(dialog.FileName);
                 }
 
-                MainViewModel.Instance?.ShowNotification($"✅ Excel exportado: {Path.GetFileName(dialog.FileName)}");
+                MainViewModel.Instance.ShowNotification($"Exportado: {Path.GetFileName(dialog.FileName)}");
             }
             catch (Exception ex)
             {
-                MainViewModel.Instance?.ShowNotification($"❌ Error al exportar: {ex.Message}", "Error");
+                MainViewModel.Instance.ShowNotification($"Error al exportar: {ex.Message}");
             }
-        }
-
-        private string LeerArchivoSeguro(string path)
-        {
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var reader = new StreamReader(fs))
-                return reader.ReadToEnd();
-        }
-
-        private void GuardarArchivoSeguro(string path, string content)
-        {
-            string dir = Path.GetDirectoryName(path);
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-            using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-            using (var writer = new StreamWriter(fs))
-                writer.Write(content);
-        }
-
-        private void ConfigurarWatcher()
-        {
-            try { _watcher?.Dispose(); } catch { }
-            _debounceTimer?.Dispose();
-            _watcher = null;
-            _debounceTimer = null;
-
-            if (string.IsNullOrEmpty(_logsDir) || !Directory.Exists(_logsDir)) return;
-
-            _debounceTimer = new Timer(_ =>
-            {
-                if (_disposed) return;
-                Application.Current?.Dispatcher.BeginInvoke(new Action(() => _ = CargarAsync()));
-            }, null, Timeout.Infinite, Timeout.Infinite);
-
-            _watcher = new FileSystemWatcher(_logsDir)
-            {
-                Filter = "alertas_oracle_enviadas.json",
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
-                EnableRaisingEvents = true
-            };
-
-            _watcher.Changed += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
-            _watcher.Created += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
         }
 
         public void Dispose()
         {
-            if (_disposed) return;
-            _disposed = true;
-            try { _watcher?.Dispose(); } catch { }
-            try { _debounceTimer?.Dispose(); } catch { }
-            _watcher = null;
-            _debounceTimer = null;
+            _watcher?.Dispose();
+            _debounceTimer?.Dispose();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-    }
-
-    public class AlertaItem
-    {
-        public string Id { get; set; }
-        public string TipoCaso { get; set; }
-        public string Timestamp { get; set; }
-        public string Nrocomprobante { get; set; }
-        public DateTime FechaCompleta { get; set; }
-
-        public string Icono
-        {
-            get
-            {
-                return TipoCaso switch
-                {
-                    "B" => "🔴",
-                    "A" => "🟡",
-                    _ => "⚫"  // Anulados u otros
-                };
-            }
-        }
-
-        public string TipoTexto
-        {
-            get
-            {
-                return TipoCaso switch
-                {
-                    "B" => "Caso B",
-                    "A" => "Caso A",
-                    _ => "Anulado"
-                };
-            }
-        }
     }
 }

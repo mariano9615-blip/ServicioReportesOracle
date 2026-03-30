@@ -1,3 +1,4 @@
+using System;
 using System.Windows.Controls;
 
 namespace ServicioReportesOracle.UI.Views
@@ -10,6 +11,7 @@ namespace ServicioReportesOracle.UI.Views
         public AlertasView()
         {
             InitializeComponent();
+            this.Unloaded += (s, e) => (DataContext as IDisposable)?.Dispose();
         }
     }
 }

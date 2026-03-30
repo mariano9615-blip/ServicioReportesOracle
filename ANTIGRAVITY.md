@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.1.0)
+## 🚀 Resumen del Proyecto (v7.2.0)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.1.2
+**Versión Actual**: v7.2.0
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -23,7 +23,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 
 ### 2. 💎 ServicioReportesOracle.UI (WPF)
 - **Arquitectura**: MVVM pura.
-- **Vistas**: `DashboardView` (Pantalla principal al iniciar), `GeneralConfigView`, `TasksView` (Gestión ABM), `SqlEditorView` (Testing), `LogsView`, `MlogisHistorialView`, `MetricasView`, `ServiceControlView`, `ChangePasswordView`.
+- **Vistas**: `DashboardView` (Pantalla principal al iniciar), `GeneralConfigView`, `TasksView` (Gestión ABM), `SqlEditorView` (Testing), `LogsView`, `MlogisHistorialView`, `MetricasView`, `AlertasView`, `ServiceControlView`, `ChangePasswordView`.
 - **Diseño**: Tema oscuro premium con notificaciones tipo "Toast" incorporadas.
 - **Modelos**: Estructura anidada para configuración de mails (`Mail.ConError.Asunto`, etc.).
 - **Dashboard (v7.0.5)**:
@@ -39,6 +39,11 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
   - **Duración correcta**: `MlogisCorrida` expone `duracion_segundos` (double). El core escribe `nuevaCorrida.DuracionSegundos = sw.Elapsed.TotalSeconds` antes de persistir el historial. El ViewModel lee este campo directamente en lugar del cálculo erróneo con timestamps de registros individuales que reportaba hasta 46,635 segundos (13h).
   - KPIs: `corridas hoy vs ayer`, `alertas enviadas hoy`, y barra de distribución `FULL vs DELTA` de hoy.
   - `MetricasViewModel` usa `FileSystemWatcher` con debounce 2s (`mlogis_historial*.json` + `alertas_oracle_enviadas.json`) y refresco en Dispatcher.
+- **AlertasView (v7.2.0)**:
+  - Reemplaza la vista anterior (solo alertas Oracle del día) con un log unificado de todos los mails SMTP enviados por el core, leído desde `Logs\alertas_smtp_enviadas.json`.
+  - `AlertaSMTP` (Models): campos `Timestamp`, `Tipo`, `IdReferencia`, `Destinatarios` (lista), `Asunto`, `Detalle`, `Origen`. Computed: `TimestampFormateado` (`dd/MM HH:mm`), `TipoAmigable` (mapa legible de tipos), `DestinatariosStr`.
+  - `AlertasViewModel`: `ObservableCollection<AlertaSMTP>` con contadores `TotalAlertas` y `AlertasHoy`. `FileSystemWatcher` en `Logs\alertas_smtp_enviadas.json` con debounce 2s. `IDisposable` + `Unloaded` en code-behind para cleanup.
+  - Vista: DataGrid con columnas Fecha, Tipo, ID Ref., Destinatarios, Asunto, Detalle, Origen. Botones Exportar a Excel (ClosedXML, header indigo) y Actualizar. Ordenado por timestamp descendente.
 
 ### 3. 🧪 TestSoap (Console)
 - Herramienta rápida para debuggear la conectividad con el WS de Mlogis sin levantar todo el servicio.
@@ -66,6 +71,7 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 | `ws_estado.json` | Estado del health check del WebService SOAP (último estado, timestamps, flag de alerta enviada). |
 | `oracle_circuit_state.json` | Estado persistido del Circuit Breaker Oracle (`closed/open/half_open`, fallos, timestamp de apertura, flag de alerta). |
 | `pendientes_alerta_estado.json` | Estado de alertas por umbral de `comparaciones_pendientes.json` (último envío + cantidad al enviar). |
+| `alertas_smtp_enviadas.json` | Log acumulativo de todos los mails SMTP enviados por el core (leído por `AlertasView`). Campos: `timestamp`, `tipo`, `id_referencia`, `destinatarios`, `asunto`, `detalle`, `origen`. |
 | `Log_<DiaSemana>.txt` | Logs de ejecución del servicio (rotación semanal). |
 
 > **Migración automática**: al iniciar, el servicio mueve los archivos operativos de la raíz a `Logs\` si existen allí (instalaciones existentes).

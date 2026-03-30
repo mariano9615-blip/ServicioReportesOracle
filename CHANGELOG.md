@@ -1,4 +1,15 @@
 # 🗂️ Changelog
+## v7.2.0 - UI: Refactor AlertasView para log unificado SMTP (2026-03-30)
+
+### 🎨 UI — AlertasView refactorizada
+- **Antes**: mostraba solo alertas Oracle del día (`alertas_oracle_enviadas.json`, campos `id`/`tipo_caso`/`timestamp`/`nrocomprobante`).
+- **Ahora**: muestra log unificado de todos los mails SMTP enviados por el core, leído desde `Logs\alertas_smtp_enviadas.json`.
+- **`AlertaSMTP` (nuevo modelo)**: campos `Timestamp`, `Tipo`, `IdReferencia`, `Destinatarios` (lista), `Asunto`, `Detalle`, `Origen`. Computed `TipoAmigable` (mapa de tipos internos a etiquetas legibles) y `DestinatariosStr`.
+- **`AlertasViewModel` reescrito**: `ObservableCollection<AlertaSMTP>`, contadores `TotalAlertas` y `AlertasHoy`, `FileSystemWatcher` + debounce 2s sobre `alertas_smtp_enviadas.json`, `IDisposable` + cleanup en `Unloaded`.
+- **Vista reemplazada**: DataGrid con columnas Fecha, Tipo, ID Ref., Destinatarios, Asunto, Detalle, Origen. Ordenado por timestamp descendente. Exportar a Excel (ClosedXML, header indigo `#4F46E5`).
+
+---
+
 ## v7.1.2 - Fix log SMTP recuperación WS (2026-03-30)
 
 ### 🐛 Bug — Retorno de EnviarMailWS(esRecuperacion: true) ignorado
