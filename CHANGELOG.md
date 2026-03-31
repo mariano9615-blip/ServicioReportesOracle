@@ -1,4 +1,20 @@
 # 🗂️ Changelog
+## v7.3.1 - Fix crítico Health Check WS — Anti-spam y UltimaVezCaido (2026-03-31)
+
+### 🐛 Bug 1 — 26 mails de caída en lugar de 1 (oscilación caido↔auth_error)
+- **Causa raíz**: La condición de reset de `AlertaCaidaEnviada` usaba `!= "caido"` (resp. `!= "auth_error"`) en cada rama. Si el WS oscilaba entre ambos estados de falla (e.g., primer check sin respuesta HTTP → `caido`, siguiente check responde HTTP pero falla SOAP → `auth_error`), cada transición reseteaba el flag a `false` y disparaba un nuevo mail, generando N mails en lugar de 1 por ciclo de caída.
+- **Fix**: El flag `AlertaCaidaEnviada` solo se resetea a `false` al transicionar DESDE `"ok"` (estado sano) a cualquier estado de falla. Las transiciones entre estados de falla (`caido` ↔ `auth_error`) ya NO resetean el flag. Idem para `UltimaVezCaido`.
+
+### 🐛 Bug 2 — `ultima_vez_caido` se pisaba en cada caída consecutiva
+- **Causa**: `estado.UltimaVezCaido = ahora` se ejecutaba incondicionalmente en cada check de falla (comentado como `v7.1.1 — actualizar siempre`), sobreescribiendo el timestamp de la primera caída del ciclo.
+- **Fix**: `UltimaVezCaido` solo se actualiza al transicionar desde `"ok"` (primera caída del ciclo). La primera caída preserva el timestamp hasta la próxima recuperación, permitiendo que el mail de recuperación muestre correctamente `{UltimaVezCaido}`.
+
+### 🔍 Logging
+- Agregados logs explícitos con prefijo `[HealthCheckSoap]` para ambas ramas (caida/auth_error):
+  - `[HealthCheckSoap] ⚠️ WS caído — Enviando alerta (primera caída del ciclo)`
+  - `[HealthCheckSoap] ⚠️ WS caído — Alerta ya enviada, omitiendo reenvío`
+  - `[HealthCheckSoap] ✅ WS recuperado — Enviando notificación de recuperación`
+
 ## v7.2.0 - UI: Refactor AlertasView para log unificado SMTP (2026-03-30)
 
 ### 🎨 UI — AlertasView refactorizada

@@ -2519,19 +2519,25 @@ namespace ServicioOracleReportes
 
             if (!wsDisponible)
             {
-                // Si el tipo de error cambió, resetear flag para enviar nuevo mail
-                if (!string.Equals(estado.UltimoEstado, "caido", StringComparison.OrdinalIgnoreCase))
+                // v7.3.1 — Solo resetear flag y preservar UltimaVezCaido al transicionar DESDE "ok".
+                // No resetear al oscilar entre estados de falla (caido ↔ auth_error) para evitar spam.
+                bool esTransicionDesdeOk = string.Equals(estado.UltimoEstado, "ok", StringComparison.OrdinalIgnoreCase)
+                                        || string.IsNullOrEmpty(estado.UltimoEstado);
+                if (esTransicionDesdeOk)
+                {
                     estado.AlertaCaidaEnviada = false;
+                    estado.UltimaVezCaido     = ahora; // Solo en la primera caída del ciclo (transición ok→caído)
+                }
 
                 estado.UltimoEstado = "caido";
                 estado.DetalleError = "Sin respuesta HTTP (Timeout o servidor no disponible)";
-                estado.UltimaVezCaido = ahora; // v7.1.1 — actualizar siempre, no solo en la primera caída
 
                 estado.CaidasHoy++;
                 AgregarEventoHistorial(estado, "caida", estado.DetalleError, ahora);
 
                 if (!estado.AlertaCaidaEnviada)
                 {
+                    EscribirLog($"[HealthCheckSoap] ⚠️ WS caído — Enviando alerta (primera caída del ciclo). Caídas hoy: {estado.CaidasHoy}");
                     bool mailEnviado = EnviarMailWS(esRecuperacion: false, estado: estado);
                     if (mailEnviado)
                     {
@@ -2545,7 +2551,7 @@ namespace ServicioOracleReportes
                 }
                 else
                 {
-                    EscribirLog($"⚠️ [WS] WebService SOAP no disponible (alerta ya enviada). Corrida SOAP omitida. Caídas hoy: {estado.CaidasHoy}");
+                    EscribirLog($"[HealthCheckSoap] ⚠️ WS caído — Alerta ya enviada, omitiendo reenvío. Caídas hoy: {estado.CaidasHoy}");
                 }
 
                 GuardarWsEstado(wsEstadoPath, estado);
@@ -2556,20 +2562,26 @@ namespace ServicioOracleReportes
             var (authOk, authDetalle, authXml) = await VerificarAutenticacionSoapAsync();
             if (!authOk)
             {
-                // Si el tipo de error cambió, resetear flag para enviar nuevo mail
-                if (!string.Equals(estado.UltimoEstado, "auth_error", StringComparison.OrdinalIgnoreCase))
+                // v7.3.1 — Solo resetear flag y preservar UltimaVezCaido al transicionar DESDE "ok".
+                // No resetear al oscilar entre estados de falla (caido ↔ auth_error) para evitar spam.
+                bool esTransicionDesdeOkAuth = string.Equals(estado.UltimoEstado, "ok", StringComparison.OrdinalIgnoreCase)
+                                           || string.IsNullOrEmpty(estado.UltimoEstado);
+                if (esTransicionDesdeOkAuth)
+                {
                     estado.AlertaCaidaEnviada = false;
+                    estado.UltimaVezCaido     = ahora; // Solo en la primera caída del ciclo (transición ok→auth_error)
+                }
 
                 estado.UltimoEstado   = "auth_error";
                 estado.DetalleError   = authDetalle;
                 estado.UltimoErrorXml = authXml;
-                estado.UltimaVezCaido = ahora; // v7.1.1 — actualizar siempre, no solo en la primera caída
 
                 estado.CaidasHoy++;
                 AgregarEventoHistorial(estado, "caida", authDetalle, ahora);
 
                 if (!estado.AlertaCaidaEnviada)
                 {
+                    EscribirLog($"[HealthCheckSoap] ⚠️ WS caído — Enviando alerta (primera caída del ciclo). Caídas hoy: {estado.CaidasHoy}");
                     bool mailEnviado = EnviarMailWS(esRecuperacion: false, estado: estado);
                     if (mailEnviado)
                     {
@@ -2583,7 +2595,7 @@ namespace ServicioOracleReportes
                 }
                 else
                 {
-                    EscribirLog($"⚠️ [WS] Error de autenticación SOAP (alerta ya enviada): {authDetalle}. Corrida omitida.");
+                    EscribirLog($"[HealthCheckSoap] ⚠️ WS caído — Alerta ya enviada, omitiendo reenvío ({authDetalle}). Corrida omitida. Caídas hoy: {estado.CaidasHoy}");
                 }
 
                 GuardarWsEstado(wsEstadoPath, estado);
@@ -2601,6 +2613,7 @@ namespace ServicioOracleReportes
                 // Anti-spam: solo enviar mail de recuperación si se había avisado de la caída
                 if (estado.AlertaCaidaEnviada)
                 {
+                    EscribirLog($"[HealthCheckSoap] ✅ WS recuperado — Enviando notificación de recuperación. Recuperaciones hoy: {estado.RecuperacionesHoy}");
                     bool mailEnviado = EnviarMailWS(esRecuperacion: true, estado: estado);
                     EscribirLog(mailEnviado
                         ? $"✅ [WS] WebService SOAP recuperado. Mail enviado. Recuperaciones hoy: {estado.RecuperacionesHoy}"
