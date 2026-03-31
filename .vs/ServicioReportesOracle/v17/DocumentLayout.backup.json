@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\servicioreportesoracle\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|solutionrelative:servicioreportesoracle\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|c:\\users\\mdemichelis\\source\\repos\\servicioreportesoracle\\servicioreportesoracle\\servicioreportesoracle.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|solutionrelative:servicioreportesoracle\\servicioreportesoracle.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -33,10 +37,6 @@
       "RelativeMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|solutionrelative:servicioreportesoracle\\consultas.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\servicioreportesoracle\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|solutionrelative:servicioreportesoracle\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\servicioreportesoracle\\config.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|solutionrelative:servicioreportesoracle\\config.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
@@ -55,24 +55,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ConsultaStatus.cs",
-              "DocumentMoniker": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ConsultaStatus.cs",
-              "RelativeDocumentMoniker": "ServicioReportesOracle\\ConsultaStatus.cs",
-              "ToolTip": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ConsultaStatus.cs",
-              "RelativeToolTip": "ServicioReportesOracle\\ConsultaStatus.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-12T21:35:54.867Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "ConsultaSQL.cs",
               "DocumentMoniker": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ConsultaSQL.cs",
               "RelativeDocumentMoniker": "ServicioReportesOracle\\ConsultaSQL.cs",
@@ -80,12 +67,11 @@
               "RelativeToolTip": "ServicioReportesOracle\\ConsultaSQL.cs",
               "ViewState": "AgIAABsAAAAAAAAAAAAQwDEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-02T19:57:14.361Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-02T19:57:14.361Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "Consultas.json",
               "DocumentMoniker": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\Consultas.json",
               "RelativeDocumentMoniker": "ServicioReportesOracle\\Consultas.json",
@@ -109,7 +95,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "ServicioReportesOracle.cs",
               "DocumentMoniker": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ServicioReportesOracle.cs",
               "RelativeDocumentMoniker": "ServicioReportesOracle\\ServicioReportesOracle.cs",
@@ -122,7 +108,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Configuracion.cs",
               "DocumentMoniker": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\Configuracion.cs",
               "RelativeDocumentMoniker": "ServicioReportesOracle\\Configuracion.cs",
@@ -130,24 +116,47 @@
               "RelativeToolTip": "ServicioReportesOracle\\Configuracion.cs",
               "ViewState": "AgIAAAwAAAAAAAAAAAAqwBsAAAAvAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-02T19:40:39.16Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-02T19:40:39.16Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "ServicioReportesOracle.cs [Dise\u00F1o]",
               "DocumentMoniker": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ServicioReportesOracle.cs",
               "RelativeDocumentMoniker": "ServicioReportesOracle\\ServicioReportesOracle.cs",
               "ToolTip": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ServicioReportesOracle.cs [Dise\u00F1o]",
               "RelativeToolTip": "ServicioReportesOracle\\ServicioReportesOracle.cs [Dise\u00F1o]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-17T19:50:56.466Z",
-              "EditorCaption": " [Dise\u00F1o]"
+              "WhenOpened": "2025-12-17T19:50:56.466Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\Program.cs",
+              "RelativeDocumentMoniker": "ServicioReportesOracle\\Program.cs",
+              "ToolTip": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\Program.cs",
+              "RelativeToolTip": "ServicioReportesOracle\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-02T19:52:49.491Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ConsultaStatus.cs",
+              "DocumentMoniker": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ConsultaStatus.cs",
+              "RelativeDocumentMoniker": "ServicioReportesOracle\\ConsultaStatus.cs",
+              "ToolTip": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ConsultaStatus.cs",
+              "RelativeToolTip": "ServicioReportesOracle\\ConsultaStatus.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-12T21:35:54.867Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "Consultas.json",
               "DocumentMoniker": "C:\\Users\\mdemichelis\\OneDrive - BIT\\Escritorio\\serv\\Consultas.json",
               "RelativeDocumentMoniker": "..\\..\\..\\OneDrive - BIT\\Escritorio\\serv\\Consultas.json",
@@ -159,7 +168,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "Consultas.json",
               "DocumentMoniker": "C:\\Users\\mdemichelis\\Downloads\\Consultas.json",
               "RelativeDocumentMoniker": "..\\..\\..\\Downloads\\Consultas.json",
@@ -191,18 +200,6 @@
               "RelativeToolTip": "..\\..\\..\\OneDrive - BIT\\Escritorio\\CorrecionExcel2D0PLANO\\DibujaReportesPendientes - copia.asp",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2025-07-30T19:17:19.373Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\Program.cs",
-              "RelativeDocumentMoniker": "ServicioReportesOracle\\Program.cs",
-              "ToolTip": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\Program.cs",
-              "RelativeToolTip": "ServicioReportesOracle\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-02T19:52:49.491Z"
             }
           ]
         }

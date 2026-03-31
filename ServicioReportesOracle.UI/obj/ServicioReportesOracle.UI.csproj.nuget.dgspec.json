@@ -1,0 +1,92 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle.UI\\ServicioReportesOracle.UI.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle.UI\\ServicioReportesOracle.UI.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle.UI\\ServicioReportesOracle.UI.csproj",
+        "projectName": "ServicioReportesOracle.UI",
+        "projectPath": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle.UI\\ServicioReportesOracle.UI.csproj",
+        "packagesPath": "C:\\Users\\mdemichelis\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle.UI\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "UsingMicrosoftNETSdk": false,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\mdemichelis\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net48"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net48": {
+            "projectReferences": {
+              "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ServicioReportesOracle.csproj": {
+                "projectPath": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ServicioReportesOracle.csproj"
+              }
+            }
+          }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net48": {
+          "dependencies": {
+            "EPPlus": {
+              "target": "Package",
+              "version": "[7.5.2, )"
+            }
+          }
+        }
+      }
+    },
+    "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ServicioReportesOracle.csproj": {
+      "restore": {
+        "projectUniqueName": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ServicioReportesOracle.csproj",
+        "projectName": "ServicioReportesOracle",
+        "projectPath": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\ServicioReportesOracle.csproj",
+        "packagesPath": "C:\\Users\\mdemichelis\\.nuget\\packages\\",
+        "projectStyle": "PackagesConfig",
+        "UsingMicrosoftNETSdk": false,
+        "configFilePaths": [
+          "C:\\Users\\mdemichelis\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net48": {
+            "projectReferences": {}
+          }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low"
+        },
+        "packagesConfigPath": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\ServicioReportesOracle\\packages.config"
+      },
+      "frameworks": {
+        "net48": {}
+      }
+    }
+  }
+}

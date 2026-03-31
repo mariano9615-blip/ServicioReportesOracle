@@ -70,7 +70,9 @@
                   GridLinesVisibility="Horizontal"
                   HorizontalGridLinesBrush="{StaticResource OutlineBrush}"
                   RowBackground="{StaticResource SurfaceBrush}"
-                  AlternatingRowBackground="#1A1A1A"
+                  AlternationCount="2"
+                  AlternatingRowBackground="#0A000000"
+                  RowHeight="32"
                   Foreground="{StaticResource OnSurfaceBrush}">
 
             <DataGrid.ColumnHeaderStyle>
@@ -114,11 +116,17 @@
             </DataGrid.RowStyle>
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Fecha" Binding="{Binding TimestampFormateado}" Width="120"/>
+                <DataGridTextColumn Header="Fecha" Binding="{Binding TimestampFormateado}" Width="100">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Tipo" Binding="{Binding TipoAmigable}" Width="220"/>
+                <DataGridTextColumn Header="Tipo" Binding="{Binding TipoAmigable}" Width="140"/>
 
-                <DataGridTextColumn Header="Asunto" Binding="{Binding Asunto}" Width="400">
+                <DataGridTextColumn Header="Asunto" Binding="{Binding Asunto}" MinWidth="250" MaxWidth="400">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="ToolTip" Value="{Binding Asunto}"/>
@@ -127,7 +135,7 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Detalle" Binding="{Binding Detalle}" Width="*">
+                <DataGridTextColumn Header="Detalle" Binding="{Binding Detalle}" MinWidth="200" MaxWidth="350">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="ToolTip" Value="{Binding Detalle}"/>
@@ -136,9 +144,9 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="ID Ref." Binding="{Binding IdReferencia}" Width="140"/>
+                <DataGridTextColumn Header="ID Ref." Binding="{Binding IdReferencia}" Visibility="Collapsed"/>
 
-                <DataGridTextColumn Header="Destinatarios" Binding="{Binding DestinatariosStr}" Width="250">
+                <DataGridTextColumn Header="Destinatarios" Binding="{Binding DestinatariosStr}" MinWidth="180" MaxWidth="250">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="ToolTip" Value="{Binding DestinatariosStr}"/>
@@ -147,7 +155,7 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Origen" Binding="{Binding Origen}" Width="150"/>
+                <DataGridTextColumn Header="Origen" Binding="{Binding Origen}" Visibility="Collapsed"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

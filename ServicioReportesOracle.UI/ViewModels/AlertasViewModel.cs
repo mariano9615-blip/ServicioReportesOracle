@@ -5,9 +5,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
-using ClosedXML.Excel;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 using ServicioReportesOracle.UI.Models;
@@ -207,46 +207,24 @@ namespace ServicioReportesOracle.UI.ViewModels
 
             var dialog = new SaveFileDialog
             {
-                Filter = "Excel Files|*.xlsx",
-                FileName = $"Alertas_SMTP_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+                Filter = "CSV Files|*.csv",
+                FileName = $"Alertas_SMTP_{DateTime.Now:yyyyMMdd_HHmm}.csv"
             };
 
             if (dialog.ShowDialog() != true) return;
 
             try
             {
-                using (var wb = new XLWorkbook())
+                using (var writer = new StreamWriter(dialog.FileName, false, Encoding.UTF8))
                 {
-                    var ws = wb.Worksheets.Add("Alertas");
-
-                    ws.Cell(1, 1).Value = "Fecha";
-                    ws.Cell(1, 2).Value = "Tipo";
-                    ws.Cell(1, 3).Value = "ID Referencia";
-                    ws.Cell(1, 4).Value = "Destinatarios";
-                    ws.Cell(1, 5).Value = "Asunto";
-                    ws.Cell(1, 6).Value = "Detalle";
-                    ws.Cell(1, 7).Value = "Origen";
-
-                    var headerRange = ws.Range("A1:G1");
-                    headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#4F46E5");
-                    headerRange.Style.Font.FontColor = XLColor.White;
-                    headerRange.Style.Font.Bold = true;
-
-                    int row = 2;
+                    // Header
+                    writer.WriteLine("Fecha,Tipo,ID Referencia,Destinatarios,Asunto,Detalle,Origen");
+                    
+                    // Data
                     foreach (var a in Alertas)
                     {
-                        ws.Cell(row, 1).Value = a.TimestampFormateado;
-                        ws.Cell(row, 2).Value = a.TipoAmigable;
-                        ws.Cell(row, 3).Value = a.IdReferencia ?? "";
-                        ws.Cell(row, 4).Value = a.DestinatariosStr;
-                        ws.Cell(row, 5).Value = a.Asunto;
-                        ws.Cell(row, 6).Value = a.Detalle;
-                        ws.Cell(row, 7).Value = a.Origen;
-                        row++;
+                        writer.WriteLine($"\"{a.TimestampFormateado}\",\"{a.TipoAmigable}\",\"{a.IdReferencia ?? ""}\",\"{a.DestinatariosStr}\",\"{a.Asunto}\",\"{a.Detalle}\",\"{a.Origen}\"");
                     }
-
-                    ws.Columns().AdjustToContents();
-                    wb.SaveAs(dialog.FileName);
                 }
 
                 MainViewModel.Instance.ShowNotification($"Exportado: {Path.GetFileName(dialog.FileName)}");

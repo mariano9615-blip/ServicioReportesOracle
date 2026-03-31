@@ -3,11 +3,11 @@
   "WorkspaceRootPath": "C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\servicioreportesoracle\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|c:\\users\\mdemichelis\\source\\repos\\servicioreportesoracle\\servicioreportesoracle\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|solutionrelative:servicioreportesoracle\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|c:\\users\\mdemichelis\\source\\repos\\servicioreportesoracle\\servicioreportesoracle\\servicioreportesoracle.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|C:\\Users\\mdemichelis\\source\\repos\\ServicioReportesOracle\\servicioreportesoracle\\servicioreportesoracle.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6D8E6CD4-4F3D-4F9C-B772-F52A8F9F6F56}|ServicioReportesOracle\\ServicioReportesOracle.csproj|solutionrelative:servicioreportesoracle\\servicioreportesoracle.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
@@ -103,8 +103,7 @@
               "RelativeToolTip": "ServicioReportesOracle\\ServicioReportesOracle.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-02T19:39:13.873Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-02T19:39:13.873Z"
             },
             {
               "$type": "Document",

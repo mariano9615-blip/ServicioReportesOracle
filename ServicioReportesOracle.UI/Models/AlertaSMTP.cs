@@ -26,8 +26,8 @@ namespace ServicioReportesOracle.UI.Models
                 {
                     ["oracle_caso_a"]        = "⚠️ Oracle - Caso A",
                     ["oracle_caso_b"]        = "🔴 Oracle - Caso B",
-                    ["ws_caido"]             = "🌐❌ WebService Caído",
-                    ["ws_recuperado"]        = "🌐✅ WS Recuperado",
+                    ["ws_caido"]             = "🔴 WebService Caído",
+                    ["ws_recuperado"]        = "✅ WS Recuperado",
                     ["oracle_caido"]         = "🔌❌ Oracle Caído",
                     ["oracle_recuperado"]    = "🔌✅ Oracle Recuperado",
                     ["tarea_sql"]            = "📊 Tarea SQL",

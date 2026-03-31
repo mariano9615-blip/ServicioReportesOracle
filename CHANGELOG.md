@@ -1,4 +1,15 @@
 # 🗂️ Changelog
+## v7.3.3 - UI: Alertas Redesign & Export CSV (2026-03-31)
+
+### ✨ Mejora — Rediseño de AlertasView
+- **Visualización**: Zebra striping (filas alternas), altura de fila de 32px y mejores anchos de columna.
+- **Interactividad**: Tooltips en celdas para Asunto, Detalle y Destinatarios para lectura sin truncar.
+- **Emoji Fix**: Eliminación de símbolos duplicados en tipos de alerta (e.g. `🔴 WebService Caído`).
+
+### 🛠️ Robustez — Exportación CSV Simple
+- **Simplificación**: Reemplazada la exportación a Excel (ClosedXML/EPPlus) por formato **CSV (UTF-8)** con delimitadores de comillas para máxima compatibilidad.
+- **Portabilidad**: Se eliminan dependencias gráficas pesadas, asegurando el funcionamiento en cualquier entorno de servidor.
+
 ## v7.3.2 - UI: Fix Badge de Alertas y Sistema de Leído Persistido (2026-03-31)
 
 ### 🐛 Bug — Badge del sidebar estancado en "1"
@@ -12,6 +23,7 @@
 - Al navegar a **Alertas**, todos los registros de hoy se marcan automáticamente como leídos.
 - **Purga automática**: El archivo `alertas_leidas.json` ahora mantiene solo los últimos 7 días de historial para optimizar el rendimiento.
 - **Notificación Directa**: `AlertasViewModel` notifica inmediatamente al `MainViewModel` para resetear el badge a 0 al visualizar las alertas.
+- **Fix de Threading (Dispatcher)**: Se movió la ejecución de `MarcarComoLeidas()` dentro del bloque `InvokeAsync` para asegurar que la colección de alertas esté poblada antes de intentar persistir su estado de lectura.
 
 ## v7.3.1 - Fix crítico Health Check WS — Anti-spam y UltimaVezCaido (2026-03-31)
 
