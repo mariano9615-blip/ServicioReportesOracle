@@ -2,9 +2,9 @@
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.3.1)
+## 🚀 Resumen del Proyecto (v7.3.2)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.3.1
+**Versión Actual**: v7.3.2
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -348,5 +348,6 @@ public string MiPropiedad
 
 ## 🗂️ Changelog
 Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.3.1 — Fix crítico Health Check WS: `AlertaCaidaEnviada` solo se resetea al transicionar desde `"ok"` (no entre estados de falla `caido`↔`auth_error`). `UltimaVezCaido` preserva el timestamp de la primera caída del ciclo. Logs explícitos `[HealthCheckSoap]` para debugging.
+Versión actual: v7.3.2 — UI: Badge de Alertas corregido. Implementado sistema de leído persistido en `alertas_leidas.json` con purga de 7 días. Notificación directa entre ViewModels para actualización en tiempo real. 
+v7.3.1 — Fix crítico Health Check WS: Anti-spam y preservación de `UltimaVezCaido`.
 

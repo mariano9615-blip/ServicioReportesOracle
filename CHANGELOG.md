@@ -1,4 +1,18 @@
 # 🗂️ Changelog
+## v7.3.2 - UI: Fix Badge de Alertas y Sistema de Leído Persistido (2026-03-31)
+
+### 🐛 Bug — Badge del sidebar estancado en "1"
+- **Causa**: `MainViewModel` estaba leyendo el archivo antiguo `alertas_oracle_enviadas.json` y usando una lógica de filtrado de "leídos" manual e inconsistente.
+- **Fix**: 
+  - Actualizado a `alertas_smtp_enviadas.json` como fuente única.
+  - Implementado sistema de IDs persistente en `alertas_leidas.json` usando key compacta `{timestamp}_{tipo}`.
+  - Mejorado `FileSystemWatcher` con `NotifyFilters.Size` y debounce de 2s para actualizaciones en tiempo real.
+
+### ✨ Mejora — Sistema de Leído/No Leído
+- Al navegar a **Alertas**, todos los registros de hoy se marcan automáticamente como leídos.
+- **Purga automática**: El archivo `alertas_leidas.json` ahora mantiene solo los últimos 7 días de historial para optimizar el rendimiento.
+- **Notificación Directa**: `AlertasViewModel` notifica inmediatamente al `MainViewModel` para resetear el badge a 0 al visualizar las alertas.
+
 ## v7.3.1 - Fix crítico Health Check WS — Anti-spam y UltimaVezCaido (2026-03-31)
 
 ### 🐛 Bug 1 — 26 mails de caída en lugar de 1 (oscilación caido↔auth_error)

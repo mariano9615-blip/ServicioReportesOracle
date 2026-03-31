@@ -93,6 +93,9 @@ namespace ServicioReportesOracle.UI.ViewModels
                     Alertas = new ObservableCollection<AlertaSMTP>(alertas);
                     TotalAlertas = alertas.Count;
                     AlertasHoy = alertas.Count(a => a.Timestamp.Date == DateTime.Today);
+                    
+                    // Marcar como leídas después de asignar (v7.3.2 Fix)
+                    MarcarComoLeidas();
                 });
             }
             catch (Exception ex)
@@ -100,9 +103,6 @@ namespace ServicioReportesOracle.UI.ViewModels
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                     MainViewModel.Instance.ShowNotification($"Error al cargar alertas: {ex.Message}"));
             }
-
-            // Marcar como leídas después de cargar
-            MarcarComoLeidas();
         }
 
         private void MarcarComoLeidas()
