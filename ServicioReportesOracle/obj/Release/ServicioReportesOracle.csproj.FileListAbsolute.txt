@@ -48,4 +48,3 @@ C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\obj\Release\Servicio.A6218495.Up2Date
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\obj\Release\ServicioReportesOracle.exe
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\obj\Release\ServicioReportesOracle.pdb
-C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle\obj\Release\ServicioReportesOracle.exe.config
