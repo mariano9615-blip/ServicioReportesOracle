@@ -100,6 +100,76 @@ namespace ServicioReportesOracle.UI.ViewModels
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                     MainViewModel.Instance.ShowNotification($"Error al cargar alertas: {ex.Message}"));
             }
+
+            // Marcar como leídas después de cargar
+            MarcarComoLeidas();
+        }
+
+        private void MarcarComoLeidas()
+        {
+            try
+            {
+                var alertasLeidasPath = Path.Combine(baseDir, "Logs", "json", "alertas_leidas.json");
+                var alertasLeidas = new HashSet<string>();
+
+                // 1. Cargar existentes
+                if (File.Exists(alertasLeidasPath))
+                {
+                    try
+                    {
+                        var json = File.ReadAllText(alertasLeidasPath);
+                        var arr = JArray.Parse(json);
+                        foreach (var token in arr)
+                        {
+                            string id = token.ToString();
+                            if (!string.IsNullOrEmpty(id))
+                                alertasLeidas.Add(id);
+                        }
+                    }
+                    catch { }
+                }
+
+                // 2. Purga automática (Ajuste v7.3.2) - Mantener solo 7 días
+                var cutoffDate = DateTime.Today.AddDays(-7);
+                alertasLeidas = alertasLeidas
+                    .Where(id => {
+                        var parts = id.Split('_');
+                        if (parts.Length > 0 && DateTime.TryParse(parts[0], out var ts))
+                        {
+                            return ts.Date >= cutoffDate;
+                        }
+                        return false;
+                    })
+                    .ToHashSet();
+
+                // 3. Marcar actuales de hoy como leídas
+                int nuevasLeidas = 0;
+                if (Alertas != null)
+                {
+                    foreach (var a in Alertas.Where(x => x.Timestamp.Date == DateTime.Today))
+                    {
+                        string id = $"{a.Timestamp:yyyy-MM-ddTHH:mm:ss}_{a.Tipo}";
+                        if (alertasLeidas.Add(id))
+                        {
+                            nuevasLeidas++;
+                        }
+                    }
+                }
+
+                // 4. Guardar si hubo cambios o purga
+                File.WriteAllText(alertasLeidasPath, JArray.FromObject(alertasLeidas).ToString(Newtonsoft.Json.Formatting.Indented));
+
+                System.Diagnostics.Debug.WriteLine($"[AlertasViewModel] Marcadas {nuevasLeidas} alertas nuevas como leídas (Total persistido: {alertasLeidas.Count})");
+
+                // 5. Notificar al MainViewModel (Ajuste v7.3.2)
+                Application.Current?.Dispatcher.InvokeAsync(() => 
+                    MainViewModel.Instance?.CargarAlertasSidebarAsync()
+                );
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AlertasViewModel] Error en MarcarComoLeidas: {ex.Message}");
+            }
         }
 
         private void IniciarWatcher()

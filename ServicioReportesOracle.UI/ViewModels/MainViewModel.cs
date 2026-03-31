@@ -100,7 +100,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
             string logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\json"));
 
-            _alertasEnviadasPath = Path.Combine(logsDir, "alertas_oracle_enviadas.json");
+            _alertasEnviadasPath = Path.Combine(logsDir, "alertas_smtp_enviadas.json");
             _alertasLeidasPath = Path.Combine(logsDir, "alertas_leidas.json");
 
             ConfigurarWatcher();
@@ -115,11 +115,14 @@ namespace ServicioReportesOracle.UI.ViewModels
                 string dir = Path.GetDirectoryName(_alertasEnviadasPath);
                 if (Directory.Exists(dir))
                 {
-                    _watcherAlertas = new FileSystemWatcher(dir, "alertas_oracle_enviadas.json");
-                    _watcherAlertas.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size;
+                    _watcherAlertas = new FileSystemWatcher(dir)
+                    {
+                        Filter = "alertas_smtp_enviadas.json",
+                        NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+                        EnableRaisingEvents = true
+                    };
                     _watcherAlertas.Changed += (s, e) => { _ = CargarAlertasSidebarAsync(); };
                     _watcherAlertas.Created += (s, e) => { _ = CargarAlertasSidebarAsync(); };
-                    _watcherAlertas.EnableRaisingEvents = true;
                 }
             }
             catch { }
@@ -132,7 +135,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             _timerAlertas.Start();
         }
 
-        private async Task CargarAlertasSidebarAsync()
+        public async Task CargarAlertasSidebarAsync()
         {
             lock (_alertasLock)
             {
@@ -144,37 +147,30 @@ namespace ServicioReportesOracle.UI.ViewModels
             {
                 await Task.Delay(2000); // 2 segundos de debounce
                 
-                int totalAlertas = 0;
+                int totalAlertasNoLeidasHoy = 0;
                 var idsLeidos = new HashSet<string>();
 
-                // Cargar IDs leídos del día actual
+                // Cargar IDs leídos
                 await Task.Run(() =>
                 {
                     try
                     {
                         if (File.Exists(_alertasLeidasPath))
                         {
-                            using (var fs = new FileStream(_alertasLeidasPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            using (var sr = new StreamReader(fs))
+                            var json = File.ReadAllText(_alertasLeidasPath);
+                            var arr = JArray.Parse(json);
+                            foreach (var token in arr)
                             {
-                                string json = sr.ReadToEnd();
-                                var arr = JArray.Parse(json);
-                                foreach (var token in arr)
-                                {
-                                    string fecha = token["fecha"]?.ToString();
-                                    string id = token["id"]?.ToString();
-                                    if (fecha == DateTime.Today.ToString("yyyy-MM-dd") && !string.IsNullOrEmpty(id))
-                                    {
-                                        idsLeidos.Add(id);
-                                    }
-                                }
+                                string id = token.ToString();
+                                if (!string.IsNullOrEmpty(id))
+                                    idsLeidos.Add(id);
                             }
                         }
                     }
                     catch { }
                 });
 
-                // Contar alertas del día no leídas
+                // Contar alertas del día no leídas desde alertas_smtp_enviadas.json
                 if (File.Exists(_alertasEnviadasPath))
                 {
                     string json = null;
@@ -184,9 +180,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                         {
                             using (var fs = new FileStream(_alertasEnviadasPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                             using (var sr = new StreamReader(fs))
-                            {
                                 json = sr.ReadToEnd();
-                            }
                             break;
                         }
                         catch { await Task.Delay(500); }
@@ -196,17 +190,21 @@ namespace ServicioReportesOracle.UI.ViewModels
                     {
                         try
                         {
-                            var arr = JArray.Parse(json);
+                            var container = JObject.Parse(json);
+                            var alertas = container["alertas"] as JArray ?? new JArray();
                             
-                            foreach (var token in arr)
+                            foreach (var a in alertas)
                             {
-                                string timestamp = token["timestamp"]?.ToString();
-                                string id = token["id"]?.ToString();
-                                if (DateTime.TryParse(timestamp, out var dt) && dt.Date == DateTime.Today && !string.IsNullOrEmpty(id))
+                                string tsStr = a["timestamp"]?.ToString();
+                                string tipo = a["tipo"]?.ToString();
+
+                                if (DateTime.TryParse(tsStr, out var dt) && dt.Date == DateTime.Today)
                                 {
-                                    if (!idsLeidos.Contains(id))
+                                    // Key compacta según ajuste v7.3.2
+                                    string alertaId = $"{dt:yyyy-MM-ddTHH:mm:ss}_{tipo}";
+                                    if (!idsLeidos.Contains(alertaId))
                                     {
-                                        totalAlertas++;
+                                        totalAlertasNoLeidasHoy++;
                                     }
                                 }
                             }
@@ -215,24 +213,22 @@ namespace ServicioReportesOracle.UI.ViewModels
                     }
                 }
 
-                Application.Current?.Dispatcher.InvokeAsync(() =>
+                await Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
-                    if (totalAlertas == 0)
+                    if (totalAlertasNoLeidasHoy == 0)
                     {
                         SidebarAlertVisible = false;
                         SidebarAlertText = "";
                     }
                     else
                     {
-                        SidebarAlertText = totalAlertas > 99 ? "99+" : totalAlertas.ToString();
+                        SidebarAlertText = totalAlertasNoLeidasHoy > 99 ? "99+" : totalAlertasNoLeidasHoy.ToString();
                         SidebarAlertVisible = true;
                     }
+                    System.Diagnostics.Debug.WriteLine($"[MainViewModel] Badge actualizado: {totalAlertasNoLeidasHoy} alertas no leídas de hoy");
                 });
             }
-            catch
-            {
-                // Ignorar error si json está mal formado
-            }
+            catch { }
             finally
             {
                 lock (_alertasLock)
