@@ -689,7 +689,7 @@ namespace ServicioOracleReportes
                     if (string.IsNullOrEmpty(idStr)) continue;
 
                     DateTime primeraVez;
-                    if (!DateTime.TryParse(entry["primera_vez_visto"]?.ToString(), out primeraVez))
+                    if (!DateTime.TryParse(entry["primera_vez_visto"]?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out primeraVez))
                         primeraVez = DateTime.MinValue;
 
                     double minutosPasados = (DateTime.Now - primeraVez).TotalMinutes;
@@ -953,7 +953,7 @@ namespace ServicioOracleReportes
                         {
                             ["id"]                = reg.Id,
                             ["nrocomprobante"]    = reg.NroComprobante ?? "",
-                            ["primera_vez_visto"] = fechaEjecucion.ToString("yyyy-MM-ddTHH:mm:ss"), // ISO 8601 sin timezone (AssumeLocal)
+                            ["primera_vez_visto"] = fechaEjecucion.ToString("s"), // ISO 8601 Sortable format
                             ["corrida_origen"]    = tipo
                         };
                         pendientesArr.Add(entry);

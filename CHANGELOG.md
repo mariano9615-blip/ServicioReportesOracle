@@ -1,4 +1,11 @@
 # 🗂️ Changelog
+## v7.3.5 - Core: Fix de Serialización de Fechas (2026-04-02)
+
+### 🐛 Bug — Root cause de cálculo absurdo en Dashboard
+- **Fix**: Se modificó `ActualizarComparacionesPendientes` en el Servicio Core para usar el formato **ISO 8601 Sortable ("s")** al guardar `primera_vez_visto`.
+- **Análisis**: Anteriormente se guardaba usando el formato regional del servidor, lo que causaba que la UI interpretara `04/02` como 4 de Febrero (en lugar de 2 de Abril), provocando el desfase de 1368 horas.
+- **Robustez**: Se añadió `InvariantCulture` en el parsing del Core para total consistencia.
+
 ## v7.3.4 - UI: Fixes Visuales en Dashboard y Métricas (2026-04-02)
 
 ### 🐛 Bug — MetricasView: "Alertas enviadas hoy" incorrecto
