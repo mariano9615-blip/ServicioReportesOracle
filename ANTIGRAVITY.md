@@ -1,10 +1,10 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.0)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.3.4)
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.3.2)
+## 🚀 Resumen del Proyecto (v7.3.4)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.3.2
+**Versión Actual**: v7.3.4
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 

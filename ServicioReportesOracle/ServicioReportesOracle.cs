@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.ServiceProcess;
+using System.Globalization;
 using System.Timers;
 using System.Threading.Tasks;
 
@@ -952,7 +953,7 @@ namespace ServicioOracleReportes
                         {
                             ["id"]                = reg.Id,
                             ["nrocomprobante"]    = reg.NroComprobante ?? "",
-                            ["primera_vez_visto"] = fechaEjecucion.ToString("yyyy-MM-ddTHH:mm:ss"),
+                            ["primera_vez_visto"] = fechaEjecucion.ToString("yyyy-MM-ddTHH:mm:ss"), // ISO 8601 sin timezone (AssumeLocal)
                             ["corrida_origen"]    = tipo
                         };
                         pendientesArr.Add(entry);
@@ -1002,7 +1003,7 @@ namespace ServicioOracleReportes
                         if (string.IsNullOrWhiteSpace(id)) continue;
 
                         DateTime primeraVez;
-                        if (!DateTime.TryParse(item["primera_vez_visto"]?.ToString(), out primeraVez))
+                        if (!DateTime.TryParse(item["primera_vez_visto"]?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out primeraVez))
                             primeraVez = ahora;
 
                         registros.Add((id, primeraVez));

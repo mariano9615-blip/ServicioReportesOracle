@@ -1,4 +1,16 @@
 # 🗂️ Changelog
+## v7.3.4 - UI: Fixes Visuales en Dashboard y Métricas (2026-04-02)
+
+### 🐛 Bug — MetricasView: "Alertas enviadas hoy" incorrecto
+- **Fix**: Se añadió `CultureInfo.InvariantCulture` al parsear el `timestamp` del JSON.
+- **Robustez**: Ahora el contador soporta tanto el formato de array plano (v6.9.1) como el formato de objeto legacy (`{ "alertas": [] }`), y verifica los campos `timestamp` y `ultima_vez_alertado`.
+
+### 🐛 Bug — Dashboard: Cálculo de minutos "Más antiguo" absurdo
+- **Causa**: Fallo de parseo regional (MM/dd vs dd/MM) y desajuste entre UTC/Local que provocaba desfases de hasta 57 días (82090 min) o `DateTime.MinValue`.
+- **Fix**: 
+  - Se implementó `ToLocalTime()` y `AssumeLocal` con `InvariantCulture` para sincronizar el tiempo del JSON con el del sistema.
+  - Se añadió una validación en el timer para capar valores imposibles y asegurar que el cálculo de `TotalMinutes` sea siempre sobre tiempos locales coherentes.
+
 ## v7.3.3 - UI: Alertas Redesign & Export CSV (2026-03-31)
 
 ### ✨ Mejora — Rediseño de AlertasView

@@ -311,58 +311,47 @@ namespace ServicioReportesOracle.UI.ViewModels
                         {
                             DateTime dt;
                             string primeraVezVisto = p["primera_vez_visto"]?.ToString();
+                            
+                            // Aseguramos InvariantCulture y el ajuste a tiempo local para el cálculo en el UI
                             bool parseOk = DateTime.TryParse(
                                 primeraVezVisto,
                                 CultureInfo.InvariantCulture,
-                                DateTimeStyles.AssumeLocal,
+                                DateTimeStyles.AssumeLocal | DateTimeStyles.AllowWhiteSpaces,
                                 out dt);
 
-                            if (!parseOk)
+                            if (parseOk && dt > DateTime.MinValue)
                             {
-                                parseOk = DateTime.TryParse(primeraVezVisto, out dt);
-                            }
+                                // Sincronizamos con el tiempo actual para evitar offsets absurdos si viene como UTC
+                                DateTime localDt = dt.ToLocalTime();
+                                if (oldest == null || localDt < oldest.Value) oldest = localDt;
 
-                            if (parseOk)
-                            {
-                                if (oldest == null || dt < oldest.Value) oldest = dt;
-                            }
+                                var item = new PendienteDashboardItem
+                                {
+                                    Id = p["id"]?.ToString() ?? "-",
+                                    Nrocomprobante = p["nrocomprobante"]?.ToString() ?? "-",
+                                    PrimeraVezVistoDate = localDt,
+                                    PrimeraVezVistoText = localDt.ToString("HH:mm dd/MM"),
+                                    CorridaOrigen = (p["corrida_origen"]?.ToString() ?? "-").ToUpperInvariant()
+                                };
 
-                            string corrida = (p["corrida_origen"]?.ToString() ?? "-").Trim();
-                            if (string.IsNullOrWhiteSpace(corrida))
-                            {
-                                corrida = "-";
+                                item.EsperandoHace = CalcularEsperandoHace(item.PrimeraVezVistoDate);
+                                detallePendientes.Add(item);
                             }
-                            else
-                            {
-                                corrida = corrida.ToUpperInvariant();
-                            }
-
-                            var item = new PendienteDashboardItem
-                            {
-                                Id = p["id"]?.ToString() ?? "-",
-                                Nrocomprobante = p["nrocomprobante"]?.ToString() ?? "-",
-                                PrimeraVezVistoDate = parseOk ? (DateTime?)dt : null,
-                                PrimeraVezVistoText = parseOk ? dt.ToString("HH:mm dd/MM") : "-",
-                                CorridaOrigen = corrida
-                            };
-
-                            item.EsperandoHace = CalcularEsperandoHace(item.PrimeraVezVistoDate);
-                            detallePendientes.Add(item);
                         }
                     }
 
                     Application.Current?.Dispatcher.InvokeAsync(() =>
                     {
                         PendientesCount = pCount;
+                        _oldestPendienteDate = oldest;
+                        
                         if (PendientesCount > 0)
                         {
                             PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B")); // Amarillo
-                            _oldestPendienteDate = oldest;
                         }
                         else
                         {
                             PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Verde
-                            _oldestPendienteDate = null;
                         }
 
                         PendientesDetalle.Clear();
@@ -377,7 +366,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     Application.Current?.Dispatcher.InvokeAsync(() =>
                     {
                         PendientesCount = 0;
-                        PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Verde
+                        PendientesColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
                         _oldestPendienteDate = null;
                         PendientesDetalle.Clear();
                     });
@@ -514,7 +503,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                         foreach (var token in arr)
                         {
                             string timestamp = token["ultima_vez_alertado"]?.ToString();
-                            if (DateTime.TryParse(timestamp, out var dt) && dt.Date == DateTime.Today)
+                            if (DateTime.TryParse(timestamp, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var dt) && dt.Date == DateTime.Today)
                             {
                                 string campo = token["campo"]?.ToString();
                                 string id = token["id"]?.ToString();
@@ -585,11 +574,20 @@ namespace ServicioReportesOracle.UI.ViewModels
                 LastRunAgoText = "Sin corridas registradas hoy";
             }
 
-            if (_oldestPendienteDate.HasValue)
+            if (_oldestPendienteDate.HasValue && _oldestPendienteDate.Value > DateTime.MinValue)
             {
-                int minPendiente = (int)(DateTime.Now - _oldestPendienteDate.Value).TotalMinutes;
-                if (minPendiente < 0) minPendiente = 0;
-                OldestPendienteText = $"Más antiguo: hace {minPendiente} min";
+                TimeSpan diff = DateTime.Now - _oldestPendienteDate.Value;
+                int minPendiente = (int)Math.Max(0, diff.TotalMinutes);
+                
+                // Si el cálculo da un valor imposible (ej: > 30 días), algo falló en los datos persistidos o parsing
+                if (minPendiente > 43200) // 30 días
+                {
+                    OldestPendienteText = "Más antiguo: +30 días";
+                }
+                else
+                {
+                    OldestPendienteText = $"Más antiguo: hace {minPendiente} min";
+                }
             }
             else
             {

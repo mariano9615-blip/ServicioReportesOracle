@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -306,15 +307,32 @@ namespace ServicioReportesOracle.UI.ViewModels
                         return sr.ReadToEnd();
                 });
 
+                // Soporte para ambos formatos: array plano [] o { "alertas": [] }
                 JArray arr = null;
-                try { arr = JArray.Parse(json); } catch { }
+                string trimmed = json.TrimStart();
+                if (trimmed.StartsWith("{"))
+                {
+                    var obj = JObject.Parse(json);
+                    arr = obj["alertas"] as JArray;
+                }
+                else if (trimmed.StartsWith("["))
+                {
+                    arr = JArray.Parse(json);
+                }
+
                 if (arr == null) return 0;
 
                 int count = 0;
                 foreach (var token in arr)
                 {
-                    if (DateTime.TryParse(token["timestamp"]?.ToString(), out DateTime ts) && ts.Date == DateTime.Today)
-                        count++;
+                    // Verificamos ambos nombres de campo posibles (timestamp o ultima_vez_alertado)
+                    string tsStr = (token["timestamp"] ?? token["ultima_vez_alertado"])?.ToString();
+                    
+                    if (DateTime.TryParse(tsStr, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime ts))
+                    {
+                        if (ts.Date == DateTime.Today)
+                            count++;
+                    }
                 }
                 return count;
             }
