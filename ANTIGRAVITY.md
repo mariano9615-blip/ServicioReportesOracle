@@ -1,354 +1,85 @@
 # ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.3.6)
 
-Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
-
-## 🚀 Resumen del Proyecto (v7.3.6)
-**Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.3.6
-**Tecnología**: .NET Framework 4.8 (C#)
+## 🚀 Resumen del Proyecto
+**Nombre**: ServicioReportesOracle | **Versión**: v7.3.6 | **Tech**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
-## 📁 Estructura de la Solución
-### 1. ⚙️ ServicioReportesOracle (Core)
-- **Lógica**: Manejo de cronogramas, ejecución SQL (Oracle), generación Excel (ClosedXML) y envío de mails.
-- **Mlogis**: Integración SOAP para comparación de registros. El timer respeta `FrecuenciaSoapMinutos` de `config.json`.
-  - **`EjecutarComparacionMlogis()` (legacy)**: Se invoca desde `EjecutarConsultasSegunFrecuencia()` cuando la consulta se llama `"ComparacionMlogisOracle"`. Usa `ids_history.json` (IDs históricos vistos por SOAP) y ejecuta un SQL desde archivo (`.sql`) contra Oracle. Compara *presencia/ausencia* de IDs. Envía mail via `EnviarCorreoTracking()`. **Se mantiene por compatibilidad.**
-  - **`CompararConOracle()` (activo, v6.7)**: Se invoca al final de cada `InvocacionSoapMlogis()`. Ejecuta `query_oracle` de `consultas_soap.json` contra Oracle. Compara *nrocomprobante* (Caso A) y *presencia* (Caso B). Envía mail via `EnviarAlertaCambioSoap()`. **Este es el mecanismo principal activo.**
-    - **v6.9.1 — Anulados SUBSTR(id,3,15)**: El trigger Oracle forma el ID anulado como `'AN' + SUBSTR(idOriginal,1,15) + sufijo_numérico`. La query usa `SUBSTR(id, 3, 15) IN ({IDS_TRUNCADOS})` donde `{IDS_TRUNCADOS}` son los IDs Mlogis truncados a 15 chars. En C# el match compara `SUBSTR(idOracle, 2, 15) == idMlogis.Substring(0, Min(15, len))` (equivalente exacto al trigger). Reemplaza el `SUBSTR(id,3)` de v6.7 que fallaba porque no excluía el sufijo numérico.
-    - **v6.7 — Anulados refactorizado (base)**: La query usa `SUBSTR(id,3) IN ({IDS})` para anulados (reemplaza el LIKE AN% anterior). En C#: si el match es via `AN%`, se marca `anulado=true` en `MlogisRegistro` y en el historial — no genera Caso B ni alerta. `MlogisRegistro` incorpora los campos `FecUpd`, `Anulado` (bool) e `IdAnuladoOracle` (string) para trazabilidad completa. (Corregido en v6.9.1.)
-    - **v6.6.1 — Anulados (Fuzzy Match, reemplazado)**: Query con `OR (id LIKE 'AN%' AND ...)`. Reemplazado por SUBSTR en v6.7.
-  - Ambos métodos coexisten: el legacy cubre IDs históricos acumulados en `ids_history.json`; el nuevo cubre la corrida actual con validación de datos, no solo presencia.
-- **Configs**: `config.json` (Global) y `Consultas.json` (Tareas).
-- **Auto-heal**: Al iniciar, `MigrarConfigSiFaltan()` inyecta atributos faltantes en `config.json` sin pisar valores existentes.
+## 📁 Arquitectura
+- **Core (ServicioReportesOracle)**: Lógica de cronogramas, ejecución SQL (Oracle), generación Excel y SOAP Mlogis.
+- **UI (ServicioReportesOracle.UI)**: Dashboard WPF (MVVM), gestión de tareas, logs y métricas.
+- **TestSoap**: Consola para debug de conectividad SOAP.
 
-### 2. 💎 ServicioReportesOracle.UI (WPF)
-- **Arquitectura**: MVVM pura.
-- **Vistas**: `DashboardView` (Pantalla principal al iniciar), `GeneralConfigView`, `TasksView` (Gestión ABM), `SqlEditorView` (Testing), `LogsView`, `MlogisHistorialView`, `MetricasView`, `AlertasView`, `ServiceControlView`, `ChangePasswordView`.
-- **Diseño**: Tema oscuro premium con notificaciones tipo "Toast" incorporadas.
-- **Modelos**: Estructura anidada para configuración de mails (`Mail.ConError.Asunto`, etc.).
-- **Dashboard (v7.0.5)**:
-  - Cards navegables con el mismo mecanismo del sidebar (`MainViewModel.Nav*Command`): Última corrida → `MlogisHistorialView`, Alertas hoy → `AlertasView`, Estado del Servicio → `ServiceControlView`.
-  - Card `WebService` solo informativa (no clickeable, sin `Command`, sin cursor `Hand`, sin hover).
-  - Card de pendientes expandible inline (toggle por clic): muestra `Logs\comparaciones_pendientes.json` en modo solo lectura con columnas `ID`, `Nrocomprobante`, `Primera vez visto` (`HH:mm dd/MM`), `Corrida origen` (`FULL|DELTA`) y `Esperando hace` (`Xh Ym` recalculado en runtime).
-  - Interacción visual de cards navegables: cursor `Hand` y overlay hover `#22FFFFFF` cubriendo la card completa (no solo el contenido interior), sin bordes/efectos extra fuera del tema.
-  - Sección Alertas hoy: contadores en `OnSurfaceBrush` y alineados al inicio de cada barra de progreso.
-- **Métricas (v7.1.0)**:
-  - Vista dedicada `MetricasView` con métricas de las últimas 48h usando `Logs\mlogis_historial.json`, `Logs\mlogis_historial_ayer.json` y `Logs\alertas_oracle_enviadas.json`.
-  - **Gráficos de barras verticales** (WPF puro, sin dependencias externas): `ItemsControl + UniformGrid` con `BarItem { BarHeightPx, Tooltip, Fill }` para `IDs procesados por corrida` y `duración por corrida`.
-  - Las alturas de barra se pre-calculan en el ViewModel (sin converters en XAML); hover reduce opacidad; tooltip muestra el valor exacto por barra.
-  - **Duración correcta**: `MlogisCorrida` expone `duracion_segundos` (double). El core escribe `nuevaCorrida.DuracionSegundos = sw.Elapsed.TotalSeconds` antes de persistir el historial. El ViewModel lee este campo directamente en lugar del cálculo erróneo con timestamps de registros individuales que reportaba hasta 46,635 segundos (13h).
-  - KPIs: `corridas hoy vs ayer`, `alertas enviadas hoy`, y barra de distribución `FULL vs DELTA` de hoy.
-  - `MetricasViewModel` usa `FileSystemWatcher` con debounce 2s (`mlogis_historial*.json` + `alertas_oracle_enviadas.json`) y refresco en Dispatcher.
-- **AlertasView (v7.2.0)**:
-  - Reemplaza la vista anterior (solo alertas Oracle del día) con un log unificado de todos los mails SMTP enviados por el core, leído desde `Logs\alertas_smtp_enviadas.json`.
-  - `AlertaSMTP` (Models): campos `Timestamp`, `Tipo`, `IdReferencia`, `Destinatarios` (lista), `Asunto`, `Detalle`, `Origen`. Computed: `TimestampFormateado` (`dd/MM HH:mm`), `TipoAmigable` (mapa legible de tipos), `DestinatariosStr`.
-  - `AlertasViewModel`: `ObservableCollection<AlertaSMTP>` con contadores `TotalAlertas` y `AlertasHoy`. `FileSystemWatcher` en `Logs\alertas_smtp_enviadas.json` con debounce 2s. `IDisposable` + `Unloaded` en code-behind para cleanup.
-  - Vista: DataGrid con columnas Fecha, Tipo, ID Ref., Destinatarios, Asunto, Detalle, Origen. Botones Exportar a Excel (ClosedXML, header indigo) y Actualizar. Ordenado por timestamp descendente.
-
-### 3. 🧪 TestSoap (Console)
-- Herramienta rápida para debuggear la conectividad con el WS de Mlogis sin levantar todo el servicio.
-
-## 🗂️ Archivos del Servicio Core
-
-### Configuración (raíz del directorio de ejecución — editados por el usuario)
+## 🗂️ Archivos Críticos
 
 | Archivo | Propósito |
 |---------|-----------|
-| `config.json` | Configuración global (conexión Oracle, SMTP, SOAP, flags). |
-| `filters.json` | Filtros SOAP para `InvocacionSoapMlogis()` (ESTADOLOG/STATUS). |
+| `config.json` | Configuración global (Oracle, SMTP, SOAP, flags). |
 | `consultas.json` | Definición de tareas/consultas SQL. |
-| `consultas_soap.json` | Configuración de alertas SOAP y query Oracle de comparación. |
+| `DOCS/ARCHIVOS_JSON.md` | Detalle técnico de archivos JSON operativos y de configuración. |
+| `DOCS/HEALTH_CHECK.md` | Detalle del Health Check SOAP y Circuit Breaker Oracle. |
+| `DOCS/UI_VISTAS.md` | Detalle de las vistas y componentes de la UI WPF. |
+| `DOCS/CHANGELOG.md` | Historial completo de cambios y versiones. |
 
-### Operativos (carpeta `Logs\` — escritos por el servicio, no editar manualmente)
+## ⚠️ ERRORES COMUNES Y TRAMPAS
 
-| Archivo | Propósito |
-|---------|-----------|
-| `mlogis_historial.json` | Historial estructurado de corridas SOAP (rotación 7 días). |
-| `comparaciones_pendientes.json` | Buffer de IDs SOAP pendientes de comparar contra Oracle. |
-| `alertas_oracle_enviadas.json` | Array acumulativo de alertas Oracle enviadas (purga diaria). Dedup por ID + TipoCaso + fecha. |
-| `ids_history.json` | IDs vistos por SOAP (compatibilidad legacy con `EjecutarComparacionMlogis`). |
-| `status.json` | Estado de errores/resueltos del flujo legacy `ComparacionMlogisOracle`. |
-| `ws_estado.json` | Estado del health check del WebService SOAP (último estado, timestamps, flag de alerta enviada). |
-| `oracle_circuit_state.json` | Estado persistido del Circuit Breaker Oracle (`closed/open/half_open`, fallos, timestamp de apertura, flag de alerta). |
-| `pendientes_alerta_estado.json` | Estado de alertas por umbral de `comparaciones_pendientes.json` (último envío + cantidad al enviar). |
-| `alertas_smtp_enviadas.json` | Log acumulativo de todos los mails SMTP enviados por el core (leído por `AlertasView`). Campos: `timestamp`, `tipo`, `id_referencia`, `destinatarios`, `asunto`, `detalle`, `origen`. |
-| `Log_<DiaSemana>.txt` | Logs de ejecución del servicio (rotación semanal). |
+### 1. Parseo de JSONs - SIEMPRE verificar estructura real
+**Problema:** Asumir estructura sin verificar el archivo físico causa fallos silenciosos.
+- `alertas_smtp_enviadas.json`: estructura `{"alertas": [...]}` (objeto con key), NO `[...]` (array plano).
+- `alertas_oracle_enviadas.json`: array plano `[...]` desde v6.9.1.
+- `comparaciones_pendientes.json`: `{"pendientes": [...]}`.
+**Regla:** Antes de parsear: 1. Abrir archivo físico en `Logs\`. 2. Verificar estructura (objeto vs array).
 
-> **Migración automática**: al iniciar, el servicio mueve los archivos operativos de la raíz a `Logs\` si existen allí (instalaciones existentes).
-
----
-
-## 🗂️ Archivos de Configuración SOAP (detalle)
-### filters.json
-- **Ubicación**: raíz del directorio de ejecución del servicio core.
-- **Propósito**: Define los filtros que se aplican a las llamadas SOAP a Mlogis. Sin este archivo, `InvocacionSoapMlogis()` aborta inmediatamente.
-- **Leído por**: `InvocacionSoapMlogis()` en `ServicioReportesOracle.cs`.
-- **Formato actual (v5.5) — Condiciones compuestas**:
-```json
-[
-  {
-    "Entidad": "Mlogis",
-    "Overlay": 1,
-    "Condiciones": [
-      { "EstadoLog": "6", "Status": "2" },
-      { "EstadoLog": "4", "Status": "1" }
-    ]
-  }
-]
+### 2. Parseo de Fechas - DateTimeKind y cultura
+**Problema:** `DateTime.TryParse` falla en Argentina (dd/MM vs MM/dd).
+**Solución:** Parseo directo del JToken:
+```csharp
+DateTime? dt = token.Value<DateTime?>("campo_fecha");
+if (dt.HasValue && dt.Value.Kind == DateTimeKind.Utc)
+    dt = dt.Value.ToLocalTime();
 ```
-  Cada objeto dentro de `Condiciones` es un par AND. Entre objetos la relación es OR. El ejemplo anterior genera:
-  `AND ((ESTADOLOG='6' AND STATUS='2') OR (ESTADOLOG='4' AND STATUS='1'))`
+**NUNCA** usar `.ToString()` + `TryParse` - usar `Value<DateTime?>()`.
 
-- **Formato viejo (compatibilidad hacia atrás)** — sigue siendo válido:
-```json
-[
-  {
-    "Entidad": "Mlogis",
-    "Overlay": 5,
-    "EstadoLog": "4,6",
-    "Status": "1,2"
-  }
-]
-```
-  Genera: `AND ESTADOLOG IN ('4','6') AND STATUS IN ('1','2')`
+### 3. FileSystemWatcher - Nombres actualizados
+**Problema:** Watcher busca nombre viejo cuando archivo cambia de nombre.
+**Regla:** Actualizar `_path` en constructor y filtro en `WatcherTrigger()` al cambiar rutas.
 
-- **Campos**:
-  - `Entidad`: nombre de la entidad SOAP. Solo se procesa la entrada con `Entidad == "Mlogis"`.
-  - `Overlay`: reservado (no usado actualmente en el filtro SOAP, puede ignorarse).
-  - `Condiciones`: array de pares `{EstadoLog, Status}`. OR entre pares, AND dentro de cada par. Toma precedencia sobre `EstadoLog`/`Status` planos.
-  - `EstadoLog` / `Status` (formato viejo): strings separados por coma, usados si `Condiciones` no está presente.
-- **Nota**: El rango temporal del filtro (`FECUPD >= desde AND FECUPD <= hasta`) lo calcula el código en runtime según el tipo de corrida (full/delta). `filters.json` solo aporta los filtros de estado.
+### 4. Delay de comparación Oracle
+**Problema:** `CompararConOracle()` ignora `DelayComparacionMinutos` si parseo de fechas falla.
+**Fix:** Usar `entry.Value<DateTime?>()` y referenciar `fechaEjecucion` (no `DateTime.Now`).
 
-### comparaciones_pendientes.json
-- **Ubicación**: raíz del directorio de ejecución del servicio core.
-- **Propósito**: Buffer persistente de IDs SOAP que aún no fueron comparados contra Oracle. Acumula IDs entre corridas para respetar `DelayComparacionMinutos`.
-- **Escrito por**: `ActualizarComparacionesPendientes()` (post-corrida) y `CompararConOracle()` (post-comparación).
-- **Leído por**: `CompararConOracle()`.
-- **Estructura**:
-```json
-{
-  "pendientes": [
-    {
-      "id": "SIL-8353914",
-      "nrocomprobante": "ABC123",
-      "primera_vez_visto": "2026-03-24T18:00:00",
-      "corrida_origen": "delta"
-    }
-  ]
-}
-```
-- **Lógica**:
-  - Corrida DELTA: los IDs nuevos se agregan con `primera_vez_visto`. Los existentes actualizan `nrocomprobante` si cambió.
-  - Corrida FULL inteligente (v6.7): ya no limpia ciegamente el buffer. Compara `fecupd` de Mlogis vs `primera_vez_visto` del buffer antes de actualizar el historial. Solo los IDs verdaderamente nuevos o actualizados (fecupd posterior a `primera_vez_visto`) van a `comparaciones_pendientes.json`; el resto se descarta sin generar alerta.
-  - `CompararConOracle()` solo incluye en la query Oracle los IDs donde `primera_vez_visto + DelayComparacionMinutos <= fechaEjecucion` (usando el timestamp de la corrida como referencia). Los IDs comparados (OK, Caso A o Caso B) se remueven del buffer.
-  - **v7.3.6 — Fix parseo**: se utiliza `entry.Value<DateTime?>()` para evitar fallos por cultura del sistema que antes reseteaban `primera_vez_visto` a `MinValue` y disparaban alertas inmediatas.
-
-### alertas_oracle_enviadas.json
-- **Ubicación**: `Logs\` (generado por el servicio, no editar manualmente).
-- **Propósito**: Historial acumulativo de alertas Oracle enviadas. Usado para deduplicación: si ya se envió una alerta para el mismo ID + TipoCaso en el día actual, se omite el reenvío.
-- **Escrito por**: `EnviarAlertaOracleConsolidada()` en `ServicioReportesOracle.cs`.
-- **Leído por**: `EnviarAlertaOracleConsolidada()`.
-- **Estructura** (array plano — v6.9.1):
-```json
-[
-  {
-    "id": "SIL-8374477",
-    "tipo_caso": "B",
-    "timestamp": "2026-03-27T10:15:00",
-    "nrocomprobante": "ABC123"
-  }
-]
-```
-- **Lógica**:
-  - **Dedup**: clave = `id + tipo_caso + DateTime.Today`. Si ya existe una entrada con esa clave para hoy, la alerta no se reenvía.
-  - **Acumulación**: al escribir, se re-lee el array del disco, se purgan entradas cuyo `timestamp.Date < DateTime.Today` (para no crecer indefinidamente) y se agregan las nuevas alertas de la corrida actual.
-  - **Primera corrida del día**: la purga de entradas del día anterior ocurre automáticamente en la primera escritura del día.
-- **Nota**: el formato cambió en v6.9.1 de `{"alertas": [...]}` a un array plano `[...]` con campos `id`, `tipo_caso`, `timestamp`, `nrocomprobante`. Archivos con el formato anterior son migrados automáticamente por `LeerDedupCompatible()` (servicio) y por el fallback en `CargarAlertas()` (UI) — mapeo: `ultima_vez_alertado → timestamp`, `campo → tipo_caso` (default "A").
-
-### consultas_soap.json
-- **Ubicación**: raíz del directorio de ejecución del servicio core.
-- **Propósito**: Configura las alertas de cambios SOAP y la query Oracle para comparación cruzada.
-- **Leído por**: `EnviarAlertaCambioSoap()` y `CompararConOracle()` en `ServicioReportesOracle.cs`.
-- **Campos clave**:
-  - `alertas_cambios.destinatarios`: lista de mails. Si está vacía, las alertas se loguean y se omiten sin error.
-  - `alertas_cambios.asunto` / `cuerpo_template`: plantillas con placeholders `{ID}`, `{Campo}`, `{ValorAnterior}`, `{ValorNuevo}`, `{Timestamp}`, `{Tipo}`.
-  - `alertas_cambios.query_oracle`: query SQL con dos placeholders:
-    - `{IDS}`: lista de IDs Mlogis exactos para el match directo.
-    - `{IDS_TRUNCADOS}`: lista de IDs Mlogis truncados a 15 chars para el match de anulados via `SUBSTR(id, 3, 15)`. El trigger Oracle forma el ID anulado como `'AN' + SUBSTR(idOriginal, 1, 15) + sufijo_numérico`, por lo que el match correcto es `SUBSTR(id, 3, 15) IN ({IDS_TRUNCADOS})`. Ambos placeholders son reemplazados por `CompararConOracle()` antes de ejecutar la query.
-
-### AlertaPendientes (config.json)
-- **Ubicación**: sección `AlertaPendientes` dentro de `config.json` (raíz del servicio core).
-- **Propósito**: alerta proactiva por crecimiento de `comparaciones_pendientes.json` para detectar fallas silenciosas de Oracle.
-- **Campos**:
-  - `Destinatarios`: lista de mails para alertas/resolución.
-  - `UmbralCantidad`: cantidad mínima de pendientes para disparar alerta (default 50).
-  - `CooldownHoras`: ventana anti-spam entre alertas consecutivas por umbral (default 4h).
-  - `AsuntoAlerta` / `CuerpoAlerta`: plantilla de alerta al superar umbral.
-  - `AsuntoResolucion` / `CuerpoResolucion`: plantilla cuando pendientes vuelve por debajo del umbral.
-- **Placeholders soportados**: `{CantidadActual}`, `{IdMasAntiguo}`, `{HorasEnBuffer}`, `{Timestamp}`, `{Empresa}`.
-- **Persistencia anti-spam**: `Logs\pendientes_alerta_estado.json` con:
-  - `ultimo_envio`: último envío de alerta por umbral.
-  - `cantidad_al_enviar`: cantidad registrada al enviar la alerta.
-
-## 🌐 Health Check del WebService SOAP
-
-- **Trigger**: antes de cada `InvocacionSoapMlogis()`.
-- **Timeout**: 60 segundos (HEAD request al endpoint `UrlWS`).
-- **Estado persistido**: `Logs\ws_estado.json` con campos `ultimo_estado`, `ultima_vez_caido`, `ultima_vez_recuperado`, `alerta_caida_enviada`, `detalle_error`, `caidas_hoy`, `recuperaciones_hoy`, `ultimo_error_xml`, `historial_eventos` (últimos 100, reset diario automático).
-- **Estados posibles**: `"ok"`, `"caido"` (sin respuesta HTTP), `"auth_error"` (LoginSucceeded=false o token ausente).
-- **Lógica de alertas**:
-  - WS caído/auth_error + `alerta_caida_enviada = false` → envía mail de caída, setea flag, saltea corrida.
-  - WS caído/auth_error + `alerta_caida_enviada = true` → solo loguea, saltea corrida (no reenvía mail).
-  - WS recuperado + estado previo era falla + `alerta_caida_enviada = true` → envía mail de recuperación, resetea flags.
-  - WS recuperado + estado previo era falla + `alerta_caida_enviada = false` → solo loguea, incrementa `recuperaciones_hoy` (sin mail — anti-spam).
-  - WS ok + estado previo `"ok"` → flujo normal.
-- **Configuración**: sección `HealthCheckSoap` en `config.json`. Se inyecta automáticamente en instalaciones existentes via `MigrarConfigSiFaltan()`.
-  - `Destinatarios`: lista de mails. Si está vacía, el mail se loguea y se omite sin error.
-  - `AsuntoCaido` / `CuerpoCaido`: plantillas para mail de caída. Placeholders: `{Empresa}`, `{Fecha}`, `{UrlWS}`, `{Timestamp}`.
-  - `AsuntoRecuperado` / `CuerpoRecuperado`: plantillas para mail de recuperación. Agrega placeholder `{UltimaVezCaido}`.
-- **Editable desde la UI**: vista Configuración General → sección "Configuración de Alertas Health Check", con campo Destinatarios y tabs "Plantilla CAÍDO" / "Plantilla RECUPERADO".
-
-## ⚡ Circuit Breaker Oracle
-
-- **Trigger**: se evalúa antes de cualquier apertura de `OracleConnection` en el core (`EjecutarConsultasSegunFrecuencia()` y `CompararConOracle()`, incluyendo `EjecutarComparacionMlogis()`/consultas individuales al compartir conexión).
-- **Estados**:
-  - `closed`: ejecución normal de Oracle.
-  - `open`: se saltean corridas Oracle sin intentar conexión.
-  - `half_open`: se ejecuta una prueba `SELECT 1 FROM DUAL`.
-- **Umbral de apertura**: `CircuitBreakerUmbral` en `config.json` (default 3 fallos consecutivos de conexión).
-- **Timeout**: `CircuitBreakerTimeoutMinutos` en `config.json` (default 15). Al cumplirse, pasa a `half_open`.
-- **Prueba HALF-OPEN**:
-  - Si falla: vuelve a `open` y reinicia `timestamp_apertura`.
-  - Si funciona: vuelve a `closed`, resetea `fallos_consecutivos` y envía mail de recuperación.
-- **Persistencia**: `Logs\oracle_circuit_state.json` con campos `estado`, `fallos_consecutivos`, `timestamp_apertura`, `alerta_enviada`.
-- **Alertas SMTP** (`config.json` → `CircuitBreakerAlerta`):
-  - `Destinatarios`, `AsuntoCaido`, `CuerpoCaido`, `AsuntoRecuperado`, `CuerpoRecuperado`.
-  - Placeholders soportados: `{Empresa}`, `{Fecha}`, `{Timestamp}`, `{FallosConsecutivos}`.
-  - **Anti-spam**: en `open` se envía una sola alerta de caída por ciclo; no se reenvía mientras `alerta_enviada=true`.
-- **Logging**: todas las transiciones/eventos del breaker se registran con prefijo `[CircuitBreaker]` en `Log_<DiaSemana>.txt`.
-
-## 🗂️ Rotación de mlogis_historial.json
-
-- Al escribir `mlogis_historial.json` después de cada corrida, se aplica rotación diaria:
-  - **hoy** (`fecha_ejecucion.Date == DateTime.Today`): van a `mlogis_historial.json`.
-  - **ayer** (`fecha_ejecucion.Date == DateTime.Today.AddDays(-1)`): van a `Logs\mlogis_historial_ayer.json`. Solo se escribe si hay corridas de ayer (no sobreescribe si no las hay).
-  - **anteriores**: se descartan.
-- Solo es limpieza de disco; no afecta el flujo de comparación Oracle (que opera sobre `comparaciones_pendientes.json`).
-- Se loguea: `🗑️ [Historial] Rotación diaria: N corridas hoy, M de ayer preservadas, K descartadas.`
-
-## 🗂️ Vista Historial SOAP — mlogis_historial_ayer.json (UI v4.6)
-- **MlogisHistorialViewModel** carga ambos archivos en cada refresh:
-  - `mlogis_historial.json` (corridas de hoy)
-  - `mlogis_historial_ayer.json` (corridas de ayer, si existe)
-- **Panel izquierdo (modo Por Corrida)**: las corridas de hoy aparecen primero, luego un separador `— Ayer —` y las corridas de ayer con `Opacity=0.5`.
-  - El separador se implementa como un `CorridaItem` con `IsSeparator=true`; no es seleccionable (`IsEnabled=False`, `IsHitTestVisible=False`, `Focusable=False`).
-  - Las corridas de ayer tienen `IsDeAyer=true`; el `ItemContainerStyle` aplica `Opacity=0.5` vía `DataTrigger`.
-- **FileSystemWatcher**: filtro cambiado a `"mlogis_historial*.json"` — detecta cambios en ambos archivos, incluida la creación de `mlogis_historial_ayer.json` a medianoche.
-- **Modo Por ID único**: itera `_historial.Concat(_historialAyer)` para deduplicación — los IDs de ayer se incluyen sin diferenciación visual.
-- **LineInfo**: muestra el total combinado (`_historial.Count + _historialAyer.Count` corridas).
-- **Integridad ciclo `comparaciones_pendientes.json` (v6.9.2)**: verificada — formato consistente entre escritura (`{"pendientes":[...]}`) y lectura (`["pendientes"] as JArray`). Operaciones secuenciales `ActualizarComparacionesPendientes` → `CompararConOracle`, sin race condition ni lost-update. No existe el bug de `alertas_oracle_enviadas.json`.
-
-## 🗂️ Sidebar Colapsable (UI v4.5)
-- **Comportamiento**: botón ☰ en la parte superior del sidebar togglea entre expandido (260px) y colapsado (56px).
-- **Animación**: `GridLengthAnimation` custom (`GridLengthAnimation.cs`) con `CubicEase EaseInOut` 200ms sobre `SidebarColumn.Width`.
-- **Estado colapsado**: se ocultan `SidebarTitle`, `SidebarSubtitle`, labels de nav (`NavText1`–`NavText7`) y `VersionText`. Quedan visibles solo el botón ☰ y los íconos emoji de cada item.
-- **Campo**: `private bool _sidebarExpanded = true;` en `MainWindow.xaml.cs`.
-- **Colores**: sin hardcodeo — overlays semitransparentes `#22FFFFFF`/`#33FFFFFF` como el `TitleBarButtonStyle` existente.
-
-## 📋 Reglas de Desarrollo
-- **Interfaz (WPF)**: Usar siempre el sistema de colores de `App.xaml`. Evitar hardcodear colores en las vistas.
-- **Notificaciones**: Utilizar `MainViewModel.Instance.ShowNotification(msg)` en lugar de `MessageBox`.
-- **Bindings**: Usar `UpdateSourceTrigger=PropertyChanged` para una UI reactiva y moderna.
-- **Models**: Los modelos que representen JSON (`ConfigModel`, `ConsultaTaskModel`) deben implementar `INotifyPropertyChanged` y seguir la estructura anidada del archivo físico.
-- **Logging**: El servicio core loguea en `Logs/Log_<DiaSemana>.txt` (ej: `Log_Lunes.txt`). Rotación semanal automática. La UI lee estos archivos con selector de día. La vista de Logs carga las últimas 1.000 líneas (ListBox virtualizado) y muestra el total real del archivo.
-  - **Carga incremental (v6.4)**: El botón Actualizar usa `IncrementalRefreshAsync()` — solo lee líneas nuevas desde la última posición, sin spinner IsBusy. El spinner solo aparece al cambiar de día en el selector.
-  - **Auto-scroll inteligente (v6.4)**: `ScrollIntoView` al final solo si el usuario ya estaba al final (margen 2px). Si scrolleó hacia arriba, no se fuerza el auto-scroll.
-  - **Log compacto por corrida (v6.7)**: una línea por corrida SOAP en formato `[HH:mm] Run {FULL|DELTA}: {total} IDs | N:{nuevos} U:{actualizados} A:{anulados} S:{sinCambios} | {segundos}s`.
-  - **LogsViewModel estable (v6.7 UI)**: `SemaphoreSlim(1,1)` en `IncrementalRefreshAsync` evita ejecuciones concurrentes; `IDisposable` + `Unloaded` limpian `FileSystemWatcher` y `debounceTimer`; try/catch global absorbe excepciones antes de que lleguen al hilo UI; `ScrollIntoView` protegido contra errores de virtualización reciclada.
-  - **Buscador en tiempo real (v6.8 UI)**: `Ctrl+F` abre/cierra la barra de búsqueda; `Esc` la cierra desde el TextBox. El filtrado opera sobre `_allLines` (copia maestra en memoria de hasta 1.000 líneas) sin releer el archivo. Mientras hay texto, `Lines` muestra solo las coincidencias case-insensitive; al borrar el texto se restaura la vista completa. Líneas nuevas que llegan via watcher también se filtran antes de mostrarse. `LineInfo` indica `N coincidencias de M líneas en memoria` durante el filtrado. El fast-path sin filtro preserva el auto-scroll incremental; con filtro activo reconstruye `Lines` desde `_allLines`.
-- **Fechas**: `FecUpd` viene del JSON como string variable (ej: `"3/26/2026 5:42:07 PM"`). Parsear con `DateTime.TryParse(..., CultureInfo.InvariantCulture, ...)` y mostrar como `dd/MM/yyyy HH:mm`. `PrimeraVezVisto`/`UltimaVezVisto` son ISO 8601 — mostrar solo `HH:mm` en grillas.
-- **ComboBox**: Siempre aplicar el Style del tema oscuro (inline `ComboBox.Style` + `ComboBox.ItemContainerStyle` con template custom). Nunca usar ComboBox sin Style explícito — el default de WPF renderiza texto negro invisible sobre fondo oscuro. Ver `LogsView.xaml` como referencia.
-- **PasswordBox**: No soporta binding directo. Sincronizar en code-behind via `PasswordChanged` → `vm.Property = box.Password`.
-- **RelayCommand**: Acepta `canExecute` opcional. `CanExecuteChanged` usa `CommandManager.RequerySuggested` para re-evaluar automáticamente.
-- **DataGrid Clipboard**: Siempre habilitar `ClipboardCopyMode="IncludeHeader"` y `SelectionMode="Extended"` para permitir Ctrl+C nativo.
-- **Export Excel**: Usar ClosedXML con estilo de headers consistente (indigo `#4F46E5`, texto blanco, negrita). Siempre usar SaveFileDialog.
+## 📋 Reglas Esenciales
+- **UI**: Usar colores de `App.xaml`. `MainViewModel.Instance.ShowNotification()` para avisos.
+- **Threading**: Siempre `Application.Current.Dispatcher.InvokeAsync()` para actualizar la UI.
+- **Logs**: Core loguea en `Logs/Log_<DiaSemana>.txt`. Rotación semanal automática.
+- **Export Excel**: ClosedXML con header indigo `#4F46E5`. Usar `SaveFileDialog`.
 
 ## ⛔ Patrones Prohibidos
-- NUNCA usar `dotnet build` — siempre MSBuild.exe directo (falla con MSB4216/GenerateResource en .NET Framework 4.8)
-- NUNCA hardcodear colores en vistas — usar exclusivamente brushes de App.xaml (OnSurfaceBrush, SurfaceBrush, etc.)
-- NUNCA usar MessageBox — usar MainViewModel.Instance.ShowNotification()
-- NUNCA usar ComboBox sin Style explícito — el default de WPF renderiza texto negro invisible sobre fondo oscuro
-- NUNCA modificar propiedades bindeadas a la UI desde threads secundarios — siempre usar Application.Current.Dispatcher.InvokeAsync()
-- NUNCA usar binding Mode=TwoWay sobre propiedades de solo lectura en modelos — usar Mode=OneWay explícito en DataTemplates
-- NUNCA escribir en los archivos operativos de Logs\ desde la UI — esos archivos son exclusivos del servicio core (excepción: alertas_leidas.json y ui_settings.json que son de la UI)
-- NUNCA añadir `OnPropertyChanged` suelto en el await posterior a `Task.Run()` si el setter de la propiedad ya lo hace — genera un segundo notify desfasado que puede leer estado intermedio (race condition)
+- NUNCA usar `dotnet build` — siempre MSBuild.exe directo.
+- NUNCA hardcodear colores en vistas.
+- NUNCA usar ComboBox sin Style explícito (ver `LogsView.xaml`).
+- NUNCA escribir en archivos operativos de `Logs\` desde la UI (excepto alertas_leidas.json).
 
-## 📎 Snippets de Referencia
-SNIPPET 1 — FileSystemWatcher con debounce 2s y Dispatcher:
+## 📎 Snippets Esenciales
+
+**FileSystemWatcher con debounce 2s:**
 ```csharp
-private FileSystemWatcher _watcher;
-private System.Timers.Timer _debounceTimer;
-
-private void IniciarWatcher(string path)
-{
-    _watcher = new FileSystemWatcher(Path.GetDirectoryName(path))
-    {
-        Filter = Path.GetFileName(path),
-        NotifyFilter = NotifyFilters.LastWrite,
-        EnableRaisingEvents = true
-    };
-    _watcher.Changed += OnArchivoChanged;
-
+private void IniciarWatcher(string path) {
+    _watcher = new FileSystemWatcher(Path.GetDirectoryName(path)) { Filter = Path.GetFileName(path), NotifyFilter = NotifyFilters.LastWrite, EnableRaisingEvents = true };
+    _watcher.Changed += (s, e) => { _debounceTimer.Stop(); _debounceTimer.Start(); };
     _debounceTimer = new System.Timers.Timer(2000) { AutoReset = false };
-    _debounceTimer.Elapsed += (s, e) =>
-        Application.Current.Dispatcher.InvokeAsync(() => CargarDatos());
-}
-
-private void OnArchivoChanged(object sender, FileSystemEventArgs e)
-{
-    _debounceTimer.Stop();
-    _debounceTimer.Start();
+    _debounceTimer.Elapsed += (s, e) => Application.Current.Dispatcher.InvokeAsync(() => CargarDatos());
 }
 ```
 
-SNIPPET 2 — Cleanup en Unloaded (IDisposable):
+**Cleanup en Unloaded (IDisposable):**
 ```csharp
-public void Dispose()
-{
-    _watcher?.Dispose();
-    _debounceTimer?.Dispose();
-    _dispatcherTimer?.Stop();
-}
+public void Dispose() { _watcher?.Dispose(); _debounceTimer?.Dispose(); }
 // En code-behind: this.Unloaded += (s, e) => (DataContext as IDisposable)?.Dispose();
 ```
 
-SNIPPET 3 — ComboBox con Style del tema oscuro:
-Referencia: ver LogsView.xaml — copiar el Style inline de ComboBox y ComboBox.ItemContainerStyle de ese archivo para cualquier ComboBox nuevo.
-
-SNIPPET 4 — Propiedad con NotifyPropertyChanged:
-```csharp
-private string _miPropiedad;
-public string MiPropiedad
-{
-    get => _miPropiedad;
-    set { _miPropiedad = value; OnPropertyChanged(); }
-}
-```
-
-## 🔐 Seguridad
-- **CryptoHelper**: AES-256 con prefijo `ENC:`. Usado para SMTP y para la clave UI.
-- **ClaveUI**: Contraseña de acceso a la consola, guardada encriptada en `config.json["ClaveUI"]`. Primera vez: se auto-genera con valor "Logistica2026" encriptado.
-- **Login**: `LoginWindow` implementa `INotifyPropertyChanged`. La visibilidad del error se controla via `IsPasswordWrong` binding.
-- **Clave maestra de recuperación**: El login acepta una clave de recuperación hardcodeada que permite acceso independientemente de la `ClaveUI` configurada. No se loguea, no se expone en la UI, no puede ser cambiada desde la interfaz. Usar solo en caso de pérdida de acceso.
-- **Cambiar Contraseña**: Vista `ChangePasswordView` + `ChangePasswordViewModel` en el menú lateral. Solo modifica `ClaveUI`; la clave maestra permanece intacta siempre.
-
 ## 🛠️ Flujo de Compilación
-- Compilar siempre la solución completa `ServicioReportesOracle.sln` en modo **Release** para despliegue.
-- Comando de rebuild Release: `"C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" ServicioReportesOracle.sln -p:Configuration=Release -t:Rebuild -m` — usar siempre este comando; `dotnet build` falla con error MSB4216/GenerateResource en proyectos .NET Framework 4.8.
-- La UI espera encontrar los archivos `.json` en `..\ServicioReportesOracle\` relativo a su ejecución.
+- Compilar solución `.sln` en modo **Release**.
+- Comando: `"C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" ServicioReportesOracle.sln -p:Configuration=Release -t:Rebuild -m`
 
-## 🗂️ Changelog
-Ver CHANGELOG.md para el historial completo de versiones.
-Versión actual: v7.3.2 — UI: Badge de Alertas corregido. Implementado sistema de leído persistido en `alertas_leidas.json` con purga de 7 días. Notificación directa entre ViewModels para actualización en tiempo real. 
-v7.3.1 — Fix crítico Health Check WS: Anti-spam y preservación de `UltimaVezCaido`.
-
+---
+**Para más detalles técnicos, consultar los archivos en la carpeta `DOCS/`.**

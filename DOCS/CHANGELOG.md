@@ -1,4 +1,10 @@
 # 🗂️ Changelog
+## v7.3.10 - UI: Dashboard Fix Estructura JSON Alertas (2026-04-03)
+
+### 🐛 Bug Crítico — Dashboard: Error de parseo en alertas SMTP
+- **Causa**: El método `CargarAlertas()` intentaba parsear `alertas_smtp_enviadas.json` como un array plano, pero el archivo tiene una estructura de objeto con una propiedad `"alertas"`. Esto causaba una excepción silenciosa y los contadores permanecían en 0.
+- **Fix**: Se corrigió el parseo para usar `JObject.Parse` y extraer el `JArray` de la propiedad correspondiente.
+
 ## v7.3.9 - UI: Dashboard Fix Watcher y UTC (2026-04-03)
 
 ### 🐛 Bug — Dashboard: No refresca automáticamente al recibir alertas
