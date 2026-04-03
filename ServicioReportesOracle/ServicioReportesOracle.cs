@@ -688,11 +688,11 @@ namespace ServicioOracleReportes
                     string idStr = entry["id"]?.ToString() ?? "";
                     if (string.IsNullOrEmpty(idStr)) continue;
 
-                    DateTime primeraVez;
-                    if (!DateTime.TryParse(entry["primera_vez_visto"]?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out primeraVez))
-                        primeraVez = DateTime.MinValue;
+                    // v7.3.6 — Parseo robusto de fecha para evitar fallo por cultura del sistema
+                    DateTime? pvz = entry.Value<DateTime?>("primera_vez_visto");
+                    DateTime primeraVez = pvz ?? DateTime.MinValue;
 
-                    double minutosPasados = (DateTime.Now - primeraVez).TotalMinutes;
+                    double minutosPasados = (fechaEjecucion - primeraVez).TotalMinutes;
                     if (minutosPasados >= delay)
                     {
                         listos.Add(entry);
@@ -705,11 +705,28 @@ namespace ServicioOracleReportes
 
                 if (listos.Count == 0)
                 {
-                    EscribirLog("⏳ [Oracle] Sin IDs que cumplan el delay. Comparación postergada.");
+                    string extra = "";
+                    if (postergados.Count > 0)
+                    {
+                        var ej = postergados[0];
+                        DateTime? pvzEj = ej.Value<DateTime?>("primera_vez_visto");
+                        double minsRestantes = delay - (fechaEjecucion - (pvzEj ?? fechaEjecucion)).TotalMinutes;
+                        extra = $" (ej: {ej["id"]}, esperando {Math.Ceiling(minsRestantes)}m más)";
+                    }
+                    EscribirLog($"⏳ [Oracle] Delay: {delay}m | IDs ready: 0 | IDs waiting: {postergados.Count}{extra}. Comparación postergada.");
                     return 0;
                 }
 
-                EscribirLog($"🔍 Comparando {listos.Count} IDs contra Oracle (delay OK, {postergados.Count} postergados)...");
+                string exampleStr = "";
+                if (postergados.Count > 0)
+                {
+                    var ej = postergados[0];
+                    DateTime? pvzEj = ej.Value<DateTime?>("primera_vez_visto");
+                    double minsRestantes = delay - (fechaEjecucion - (pvzEj ?? fechaEjecucion)).TotalMinutes;
+                    exampleStr = $" (ej: {ej["id"]}, esperando {Math.Ceiling(minsRestantes)}m más)";
+                }
+
+                EscribirLog($"🔍 [Oracle] Delay: {delay}m | IDs ready: {listos.Count} | IDs waiting: {postergados.Count}{exampleStr}...");
 
                 // Lookup id → nrocomprobante desde los pendientes listos
                 var mlogisNro = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -1002,9 +1019,9 @@ namespace ServicioOracleReportes
                         string id = item["id"]?.ToString() ?? "";
                         if (string.IsNullOrWhiteSpace(id)) continue;
 
-                        DateTime primeraVez;
-                        if (!DateTime.TryParse(item["primera_vez_visto"]?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out primeraVez))
-                            primeraVez = ahora;
+                        // v7.3.6 — Parseo robusto
+                        DateTime? pvz = item.Value<DateTime?>("primera_vez_visto");
+                        DateTime primeraVez = pvz ?? ahora;
 
                         registros.Add((id, primeraVez));
                     }
