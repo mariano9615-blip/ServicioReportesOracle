@@ -490,7 +490,8 @@ namespace ServicioReportesOracle.UI.ViewModels
                 if (File.Exists(_alertasEnviadasPath))
                 {
                     string json = LeerArchivoSeguro(_alertasEnviadasPath);
-                    var arr = JArray.Parse(json);
+                    var obj = JObject.Parse(json);
+                    var arr = obj["alertas"] as JArray;
                     
                     if (arr != null)
                     {

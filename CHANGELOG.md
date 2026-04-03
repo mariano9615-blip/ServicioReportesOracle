@@ -1,4 +1,11 @@
 # 🗂️ Changelog
+## v7.3.9 - UI: Dashboard Fix Watcher y UTC (2026-04-03)
+
+### 🐛 Bug — Dashboard: No refresca automáticamente al recibir alertas
+- **Causa**: El `FileSystemWatcher` en `DashboardViewModel` no tenía en su lista de disparadores el archivo `alertas_smtp_enviadas.json` (el log unificado), por lo que las cards no se actualizaban en tiempo real tras un envío.
+- **Fix**: Se agregó `alertas_smtp_enviadas.json` al método `WatcherTrigger`.
+- **Mejora**: Se añadió manejo explícito de `DateTimeKind.Utc` en `CargarAlertas()` para asegurar que el filtrado por "hoy" sea robusto independientemente de la serialización del core.
+
 ## v7.3.8 - UI: Dashboard Fix Alertas Unified Log (2026-04-03)
 
 ### 🐛 Bug — Dashboard: "Sin alertas enviadas hoy" incorrecto
