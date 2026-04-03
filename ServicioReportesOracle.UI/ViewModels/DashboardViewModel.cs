@@ -496,21 +496,27 @@ namespace ServicioReportesOracle.UI.ViewModels
                     {
                         foreach (var token in arr)
                         {
-                            // v7.3.8 — Parseo robusto desde log unificado (ISO 8601)
+                            // v7.3.9 — Parseo robusto (ISO 8601) + Manejo UTC por seguridad
                             DateTime? dtNullable = token.Value<DateTime?>("timestamp");
-                            if (dtNullable.HasValue && dtNullable.Value.Date == DateTime.Today)
+                            if (dtNullable.HasValue)
                             {
                                 DateTime dt = dtNullable.Value;
-                                string tipo = token["tipo"]?.ToString()?.ToLowerInvariant();
-                                string id = token["id_referencia"]?.ToString();
-                                
-                                if (tipo == "oracle_caso_a") {
-                                    ca++;
-                                    if (lastCasoA == null || dt > lastCasoA) { lastCasoA = dt; idCasoA = id; }
-                                }
-                                else if (tipo == "oracle_caso_b") {
-                                    cb++;
-                                    if (lastCasoB == null || dt > lastCasoB) { lastCasoB = dt; idCasoB = id; }
+                                if (dt.Kind == DateTimeKind.Utc)
+                                    dt = dt.ToLocalTime();
+
+                                if (dt.Date == DateTime.Today)
+                                {
+                                    string tipo = token["tipo"]?.ToString()?.ToLowerInvariant();
+                                    string id = token["id_referencia"]?.ToString();
+                                    
+                                    if (tipo == "oracle_caso_a") {
+                                        ca++;
+                                        if (lastCasoA == null || dt > lastCasoA) { lastCasoA = dt; idCasoA = id; }
+                                    }
+                                    else if (tipo == "oracle_caso_b") {
+                                        cb++;
+                                        if (lastCasoB == null || dt > lastCasoB) { lastCasoB = dt; idCasoB = id; }
+                                    }
                                 }
                             }
                         }
@@ -747,6 +753,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             if (lowerInfo == "ws_estado.json" || 
                 lowerInfo.StartsWith("mlogis_historial") || 
                 lowerInfo == "comparaciones_pendientes.json" ||
+                lowerInfo == "alertas_smtp_enviadas.json" ||
                 lowerInfo == "alertas_oracle_enviadas.json")
             {
                 _debounceTimer?.Change(DebounceMs, Timeout.Infinite);

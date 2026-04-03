@@ -1,4 +1,12 @@
 # 🗂️ Changelog
+## v7.3.8 - UI: Dashboard Fix Alertas Unified Log (2026-04-03)
+
+### 🐛 Bug — Dashboard: "Sin alertas enviadas hoy" incorrecto
+- **Causa**: El Dashboard leía del archivo obsoleto `alertas_oracle_enviadas.json` (usado para deduplicación), el cual no reflejaba el log unificado de envíos SMTP introducido en v7.2.0.
+- **Fix**: Se cambió el data source a `alertas_smtp_enviadas.json`.
+- **Adaptación**: Se actualizó el parseo para manejar el formato de array plano y los nuevos nombres de campos (`tipo`, `timestamp`, `id_referencia`).
+- **Mapeo**: Los contadores ahora filtran correctamente por `oracle_caso_a` y `oracle_caso_b`.
+
 ## v7.3.7 - UI: Dashboard Fix Parseo de Fechas (2026-04-03)
 
 ### 🐛 Bug — Dashboard: Cálculo de tiempo "Más antiguo" erróneo
