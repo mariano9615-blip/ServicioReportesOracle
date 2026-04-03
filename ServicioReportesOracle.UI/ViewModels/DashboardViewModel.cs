@@ -98,7 +98,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             _historialPath = Path.Combine(_logsDir, "mlogis_historial.json");
             _historialAyerPath = Path.Combine(_logsDir, "mlogis_historial_ayer.json");
             _pendientesPath = Path.Combine(_logsDir, "comparaciones_pendientes.json");
-            _alertasEnviadasPath = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
+            _alertasEnviadasPath = Path.Combine(_logsDir, "alertas_smtp_enviadas.json");
 
             RefreshCommand = new RelayCommand(_ => _ = CargarAsync());
             NavigateToServiceControlCommand = new RelayCommand(_ => EjecutarNavegacion(m => m.NavServiceCommand));
@@ -490,24 +490,25 @@ namespace ServicioReportesOracle.UI.ViewModels
                 if (File.Exists(_alertasEnviadasPath))
                 {
                     string json = LeerArchivoSeguro(_alertasEnviadasPath);
-                    var obj = JObject.Parse(json);
-                    var arr = obj["alertas"] as JArray;
+                    var arr = JArray.Parse(json);
                     
                     if (arr != null)
                     {
                         foreach (var token in arr)
                         {
-                            string timestamp = token["ultima_vez_alertado"]?.ToString();
-                            if (DateTime.TryParse(timestamp, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var dt) && dt.Date == DateTime.Today)
+                            // v7.3.8 — Parseo robusto desde log unificado (ISO 8601)
+                            DateTime? dtNullable = token.Value<DateTime?>("timestamp");
+                            if (dtNullable.HasValue && dtNullable.Value.Date == DateTime.Today)
                             {
-                                string campo = token["campo"]?.ToString();
-                                string id = token["id"]?.ToString();
+                                DateTime dt = dtNullable.Value;
+                                string tipo = token["tipo"]?.ToString()?.ToLowerInvariant();
+                                string id = token["id_referencia"]?.ToString();
                                 
-                                if (!string.IsNullOrEmpty(campo)) {
+                                if (tipo == "oracle_caso_a") {
                                     ca++;
                                     if (lastCasoA == null || dt > lastCasoA) { lastCasoA = dt; idCasoA = id; }
                                 }
-                                else {
+                                else if (tipo == "oracle_caso_b") {
                                     cb++;
                                     if (lastCasoB == null || dt > lastCasoB) { lastCasoB = dt; idCasoB = id; }
                                 }

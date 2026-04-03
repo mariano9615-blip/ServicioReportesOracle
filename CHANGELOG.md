@@ -1,4 +1,11 @@
 # 🗂️ Changelog
+## v7.3.7 - UI: Dashboard Fix Parseo de Fechas (2026-04-03)
+
+### 🐛 Bug — Dashboard: Cálculo de tiempo "Más antiguo" erróneo
+- **Causa**: `DashboardViewModel` seguía usando `DateTime.TryParse` sobre el string de `primera_vez_visto`, lo que fallaba en entornos con cultura regional argentina (dd/MM/yyyy). Al fallar, devolvía `DateTime.MinValue`, resultando en etiquetas de "hace 43200 min" o "+30 días".
+- **Fix**: Se alineó la lógica con el Core (v7.3.6), utilizando `Value<DateTime?>()` para un parseo robusto directo desde el JToken.
+- **Robustez**: Se añadió el manejo de `DateTimeKind.Utc` para asegurar que el cálculo de `EsperandoHace` sea siempre sobre tiempos locales correctos.
+
 ## v7.3.6 - Core: Fix de Delay y Parseo Robusto de Fechas (2026-04-03)
 
 ### 🐛 Bug Crítico — Delay de comparación Oracle no se respetaba
