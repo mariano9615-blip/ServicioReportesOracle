@@ -1,10 +1,10 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.3.5)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.3.6)
 
 Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para un trabajo óptimo.
 
-## 🚀 Resumen del Proyecto (v7.3.5)
+## 🚀 Resumen del Proyecto (v7.3.6)
 **Nombre**: ServicioReportesOracle
-**Versión Actual**: v7.3.5
+**Versión Actual**: v7.3.6
 **Tecnología**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
@@ -140,7 +140,8 @@ Este archivo es la fuente de verdad para Antigravity. Mantenlo actualizado para 
 - **Lógica**:
   - Corrida DELTA: los IDs nuevos se agregan con `primera_vez_visto`. Los existentes actualizan `nrocomprobante` si cambió.
   - Corrida FULL inteligente (v6.7): ya no limpia ciegamente el buffer. Compara `fecupd` de Mlogis vs `primera_vez_visto` del buffer antes de actualizar el historial. Solo los IDs verdaderamente nuevos o actualizados (fecupd posterior a `primera_vez_visto`) van a `comparaciones_pendientes.json`; el resto se descarta sin generar alerta.
-  - `CompararConOracle()` solo incluye en la query Oracle los IDs donde `primera_vez_visto + DelayComparacionMinutos <= DateTime.Now`. Los IDs comparados (OK, Caso A o Caso B) se remueven del buffer.
+  - `CompararConOracle()` solo incluye en la query Oracle los IDs donde `primera_vez_visto + DelayComparacionMinutos <= fechaEjecucion` (usando el timestamp de la corrida como referencia). Los IDs comparados (OK, Caso A o Caso B) se remueven del buffer.
+  - **v7.3.6 — Fix parseo**: se utiliza `entry.Value<DateTime?>()` para evitar fallos por cultura del sistema que antes reseteaban `primera_vez_visto` a `MinValue` y disparaban alertas inmediatas.
 
 ### alertas_oracle_enviadas.json
 - **Ubicación**: `Logs\` (generado por el servicio, no editar manualmente).

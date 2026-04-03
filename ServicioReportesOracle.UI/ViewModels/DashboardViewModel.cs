@@ -309,21 +309,16 @@ namespace ServicioReportesOracle.UI.ViewModels
                     {
                         foreach (var p in pendientesArr)
                         {
-                            DateTime dt;
-                            string primeraVezVisto = p["primera_vez_visto"]?.ToString();
-                            
-                            // Aseguramos InvariantCulture y el ajuste a tiempo local para el cálculo en el UI
-                            bool parseOk = DateTime.TryParse(
-                                primeraVezVisto,
-                                CultureInfo.InvariantCulture,
-                                DateTimeStyles.AssumeLocal | DateTimeStyles.AllowWhiteSpaces,
-                                out dt);
-
-                            if (parseOk && dt > DateTime.MinValue)
+                            // Robust parsing (v7.3.7 - Aligned with Core v7.3.6)
+                            DateTime? dtNullable = p.Value<DateTime?>("primera_vez_visto");
+                            if (dtNullable.HasValue && dtNullable.Value > DateTime.MinValue)
                             {
-                                // Sincronizamos con el tiempo actual para evitar offsets absurdos si viene como UTC
-                                DateTime localDt = dt.ToLocalTime();
-                                if (oldest == null || localDt < oldest.Value) oldest = localDt;
+                                DateTime localDt = dtNullable.Value;
+                                if (localDt.Kind == DateTimeKind.Utc)
+                                    localDt = localDt.ToLocalTime();
+                                    
+                                if (oldest == null || localDt < oldest.Value) 
+                                    oldest = localDt;
 
                                 var item = new PendienteDashboardItem
                                 {

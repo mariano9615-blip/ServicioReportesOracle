@@ -1,4 +1,12 @@
 # 🗂️ Changelog
+## v7.3.6 - Core: Fix de Delay y Parseo Robusto de Fechas (2026-04-03)
+
+### 🐛 Bug Crítico — Delay de comparación Oracle no se respetaba
+- **Causa**: Fallo de parseo en `CompararConOracle` al usar `.ToString()` sobre un token `JValue` ya parseado. En sistemas con cultura regional (ej: Argentina), la fecha se convertía a `dd/MM/yyyy`, lo que hacía fallar a `InvariantCulture.TryParse`, resultando en `DateTime.MinValue` y disparando alertas inmediatas.
+- **Fix**: Reemplazado parseo manual por `entry.Value<DateTime?>()`, que utiliza la lógica interna de Newtonsoft para detectar y convertir tipos de forma segura.
+- **Mejora**: Se sincronizó el cálculo de `minutosPasados` usando `fechaEjecucion` (timestamp de inicio de la corrida) como referencia única, eliminando discrepancias por el uso de `DateTime.Now` en medio del proceso.
+- **Logging**: Mejora en la visibilidad del buffer; ahora el log detalla cuántos IDs esperan delay e incluye un ejemplo con los minutos restantes (ej: `IDs waiting: 3 (ej: SIL-8407366, esperando 12m más)`).
+
 ## v7.3.5 - Core: Fix de Serialización de Fechas (2026-04-02)
 
 ### 🐛 Bug — Root cause de cálculo absurdo en Dashboard
