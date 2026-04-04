@@ -230,6 +230,21 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _promedioCorridasDia = value; OnPropertyChanged(); }
         }
 
+        private int _minDiaTendencia;
+        private int _maxDiaTendencia;
+
+        public int MinDiaTendencia
+        {
+            get => _minDiaTendencia;
+            set { _minDiaTendencia = value; OnPropertyChanged(); }
+        }
+
+        public int MaxDiaTendencia
+        {
+            get => _maxDiaTendencia;
+            set { _maxDiaTendencia = value; OnPropertyChanged(); }
+        }
+
         public string TituloMetricas
         {
             get => _tituloMetricas;
@@ -357,6 +372,14 @@ namespace ServicioReportesOracle.UI.ViewModels
                     })
                     .ToList();
 
+                // Calcular min/max para escala visual
+                int minDia = metricasMensuales.Count > 0
+                    ? metricasMensuales.Min(m => m.TotalRegistrosPico)
+                    : 0;
+                int maxDia = metricasMensuales.Count > 0
+                    ? metricasMensuales.Max(m => m.TotalRegistrosPico)
+                    : 0;
+
                 int promedioDiarioIds    = metricasMensuales.Count > 0
                     ? (int)metricasMensuales.Average(m => m.TotalRegistrosPico) : 0;
                 int totalMesIds          = metricasMensuales.Sum(m => m.TotalRegistrosPico);
@@ -417,6 +440,8 @@ namespace ServicioReportesOracle.UI.ViewModels
                     DiasConAlertas     = diasConAlertas;
                     PromedioCorridasDia = Math.Round(promedioCorridasDia, 1);
                     TituloMetricas     = tituloMetricas;
+                    MinDiaTendencia    = minDia;
+                    MaxDiaTendencia    = maxDia;
                 });
             }
             catch
@@ -443,13 +468,31 @@ namespace ServicioReportesOracle.UI.ViewModels
             if (valores == null || valores.Count == 0) return result;
 
             double max = valores.Max();
+            double min = valores.Min();
 
+            // Si todos los valores son iguales, usar altura fija
+            if (Math.Abs(max - min) < 0.01)
+            {
+                foreach (double v in valores)
+                {
+                    result.Add(new BarItem
+                    {
+                        BarHeightPx = maxHeightPx * 0.5,
+                        Tooltip     = tooltipFmt(v),
+                        Fill        = fill
+                    });
+                }
+                return result;
+            }
+
+            // Calcular alturas proporcionales con mínimo 20%
             foreach (double v in valores)
             {
-                double ratio = max > 0 ? v / max : 0;
+                double ratio  = (v - min) / (max - min);
+                double altura = (ratio * maxHeightPx * 0.8) + (maxHeightPx * 0.2);
                 result.Add(new BarItem
                 {
-                    BarHeightPx = Math.Max(2, ratio * maxHeightPx), // mínimo 2px para que sea visible
+                    BarHeightPx = Math.Max(10, altura),
                     Tooltip     = tooltipFmt(v),
                     Fill        = fill
                 });
@@ -683,7 +726,21 @@ namespace ServicioReportesOracle.UI.ViewModels
                 var soapClient = new SoapClientUI(dominio, urlAuth, urlWs);
                 string token = await soapClient.LoginAsync();
 
-                // Preparar histórico
+                // Limpiar histórico existente
+                if (File.Exists(_historicoMensualPath))
+                {
+                    try
+                    {
+                        File.Delete(_historicoMensualPath);
+                        System.Diagnostics.Debug.WriteLine("🗑️ Histórico mensual eliminado para recarga limpia.");
+                    }
+                    catch (Exception ex)
+                    {
+                        MainViewModel.Instance?.ShowNotification($"⚠️ No se pudo limpiar histórico: {ex.Message}", "warning");
+                    }
+                }
+
+                // Preparar histórico limpio
                 var historicoMensual = new MlogisHistoricoMensual { Dias = new List<MetricaDiaria>() };
 
                 // 30 días individuales (consulta día por día)

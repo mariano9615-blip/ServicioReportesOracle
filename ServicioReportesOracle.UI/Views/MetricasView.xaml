@@ -236,7 +236,8 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="140"/>
+                    <RowDefinition Height="180"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Text="Tendencia de IDs procesados (período histórico)"
@@ -264,10 +265,12 @@
                         </TextBlock.Style>
                     </TextBlock>
 
-                    <!-- Gráfico -->
-                    <ItemsControl ItemsSource="{Binding TendenciaIds}">
-                        <ItemsControl.Style>
-                            <Style TargetType="ItemsControl">
+                    <!-- Gráfico de barras más anchas -->
+                    <Border Background="{StaticResource SurfaceContainerHighBrush}"
+                            CornerRadius="4"
+                            Padding="8">
+                        <Border.Style>
+                            <Style TargetType="Border">
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding TendenciaIds.Count}" Value="0">
@@ -275,25 +278,74 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </ItemsControl.Style>
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Rows="1"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid ToolTip="{Binding Tooltip}">
-                                    <Border Background="{StaticResource PrimaryBrush}"
-                                            Width="3"
-                                            Height="120"
-                                            VerticalAlignment="Bottom"
-                                            CornerRadius="2,2,0,0"
-                                            Opacity="0.7"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        </Border.Style>
+
+                        <ItemsControl ItemsSource="{Binding TendenciaIds}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="1"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ToolTip="{Binding Tooltip}"
+                                          Margin="2,0">
+                                        <Border Background="{StaticResource PrimaryBrush}"
+                                                CornerRadius="3,3,0,0"
+                                                VerticalAlignment="Bottom"
+                                                Height="{Binding Valor}"
+                                                MinHeight="8"
+                                                Opacity="0.85">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Opacity" Value="1"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </Grid>
+
+                <!-- Escala Min/Max -->
+                <Grid Grid.Row="2" Margin="0,8,0,0">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding TendenciaIds.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               FontSize="11"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}">
+                        <Run Text="Min: "/>
+                        <Run Text="{Binding MinDiaTendencia}" FontWeight="SemiBold"/>
+                        <Run Text=" IDs"/>
+                    </TextBlock>
+
+                    <TextBlock Grid.Column="2"
+                               FontSize="11"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}">
+                        <Run Text="Max: "/>
+                        <Run Text="{Binding MaxDiaTendencia}" FontWeight="SemiBold"/>
+                        <Run Text=" IDs"/>
+                    </TextBlock>
                 </Grid>
             </Grid>
         </Border>
