@@ -1,25 +1,14 @@
 # 🗂️ Changelog
-## v7.4.1 - UI: Fixes y Mejoras Visuales en MetricasView (2026-04-04)
+## [7.4.1] - 2026-04-04
 
-### 🐛 Bug — Barras de tendencia histórica todas iguales en altura
-- **Causa**: `TendenciaIds` almacenaba el conteo real de IDs (miles) en `LinePoint.Valor`, pero el XAML lo bindeaba directo a `Height`. Todos los valores superaban el contenedor (180px), por lo que todas las barras se veían idénticas al tope.
-- **Fix**: Se normaliza `Valor` a píxeles (rango 20%–140px, misma proporción que `BuildBarItems`) antes de asignar la colección. El tooltip usa el string pre-formateado, sin pérdida de información.
+### Fixed
+- **MetricasView**: Eliminados labels "seg" repetidos en gráfico de duración, ahora solo en título ("Duración en segundos (últimas 20)")
+- **MetricasView**: Manejo visual de outliers en barras de IDs procesados (truncado a P95, color amarillo, indicador ▲)
 
-### 🐛 Bug — Label "seg" del gráfico de duración se cortaba (fix definitivo)
-- **Causa**: El `TextBlock` de `DuracionBarLabel` mostraba "Min X.Xs / Max X.Xs" que se recortaba en ventanas angostas.
-- **Fix definitivo**: Se eliminó el `TextBlock` de `DuracionBarLabel` y su `RowDefinition` del panel de duración. Se simplificó el título a "Duración en segundos (últimas 20)".
-
-### ✨ Mejora — Espaciado vertical entre secciones
-- Se agregaron márgenes superior/inferior en Row 0 (`0,15,0,10`), Row 2 (`0,10,0,15`) y Row 3 (`0,10,0,15`) para mayor separación visual entre bloques.
-
-### ✨ Mejora — Eje temporal en gráfico de tendencia
-- Se agregó el label "← inicio período ... hoy →" centrado debajo del gráfico de tendencia para contextualizar la dirección temporal del eje X.
-
-### ✨ Mejora — Detección de outliers en barras IDs (P95)
-- `BuildBarItems` ahora calcula el percentil 95. Los valores superiores al P95 se truncan visualmente al tope del P95, cambian de color a `WarningBrush` (amarillo) y muestran un indicador ▲ en el tope de la barra. El tooltip sigue mostrando el valor real.
-
-### ✨ Mejora — Botón "Cargar 30 días" como acción primaria
-- Se cambió el `Background` del botón de `SurfaceContainerHighBrush` a `PrimaryBrush` (#0078D4) con `BorderBrush=PrimaryLightBrush`, para que se destaque visualmente como acción principal frente al fondo oscuro.
+### Improved
+- **MetricasView**: Espaciado vertical mejorado entre secciones (margins 10-15px)
+- **MetricasView**: Contexto temporal en gráfico de tendencia histórica ("← inicio período ... hoy →")
+- **MetricasView**: Botón "Cargar 30 días" destacado con color primario para mayor visibilidad
 
 ## v7.4.0 - Core: Métricas Históricas Mlogis Rolling 30 Días (2026-04-04)
 
