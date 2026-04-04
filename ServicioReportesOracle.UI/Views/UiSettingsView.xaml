@@ -161,6 +161,27 @@
                            FontSize="11" Foreground="{StaticResource OnSurfaceVariantBrush}"
                            Opacity="0.7" Margin="0,0,0,0"/>
 
+                <!-- Sección: Botón de carga histórica -->
+                <StackPanel Margin="0,24,0,0">
+                    <TextBlock Text="Botón de carga histórica"
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="{StaticResource OnSurfaceBrush}" Margin="0,0,0,12"/>
+
+                    <CheckBox IsChecked="{Binding MostrarBotonCargarHistorico, UpdateSourceTrigger=PropertyChanged}"
+                              Content="Mostrar botón 'Cargar 30 días' en Métricas"
+                              Foreground="{StaticResource OnSurfaceBrush}"
+                              Margin="0,0,0,4">
+                        <CheckBox.ToolTip>
+                            <TextBlock Text="Habilita el botón para cargar histórico mensual de métricas Mlogis mediante llamadas SOAP retroactivas"
+                                       TextWrapping="Wrap" MaxWidth="300"/>
+                        </CheckBox.ToolTip>
+                    </CheckBox>
+
+                    <TextBlock Text="El botón permite popular el histórico de 30 días ejecutando corridas SOAP retroactivas (útil para inicializar el sistema)"
+                               FontSize="11" Foreground="{StaticResource OnSurfaceVariantBrush}"
+                               TextWrapping="Wrap" Margin="24,0,0,0" Opacity="0.7"/>
+                </StackPanel>
+
                 <Border Height="1" Background="{StaticResource OutlineBrush}" Margin="0,28,0,24"/>
 
                 <!-- Botones -->

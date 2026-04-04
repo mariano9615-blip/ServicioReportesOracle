@@ -51,6 +51,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         private FileSystemWatcher _watcherHistorial;
         private FileSystemWatcher _watcherAlertas;
         private FileSystemWatcher _watcherMensual;
+        private FileSystemWatcher _watcherSettings;
         private Timer _debounceTimer;
         private const int DebounceMs = 2000;
         private bool _disposed;
@@ -559,10 +560,12 @@ namespace ServicioReportesOracle.UI.ViewModels
             try { _watcherHistorial?.Dispose(); } catch { }
             try { _watcherAlertas?.Dispose(); } catch { }
             try { _watcherMensual?.Dispose(); } catch { }
+            try { _watcherSettings?.Dispose(); } catch { }
             _debounceTimer?.Dispose();
             _watcherHistorial = null;
             _watcherAlertas   = null;
             _watcherMensual   = null;
+            _watcherSettings  = null;
             _debounceTimer    = null;
 
             if (string.IsNullOrWhiteSpace(_logsDir) || !Directory.Exists(_logsDir))
@@ -600,6 +603,31 @@ namespace ServicioReportesOracle.UI.ViewModels
             };
             _watcherMensual.Changed += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
             _watcherMensual.Created += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
+
+            // Watcher para ui_settings.json (detectar cambios en MostrarBotonCargarHistorico)
+            var uiSettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ui_settings.json");
+            var uiSettingsDir  = Path.GetDirectoryName(uiSettingsPath);
+            if (!string.IsNullOrWhiteSpace(uiSettingsDir) && Directory.Exists(uiSettingsDir))
+            {
+                _watcherSettings = new FileSystemWatcher(uiSettingsDir)
+                {
+                    Filter       = "ui_settings.json",
+                    NotifyFilter = NotifyFilters.LastWrite,
+                    EnableRaisingEvents = true
+                };
+                _watcherSettings.Changed += (s, e) =>
+                {
+                    try
+                    {
+                        var settings = JsonConvert.DeserializeObject<UiSettingsModel>(File.ReadAllText(uiSettingsPath));
+                        Application.Current?.Dispatcher.InvokeAsync(() =>
+                        {
+                            MostrarBotonCargarHistorico = settings?.MostrarBotonCargarHistorico ?? true;
+                        });
+                    }
+                    catch { }
+                };
+            }
         }
 
         private async Task CargarHistoricoAsync()
@@ -777,10 +805,12 @@ namespace ServicioReportesOracle.UI.ViewModels
             try { _watcherHistorial?.Dispose(); } catch { }
             try { _watcherAlertas?.Dispose(); } catch { }
             try { _watcherMensual?.Dispose(); } catch { }
+            try { _watcherSettings?.Dispose(); } catch { }
             try { _debounceTimer?.Dispose(); } catch { }
             _watcherHistorial = null;
             _watcherAlertas   = null;
             _watcherMensual   = null;
+            _watcherSettings  = null;
             _debounceTimer    = null;
         }
 

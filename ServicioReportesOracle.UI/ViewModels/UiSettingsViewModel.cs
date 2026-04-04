@@ -12,6 +12,7 @@ namespace ServicioReportesOracle.UI.ViewModels
     {
         private readonly UiSettingsService _service = new UiSettingsService();
         private int _selectedWidthPercent;
+        private bool _mostrarBotonCargarHistorico;
 
         public ObservableCollection<int> WidthPercentOptions { get; } =
             new ObservableCollection<int> { 70, 80, 90, 100 };
@@ -22,6 +23,12 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _selectedWidthPercent = value; OnPropertyChanged(); }
         }
 
+        public bool MostrarBotonCargarHistorico
+        {
+            get => _mostrarBotonCargarHistorico;
+            set { _mostrarBotonCargarHistorico = value; OnPropertyChanged(); }
+        }
+
         public ICommand SaveCommand { get; }
         public ICommand ApplyNowCommand { get; }
 
@@ -29,6 +36,7 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             var settings = _service.Load();
             _selectedWidthPercent = settings.WindowWidthPercent;
+            _mostrarBotonCargarHistorico = settings.MostrarBotonCargarHistorico;
 
             SaveCommand    = new RelayCommand(_ => Save());
             ApplyNowCommand = new RelayCommand(_ => ApplyNow());
@@ -36,7 +44,11 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         private void Save()
         {
-            _service.Save(new UiSettingsModel { WindowWidthPercent = _selectedWidthPercent });
+            _service.Save(new UiSettingsModel
+            {
+                WindowWidthPercent = _selectedWidthPercent,
+                MostrarBotonCargarHistorico = _mostrarBotonCargarHistorico
+            });
             MainViewModel.Instance.ShowNotification(
                 "Configuración guardada. Se aplicará al reiniciar la aplicación.", "Success");
         }
