@@ -25,6 +25,8 @@
         </Style>
     </UserControl.Resources>
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>   <!-- Título + botones -->
@@ -236,7 +238,7 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="180"/>
+                    <RowDefinition Height="160"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
@@ -369,7 +371,7 @@
                     Background="{StaticResource SurfaceBrush}"
                     CornerRadius="8"
                     Padding="16"
-                    MinHeight="190"
+                    MinHeight="120"
                     Margin="0,0,8,0">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -467,7 +469,7 @@
                     Background="{StaticResource SurfaceBrush}"
                     CornerRadius="8"
                     Padding="16"
-                    MinHeight="190"
+                    MinHeight="120"
                     Margin="8,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -664,4 +666,5 @@
             </Grid>
         </Border>
     </Grid>
+    </ScrollViewer>
 </UserControl>
