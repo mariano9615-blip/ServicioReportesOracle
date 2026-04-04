@@ -95,6 +95,10 @@ namespace ServicioReportesOracle.UI.ViewModels
         private string _textoProgresoHistorico = "Listo para cargar";
         private bool _mostrarBotonCargarHistorico = true;
 
+        // Drill-down por día
+        private bool _estaCargandoDetalle;
+        private string _textoCargandoDetalle = "";
+
         public ICommand RefreshCommand { get; }
 
         // ── Propiedades bindables ────────────────────────────────────────────────
@@ -278,7 +282,20 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _mostrarBotonCargarHistorico = value; OnPropertyChanged(); }
         }
 
+        public bool EstaCargandoDetalle
+        {
+            get => _estaCargandoDetalle;
+            set { _estaCargandoDetalle = value; OnPropertyChanged(); }
+        }
+
+        public string TextoCargandoDetalle
+        {
+            get => _textoCargandoDetalle;
+            set { _textoCargandoDetalle = value; OnPropertyChanged(); }
+        }
+
         public ICommand CargarHistoricoCommand { get; }
+        public ICommand VerDetalleDiaCommand   { get; }
 
         public MetricasViewModel()
         {
@@ -289,8 +306,9 @@ namespace ServicioReportesOracle.UI.ViewModels
             _alertasPath          = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
             _historicoMensualPath = Path.Combine(_logsDir, "mlogis_historico_mensual.json");
 
-            RefreshCommand = new RelayCommand(_ => _ = CargarAsync());
+            RefreshCommand         = new RelayCommand(_ => _ = CargarAsync());
             CargarHistoricoCommand = new RelayCommand(_ => _ = CargarHistoricoAsync());
+            VerDetalleDiaCommand   = new RelayCommand(p => _ = VerDetalleDiaAsync(p), _ => !_estaCargandoDetalle);
 
             // Leer config UI
             try
@@ -880,6 +898,171 @@ namespace ServicioReportesOracle.UI.ViewModels
             {
                 EstaCargandoHistorico = false;
             }
+        }
+
+        private async Task VerDetalleDiaAsync(object param)
+        {
+            if (!(param is DateTime fecha)) return;
+            if (_estaCargandoDetalle) return;
+
+            try
+            {
+                EstaCargandoDetalle   = true;
+                TextoCargandoDetalle  = $"Cargando {fecha:dd/MM/yyyy}...";
+
+                string basePath   = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\ServicioReportesOracle");
+                string configPath = Path.Combine(basePath, "config.json");
+
+                if (!File.Exists(configPath))
+                {
+                    MessageBox.Show("No se encontró config.json", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var config   = JsonConvert.DeserializeObject<dynamic>(File.ReadAllText(configPath));
+                string dominio = config.Dominio?.ToString();
+                string urlAuth = config.UrlAutentificacion?.ToString();
+                string urlWs   = config.UrlWS?.ToString();
+
+                if (string.IsNullOrEmpty(dominio) || string.IsNullOrEmpty(urlAuth) || string.IsNullOrEmpty(urlWs))
+                {
+                    MessageBox.Show("Configuración SOAP incompleta", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                string filtersPath = Path.Combine(basePath, "filters.json");
+                if (!File.Exists(filtersPath))
+                {
+                    MessageBox.Show("No se encontró filters.json", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var filtros  = JsonConvert.DeserializeObject<List<dynamic>>(File.ReadAllText(filtersPath));
+                var fMlogis  = filtros?.FirstOrDefault(f => f.Entidad == "Mlogis");
+
+                // Construir filtro para el día seleccionado
+                DateTime desde = fecha.Date;
+                DateTime hasta = fecha.Date.AddDays(1).AddSeconds(-1);
+                string fStr   = $"FECUPD>='{desde:dd/MM/yyyy HH:mm:ss}' AND FECUPD<='{hasta:dd/MM/yyyy HH:mm:ss}'";
+
+                if (fMlogis != null)
+                {
+                    var jFMlogis      = (JObject)fMlogis;
+                    var condicionesArr = jFMlogis["Condiciones"] as JArray;
+                    if (condicionesArr != null && condicionesArr.Count > 0)
+                    {
+                        var partes = new List<string>();
+                        foreach (var cond in condicionesArr)
+                        {
+                            var partesCond = new List<string>();
+                            string estadoLog = cond["EstadoLog"]?.ToString();
+                            string status    = cond["Status"]?.ToString();
+                            if (!string.IsNullOrWhiteSpace(estadoLog)) partesCond.Add($"ESTADOLOG='{estadoLog.Trim()}'");
+                            if (!string.IsNullOrWhiteSpace(status))    partesCond.Add($"STATUS='{status.Trim()}'");
+                            if (partesCond.Count > 0) partes.Add($"({string.Join(" AND ", partesCond)})");
+                        }
+                        if (partes.Count == 1)      fStr += $" AND {partes[0]}";
+                        else if (partes.Count > 1)  fStr += $" AND ({string.Join(" OR ", partes)})";
+                    }
+                }
+
+                TextoCargandoDetalle = $"Consultando SOAP {fecha:dd/MM/yyyy}...";
+                var soapClient  = new SoapClientUI(dominio, urlAuth, urlWs);
+                string token    = await soapClient.LoginAsync();
+                string result   = await soapClient.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
+
+                // Parsear registros
+                var registros = new List<RegistroDisplayItem>();
+                if (!string.IsNullOrWhiteSpace(result))
+                {
+                    if (result.Trim().StartsWith("["))
+                    {
+                        var list = JsonConvert.DeserializeObject<List<dynamic>>(result);
+                        if (list != null)
+                        {
+                            foreach (var item in list)
+                            {
+                                string id  = item.ID?.ToString() ?? item.Id?.ToString() ?? "";
+                                if (string.IsNullOrEmpty(id)) continue;
+                                string nro    = item.NROCOMPROBANTE?.ToString() ?? item.NroComprobante?.ToString() ?? "";
+                                string fecupd = item.FECUPD?.ToString()        ?? item.FecUpd?.ToString()          ?? "";
+                                string anuStr = item.ANULADO?.ToString()        ?? "";
+                                bool   anulado = anuStr == "1"
+                                    || string.Equals(anuStr, "true", StringComparison.OrdinalIgnoreCase)
+                                    || string.Equals(anuStr, "S",    StringComparison.OrdinalIgnoreCase);
+                                registros.Add(new RegistroDisplayItem
+                                {
+                                    Id             = id,
+                                    NroComprobante = nro,
+                                    FecUpd         = fecupd,
+                                    Anulado        = anulado,
+                                    PrimeraVezVisto = "-",
+                                    UltimaVezVisto  = "-",
+                                });
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Formato XML: extraer tags por registro
+                        int pos = 0;
+                        while ((pos = result.IndexOf("<ID>", pos, StringComparison.OrdinalIgnoreCase)) != -1)
+                        {
+                            int idStart = pos + 4;
+                            int idEnd   = result.IndexOf("</ID>", idStart, StringComparison.OrdinalIgnoreCase);
+                            if (idEnd < 0) break;
+                            string id = result.Substring(idStart, idEnd - idStart).Trim();
+
+                            string nro    = ExtractNearbyTag(result, idEnd, "NROCOMPROBANTE");
+                            string fecupd = ExtractNearbyTag(result, idEnd, "FECUPD");
+                            string anuStr = ExtractNearbyTag(result, idEnd, "ANULADO");
+                            bool   anulado = anuStr == "1"
+                                || string.Equals(anuStr, "true", StringComparison.OrdinalIgnoreCase)
+                                || string.Equals(anuStr, "S",    StringComparison.OrdinalIgnoreCase);
+
+                            if (!string.IsNullOrEmpty(id))
+                                registros.Add(new RegistroDisplayItem
+                                {
+                                    Id              = id,
+                                    NroComprobante  = nro,
+                                    FecUpd          = fecupd,
+                                    Anulado         = anulado,
+                                    PrimeraVezVisto = "-",
+                                    UltimaVezVisto  = "-",
+                                });
+                            pos = idEnd;
+                        }
+                    }
+                }
+
+                // Navegar a MlogisHistorialView con datos precargados
+                var historialVm = new MlogisHistorialViewModel(skipInitialLoad: true);
+                historialVm.CargarConDatosPrecargados(fecha, registros);
+                MainViewModel.Instance.SelectedViewModel = historialVm;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error cargando detalle del {fecha:dd/MM/yyyy}:\n{ex.Message}",
+                                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                EstaCargandoDetalle  = false;
+                TextoCargandoDetalle = "";
+            }
+        }
+
+        private static string ExtractNearbyTag(string xml, int fromPos, string tag)
+        {
+            int searchEnd = Math.Min(fromPos + 600, xml.Length);
+            string slice  = xml.Substring(fromPos, searchEnd - fromPos);
+            string open   = $"<{tag}>";
+            int s = slice.IndexOf(open, StringComparison.OrdinalIgnoreCase);
+            if (s < 0) return "";
+            s += open.Length;
+            int e = slice.IndexOf($"</{tag}>", s, StringComparison.OrdinalIgnoreCase);
+            if (e < 0) return "";
+            return slice.Substring(s, e - s).Trim();
         }
 
         public void Dispose()

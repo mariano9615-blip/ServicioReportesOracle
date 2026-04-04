@@ -137,14 +137,18 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         // ── Constructor ───────────────────────────────────────────────────────
 
-        public MlogisHistorialViewModel()
+        // ── Modo precargado (drill-down desde MetricasView) ───────────────────
+        private bool _modoFiltradoPorFecha;
+        private List<RegistroDisplayItem> _datosPrecargados;
+
+        public MlogisHistorialViewModel(bool skipInitialLoad = false)
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
             string logsDir  = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\json"));
             _historialPath     = Path.Combine(logsDir, "mlogis_historial.json");
             _historialAyerPath = Path.Combine(logsDir, "mlogis_historial_ayer.json");
 
-            RefreshCommand           = new RelayCommand(_ => _ = CargarAsync());
+            RefreshCommand           = new RelayCommand(_ => { _modoFiltradoPorFecha = false; _datosPrecargados = null; _ = CargarAsync(); });
             ToggleModoCorridaCommand = new RelayCommand(_ => IsModoCorrida = true);
             ToggleModoUnicoCommand   = new RelayCommand(_ => IsModoCorrida = false);
             ToggleSearchCommand      = new RelayCommand(_ => IsSearchVisible = !IsSearchVisible);
@@ -152,13 +156,39 @@ namespace ServicioReportesOracle.UI.ViewModels
             ExportToExcelCommand     = new RelayCommand(_ => ExportToExcel());
 
             ConfigurarWatcher();
-            _ = CargarAsync();
+            if (!skipInitialLoad)
+                _ = CargarAsync();
+        }
+
+        /// <summary>
+        /// Carga datos precargados desde el drill-down de MetricasView.
+        /// Debe llamarse desde el hilo UI (después del constructor con skipInitialLoad=true).
+        /// </summary>
+        public void CargarConDatosPrecargados(DateTime fecha, List<RegistroDisplayItem> datos)
+        {
+            _modoFiltradoPorFecha = true;
+            _datosPrecargados = datos ?? new List<RegistroDisplayItem>();
+
+            Corridas.Clear();
+            Corridas.Add(CorridaItem.CrearHistorico(fecha, _datosPrecargados.Count));
+
+            _allRegistrosCorrida.Clear();
+            foreach (var r in _datosPrecargados)
+                _allRegistrosCorrida.Add(r);
+
+            // Seleccionar el único item sin disparar RebuildRegistrosCorrida de nuevo
+            _selectedCorrida = Corridas[0];
+            OnPropertyChanged(nameof(SelectedCorrida));
+
+            AplicarFiltroCorrida();
+            ActualizarLineInfo();
         }
 
         // ── Carga del archivo ─────────────────────────────────────────────────
 
         internal async Task CargarAsync()
         {
+            if (_modoFiltradoPorFecha) return;
             if (!await _refreshLock.WaitAsync(0)) return;
             try
             {
@@ -246,6 +276,13 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         private void RebuildRegistrosCorrida()
         {
+            if (_modoFiltradoPorFecha)
+            {
+                // En modo precargado, _allRegistrosCorrida ya está poblado
+                AplicarFiltroCorrida();
+                ActualizarLineInfo();
+                return;
+            }
             _allRegistrosCorrida.Clear();
             if (_selectedCorrida?.Corrida?.Registros != null)
             {
@@ -320,6 +357,14 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         private void ActualizarLineInfo()
         {
+            if (_modoFiltradoPorFecha)
+            {
+                int total = _allRegistrosCorrida.Count;
+                LineInfo = string.IsNullOrEmpty(_searchText)
+                    ? $"{total} registros históricos"
+                    : $"{RegistrosCorrida.Count} coincidencias de {total} registros";
+                return;
+            }
             int corridas = _historial.Count + _historialAyer.Count;
             if (_isModoCorrida)
             {
@@ -474,13 +519,15 @@ namespace ServicioReportesOracle.UI.ViewModels
 
     public class CorridaItem
     {
-        public MlogisCorrida Corrida     { get; }
-        public string        Hora        { get; }
-        public string        Tipo        { get; }   // "FULL" | "DELTA"
-        public string        CountText   { get; }
-        public bool          IsEmpty     { get; }
-        public bool          IsSeparator { get; }
-        public bool          IsDeAyer    { get; }
+        public MlogisCorrida Corrida          { get; }
+        public string        Hora             { get; }
+        public string        Tipo             { get; }   // "FULL" | "DELTA"
+        public string        CountText        { get; }
+        public bool          IsEmpty          { get; }
+        public bool          IsSeparator      { get; }
+        public bool          IsDeAyer         { get; }
+        public bool          IsHistorico      { get; }
+        public string        EtiquetaHistorico{ get; }
 
         public CorridaItem(MlogisCorrida c, bool esDeAyer = false)
         {
@@ -492,6 +539,17 @@ namespace ServicioReportesOracle.UI.ViewModels
             IsEmpty   = n == 0;
             IsDeAyer  = esDeAyer;
         }
+
+        // Constructor privado para histórico (drill-down desde MetricasView)
+        private CorridaItem(DateTime fecha, int count)
+        {
+            IsHistorico       = true;
+            EtiquetaHistorico = $"📅 HISTÓRICO\n{fecha:dd/MM/yyyy}\n{count} IDs";
+            CountText         = $"{count} IDs";
+        }
+
+        public static CorridaItem CrearHistorico(DateTime fecha, int count)
+            => new CorridaItem(fecha, count);
 
         // Constructor privado solo para separador
         private CorridaItem()

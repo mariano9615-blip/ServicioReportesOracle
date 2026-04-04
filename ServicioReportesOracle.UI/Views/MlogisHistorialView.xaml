@@ -241,6 +241,17 @@
                                                        Opacity="0.6"
                                                        Margin="0,4"/>
 
+                                            <!-- Histórico (drill-down desde MetricasView) -->
+                                            <TextBlock x:Name="HistText"
+                                                       Text="{Binding EtiquetaHistorico}"
+                                                       Visibility="Collapsed"
+                                                       HorizontalAlignment="Center"
+                                                       FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource PrimaryLightBrush}"
+                                                       TextWrapping="Wrap"
+                                                       TextAlignment="Center"
+                                                       Margin="4"/>
+
                                             <!-- Contenido normal de corrida -->
                                             <Grid x:Name="NormalGrid">
                                                 <Grid.Style>
@@ -297,6 +308,10 @@
                                         <DataTemplate.Triggers>
                                             <DataTrigger Binding="{Binding IsSeparator}" Value="True">
                                                 <Setter TargetName="SepText"    Property="Visibility" Value="Visible"/>
+                                                <Setter TargetName="NormalGrid" Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsHistorico}" Value="True">
+                                                <Setter TargetName="HistText"   Property="Visibility" Value="Visible"/>
                                                 <Setter TargetName="NormalGrid" Property="Visibility" Value="Collapsed"/>
                                             </DataTrigger>
                                         </DataTemplate.Triggers>
