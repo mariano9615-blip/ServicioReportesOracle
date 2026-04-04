@@ -1,4 +1,14 @@
 # 🗂️ Changelog
+## v7.4.1 - UI: Fix Bugs Visuales en MetricasView (2026-04-04)
+
+### 🐛 Bug — Barras de tendencia histórica todas al 100% de altura
+- **Causa**: `TendenciaIds` almacenaba en `LinePoint.Valor` el conteo real de IDs (miles), pero el XAML lo bindeaba directo a `Height`. Como todos los valores superaban la altura del contenedor (180px), todas las barras se veían idénticas al tope.
+- **Fix**: Se normaliza `Valor` a altura en píxeles (rango 20%–140px, misma proporción que `BuildBarItems`) antes de asignar la colección. El tooltip ya usa el string formateado con el valor real, así que no hay pérdida de información.
+
+### 🐛 Bug — Label "seg" del gráfico de duración se cortaba
+- **Causa**: El `TextBlock` de `DuracionBarLabel` no tenía `TextWrapping`, por lo que en ventanas más angostas el texto "Min X.Xs / Max X.Xs" quedaba recortado visualmente.
+- **Fix**: Se agregó `TextWrapping="Wrap"` al `TextBlock` correspondiente en `MetricasView.xaml`.
+
 ## v7.4.0 - Core: Métricas Históricas Mlogis Rolling 30 Días (2026-04-04)
 
 ### ✨ Feature — Historial de métricas Mlogis con ventana rolling de 30 días
