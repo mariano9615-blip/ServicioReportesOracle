@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ServicioOracleReportes;
+using ServicioReportesOracle.UI.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -83,6 +84,12 @@ namespace ServicioReportesOracle.UI.ViewModels
         private int _diasConAlertas;
         private double _promedioCorridasDia;
         private string _tituloMetricas = "Métricas (48 horas)";
+
+        // Carga histórica
+        private bool _estaCargandoHistorico;
+        private int _progresoCargarHistorico;
+        private string _textoProgresoHistorico = "Listo para cargar";
+        private bool _mostrarBotonCargarHistorico = true;
 
         public ICommand RefreshCommand { get; }
 
@@ -228,6 +235,32 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _tituloMetricas = value; OnPropertyChanged(); }
         }
 
+        public bool EstaCargandoHistorico
+        {
+            get => _estaCargandoHistorico;
+            set { _estaCargandoHistorico = value; OnPropertyChanged(); }
+        }
+
+        public int ProgresoCargarHistorico
+        {
+            get => _progresoCargarHistorico;
+            set { _progresoCargarHistorico = value; OnPropertyChanged(); }
+        }
+
+        public string TextoProgresoHistorico
+        {
+            get => _textoProgresoHistorico;
+            set { _textoProgresoHistorico = value; OnPropertyChanged(); }
+        }
+
+        public bool MostrarBotonCargarHistorico
+        {
+            get => _mostrarBotonCargarHistorico;
+            set { _mostrarBotonCargarHistorico = value; OnPropertyChanged(); }
+        }
+
+        public ICommand CargarHistoricoCommand { get; }
+
         public MetricasViewModel()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
@@ -238,6 +271,20 @@ namespace ServicioReportesOracle.UI.ViewModels
             _historicoMensualPath = Path.Combine(_logsDir, "mlogis_historico_mensual.json");
 
             RefreshCommand = new RelayCommand(_ => _ = CargarAsync());
+            CargarHistoricoCommand = new RelayCommand(_ => _ = CargarHistoricoAsync());
+
+            // Leer config UI
+            try
+            {
+                string uiSettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ui_settings.json");
+                if (File.Exists(uiSettingsPath))
+                {
+                    var settings = JsonConvert.DeserializeObject<UiSettingsModel>(File.ReadAllText(uiSettingsPath));
+                    MostrarBotonCargarHistorico = settings?.MostrarBotonCargarHistorico ?? true;
+                }
+            }
+            catch { }
+
             ConfigurarWatcher();
             _ = CargarAsync();
         }
@@ -555,6 +602,174 @@ namespace ServicioReportesOracle.UI.ViewModels
             _watcherMensual.Created += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
         }
 
+        private async Task CargarHistoricoAsync()
+        {
+            if (EstaCargandoHistorico) return;
+
+            try
+            {
+                EstaCargandoHistorico = true;
+                ProgresoCargarHistorico = 0;
+                TextoProgresoHistorico = "Inicializando...";
+
+                // Leer configuración para SOAP
+                string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\ServicioReportesOracle");
+                string configPath = Path.Combine(basePath, "config.json");
+
+                if (!File.Exists(configPath))
+                {
+                    MainViewModel.Instance?.ShowNotification("❌ No se encontró config.json", "error");
+                    return;
+                }
+
+                var config = JsonConvert.DeserializeObject<dynamic>(File.ReadAllText(configPath));
+                string dominio = config.Dominio?.ToString();
+                string urlAuth = config.UrlAutentificacion?.ToString();
+                string urlWs = config.UrlWS?.ToString();
+
+                if (string.IsNullOrEmpty(dominio) || string.IsNullOrEmpty(urlAuth) || string.IsNullOrEmpty(urlWs))
+                {
+                    MainViewModel.Instance?.ShowNotification("❌ Config SOAP incompleta", "error");
+                    return;
+                }
+
+                // Leer filtros
+                string filtersPath = Path.Combine(basePath, "filters.json");
+                if (!File.Exists(filtersPath))
+                {
+                    MainViewModel.Instance?.ShowNotification("❌ No se encontró filters.json", "error");
+                    return;
+                }
+
+                var filtros = JsonConvert.DeserializeObject<List<dynamic>>(File.ReadAllText(filtersPath));
+                var fMlogis = filtros?.FirstOrDefault(f => f.Entidad == "Mlogis");
+
+                if (fMlogis == null)
+                {
+                    MainViewModel.Instance?.ShowNotification("❌ Filtro Mlogis no encontrado", "error");
+                    return;
+                }
+
+                // Autenticar
+                TextoProgresoHistorico = "Autenticando...";
+                var soapClient = new SoapClientUI(dominio, urlAuth, urlWs);
+                string token = await soapClient.LoginAsync();
+
+                // Preparar histórico
+                var historicoMensual = new MlogisHistoricoMensual { Dias = new List<MetricaDiaria>() };
+
+                // 15 batches (30 días / 2 días por batch)
+                int totalBatches = 15;
+
+                for (int batch = 0; batch < totalBatches; batch++)
+                {
+                    int diasAtras = 30 - (batch * 2);
+                    DateTime desde = DateTime.Today.AddDays(-diasAtras);
+                    DateTime hasta = desde.AddDays(2);
+
+                    if (desde >= DateTime.Today) continue;
+
+                    TextoProgresoHistorico = $"Cargando {desde:dd/MM} - {hasta:dd/MM}...";
+                    ProgresoCargarHistorico = (int)((batch / (double)totalBatches) * 100);
+
+                    try
+                    {
+                        // Construir filtro temporal
+                        string fStr = $"FECUPD>='{desde:dd/MM/yyyy HH:mm:ss}' AND FECUPD<='{hasta:dd/MM/yyyy HH:mm:ss}'";
+
+                        // Agregar condiciones de estado
+                        var jFMlogis = (JObject)fMlogis;
+                        var condicionesArr = jFMlogis["Condiciones"] as JArray;
+
+                        if (condicionesArr != null && condicionesArr.Count > 0)
+                        {
+                            var partes = new List<string>();
+                            foreach (var cond in condicionesArr)
+                            {
+                                var partesCond = new List<string>();
+                                string estadoLog = cond["EstadoLog"]?.ToString();
+                                string status = cond["Status"]?.ToString();
+                                if (!string.IsNullOrWhiteSpace(estadoLog)) partesCond.Add($"ESTADOLOG='{estadoLog.Trim()}'");
+                                if (!string.IsNullOrWhiteSpace(status)) partesCond.Add($"STATUS='{status.Trim()}'");
+                                if (partesCond.Count > 0) partes.Add($"({string.Join(" AND ", partesCond)})");
+                            }
+                            if (partes.Count == 1)
+                                fStr += $" AND {partes[0]}";
+                            else if (partes.Count > 1)
+                                fStr += $" AND ({string.Join(" OR ", partes)})";
+                        }
+
+                        // Llamada SOAP
+                        string resultInner = await soapClient.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
+
+                        // Parsear registros
+                        int totalIds = 0;
+                        if (!string.IsNullOrWhiteSpace(resultInner))
+                        {
+                            if (resultInner.Trim().StartsWith("["))
+                            {
+                                var list = JsonConvert.DeserializeObject<List<dynamic>>(resultInner);
+                                totalIds = list?.Count ?? 0;
+                            }
+                            else
+                            {
+                                int pos = 0;
+                                while ((pos = resultInner.IndexOf("<ID>", pos, StringComparison.OrdinalIgnoreCase)) != -1)
+                                {
+                                    totalIds++;
+                                    pos += 4;
+                                }
+                            }
+                        }
+
+                        // Agregar métrica por día
+                        for (int d = 0; d < 2; d++)
+                        {
+                            DateTime fechaDia = desde.AddDays(d);
+                            if (fechaDia >= DateTime.Today) continue;
+
+                            historicoMensual.Dias.Add(new MetricaDiaria
+                            {
+                                Fecha = fechaDia.ToString("yyyy-MM-dd"),
+                                TotalCorridas = 1,
+                                TotalRegistrosPico = totalIds / 2,
+                                AlertasOracleEnviadas = 0
+                            });
+                        }
+
+                        await Task.Delay(500);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error batch {batch}: {ex.Message}");
+                    }
+                }
+
+                // Guardar
+                TextoProgresoHistorico = "Guardando...";
+                ProgresoCargarHistorico = 95;
+
+                File.WriteAllText(_historicoMensualPath, JsonConvert.SerializeObject(historicoMensual, Formatting.Indented));
+
+                ProgresoCargarHistorico = 100;
+                TextoProgresoHistorico = "✅ Completado";
+
+                MainViewModel.Instance?.ShowNotification($"✅ Cargados {historicoMensual.Dias.Count} días", "success");
+
+                await Task.Delay(1000);
+                await CargarAsync();
+            }
+            catch (Exception ex)
+            {
+                TextoProgresoHistorico = $"❌ Error: {ex.Message}";
+                MainViewModel.Instance?.ShowNotification($"❌ {ex.Message}", "error");
+            }
+            finally
+            {
+                EstaCargandoHistorico = false;
+            }
+        }
+
         public void Dispose()
         {
             if (_disposed) return;
@@ -572,5 +787,111 @@ namespace ServicioReportesOracle.UI.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // SoapClientUI - Cliente SOAP interno para carga histórica
+    // ══════════════════════════════════════════════════════════════════
+    internal class SoapClientUI
+    {
+        private readonly System.Net.Http.HttpClient _http;
+        private readonly string _dominio;
+        private readonly string _urlAuth;
+        private readonly string _urlWs;
+
+        public SoapClientUI(string dominio, string urlAuth, string urlWs)
+        {
+            _dominio = dominio;
+            _urlAuth = urlAuth;
+            _urlWs = urlWs;
+            _http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMinutes(5) };
+        }
+
+        public async Task<string> LoginAsync()
+        {
+            string envelope =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                "<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+                "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" " +
+                "xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                "<soap:Body><LoginServiceWithPackDirect xmlns=\"DkMServer.Services\">" +
+                "<packName>dkactas</packName>" +
+                $"<domain>{_dominio}</domain>" +
+                $"<userName>{_dominio}</userName>" +
+                $"<userPwd>{_dominio}</userPwd>" +
+                "</LoginServiceWithPackDirect></soap:Body></soap:Envelope>";
+
+            var content = new System.Net.Http.StringContent(envelope, System.Text.Encoding.UTF8, "text/xml");
+            content.Headers.Add("SOAPAction", "\"DkMServer.Services/LoginServiceWithPackDirect\"");
+
+            var response = await _http.PostAsync(_urlAuth, content);
+            string body = await response.Content.ReadAsStringAsync();
+
+            string resultInner = GetXmlVal(body, "LoginServiceWithPackDirectResult");
+            string unescaped = UnescapeXml(resultInner);
+            string token = GetXmlVal(unescaped, "UserToken");
+
+            if (string.IsNullOrEmpty(token))
+                throw new Exception("No se encontró UserToken");
+
+            return token;
+        }
+
+        public async Task<string> ObtenerRegistrosGenericoAsync(string token, string entidad, string filtro)
+        {
+            string envelope =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                "<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+                "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" " +
+                "xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                "<soap:Body><ObtenerRegistrosGenerico xmlns=\"http://tempuri.org/\">" +
+                $"<token>{token}</token>" +
+                $"<entidad>{entidad}</entidad>" +
+                "<condicionesFiltro>" +
+                $"<string>{EscapeXml(filtro)}</string>" +
+                "</condicionesFiltro>" +
+                "</ObtenerRegistrosGenerico></soap:Body></soap:Envelope>";
+
+            var content = new System.Net.Http.StringContent(envelope, System.Text.Encoding.UTF8, "text/xml");
+            content.Headers.Add("SOAPAction", "\"http://tempuri.org/ObtenerRegistrosGenerico\"");
+
+            var response = await _http.PostAsync(_urlWs, content);
+            string body = await response.Content.ReadAsStringAsync();
+
+            string resultInner = GetXmlVal(body, "ObtenerRegistrosGenericoResult");
+            string unescaped = UnescapeXml(resultInner);
+
+            string codigo = GetXmlVal(unescaped, "CodigoError");
+            if (codigo != "0")
+                throw new Exception($"Error SOAP {codigo}");
+
+            return UnescapeXml(GetXmlVal(unescaped, "ResultXML"));
+        }
+
+        private string GetXmlVal(string xml, string tag)
+        {
+            if (string.IsNullOrEmpty(xml)) return "";
+            string open = $"<{tag}>";
+            int s = xml.IndexOf(open, StringComparison.OrdinalIgnoreCase);
+            if (s < 0) return "";
+            s += open.Length;
+            int e = xml.IndexOf($"</{tag}>", s, StringComparison.OrdinalIgnoreCase);
+            if (e < 0) return "";
+            return xml.Substring(s, e - s).Trim();
+        }
+
+        private string UnescapeXml(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace("&lt;", "<").Replace("&gt;", ">")
+                    .Replace("&amp;", "&").Replace("&quot;", "\"").Replace("&apos;", "'");
+        }
+
+        private string EscapeXml(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;")
+                    .Replace("\"", "&quot;").Replace("'", "&apos;");
+        }
     }
 }

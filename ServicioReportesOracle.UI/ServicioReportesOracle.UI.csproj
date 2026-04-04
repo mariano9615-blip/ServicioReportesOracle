@@ -60,6 +60,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
