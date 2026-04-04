@@ -971,6 +971,70 @@ namespace ServicioReportesOracle.UI.ViewModels
                 string token    = await soapClient.LoginAsync();
                 string result   = await soapClient.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
 
+                // SEGUNDA LLAMADA - MLOGISLEGAL para traer CTG
+                TextoCargandoDetalle = $"Consultando CTG {fecha:dd/MM/yyyy}...";
+
+                var fMlogisLegal = filtros?.FirstOrDefault(f => f.Entidad == "MlogisLegal");
+                string fStrLegal = $"FECUPD>='{desde:dd/MM/yyyy HH:mm:ss}' AND FECUPD<='{hasta:dd/MM/yyyy HH:mm:ss}'";
+
+                if (fMlogisLegal != null)
+                {
+                    var jFMlogisLegal = (JObject)fMlogisLegal;
+                    var condicionesArrLegal = jFMlogisLegal["Condiciones"] as JArray;
+                    if (condicionesArrLegal != null && condicionesArrLegal.Count > 0)
+                    {
+                        var partesLegal = new List<string>();
+                        foreach (var cond in condicionesArrLegal)
+                        {
+                            var partesCondLegal = new List<string>();
+                            string estadoLog = cond["EstadoLog"]?.ToString();
+                            string status    = cond["Status"]?.ToString();
+                            if (!string.IsNullOrWhiteSpace(estadoLog)) partesCondLegal.Add($"ESTADOLOG='{estadoLog.Trim()}'");
+                            if (!string.IsNullOrWhiteSpace(status))    partesCondLegal.Add($"STATUS='{status.Trim()}'");
+                            if (partesCondLegal.Count > 0) partesLegal.Add($"({string.Join(" AND ", partesCondLegal)})");
+                        }
+                        if (partesLegal.Count == 1)     fStrLegal += $" AND {partesLegal[0]}";
+                        else if (partesLegal.Count > 1) fStrLegal += $" AND ({string.Join(" OR ", partesLegal)})";
+                    }
+                }
+
+                string resultLegal = await soapClient.ObtenerRegistrosGenericoAsync(token, "MlogisLegal", fStrLegal);
+
+                // Parsear MlogisLegal para crear diccionario ID_MLOGIS -> CTG
+                var ctgDict = new Dictionary<string, string>();
+                if (!string.IsNullOrWhiteSpace(resultLegal))
+                {
+                    if (resultLegal.Trim().StartsWith("["))
+                    {
+                        var listLegal = JsonConvert.DeserializeObject<List<dynamic>>(resultLegal);
+                        if (listLegal != null)
+                        {
+                            foreach (var item in listLegal)
+                            {
+                                string idMlogis = item.ID_MLOGIS?.ToString() ?? "";
+                                string ctg      = item.CTG?.ToString() ?? "";
+                                if (!string.IsNullOrEmpty(idMlogis) && !ctgDict.ContainsKey(idMlogis))
+                                    ctgDict[idMlogis] = ctg;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int posL = 0;
+                        while ((posL = resultLegal.IndexOf("<ID_MLOGIS>", posL, StringComparison.OrdinalIgnoreCase)) != -1)
+                        {
+                            int idStart = posL + 11;
+                            int idEnd   = resultLegal.IndexOf("</ID_MLOGIS>", idStart, StringComparison.OrdinalIgnoreCase);
+                            if (idEnd < 0) break;
+                            string idMlogis = resultLegal.Substring(idStart, idEnd - idStart).Trim();
+                            string ctg      = ExtractNearbyTag(resultLegal, idEnd, "CTG");
+                            if (!string.IsNullOrEmpty(idMlogis) && !ctgDict.ContainsKey(idMlogis))
+                                ctgDict[idMlogis] = ctg;
+                            posL = idEnd;
+                        }
+                    }
+                }
+
                 // Parsear registros
                 var registros = new List<RegistroDisplayItem>();
                 if (!string.IsNullOrWhiteSpace(result))
@@ -998,6 +1062,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                                     Anulado        = anulado,
                                     PrimeraVezVisto = "-",
                                     UltimaVezVisto  = "-",
+                                    Ctg            = ctgDict.ContainsKey(id) ? ctgDict[id] : ""
                                 });
                             }
                         }
@@ -1029,6 +1094,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                                     Anulado         = anulado,
                                     PrimeraVezVisto = "-",
                                     UltimaVezVisto  = "-",
+                                    Ctg             = ctgDict.ContainsKey(id) ? ctgDict[id] : ""
                                 });
                             pos = idEnd;
                         }

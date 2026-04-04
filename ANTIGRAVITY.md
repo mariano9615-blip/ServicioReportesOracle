@@ -1,4 +1,4 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.5.0)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.5.1)
 
 ## 🚀 Resumen del Proyecto
 **Nombre**: ServicioReportesOracle | **Versión**: v7.5.0 | **Tech**: .NET Framework 4.8 (C#)
