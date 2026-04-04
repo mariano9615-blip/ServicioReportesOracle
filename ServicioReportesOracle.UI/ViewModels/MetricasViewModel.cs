@@ -354,6 +354,26 @@ namespace ServicioReportesOracle.UI.ViewModels
                     })
                     .ToList();
 
+                // Normalizar Valor a altura en píxeles para el gráfico (max 140px, min 20%)
+                if (tendenciaIds.Count > 0)
+                {
+                    const double maxPx = 140.0;
+                    double maxVal = tendenciaIds.Max(p => p.Valor);
+                    double minVal = tendenciaIds.Min(p => p.Valor);
+                    if (Math.Abs(maxVal - minVal) < 0.01)
+                    {
+                        foreach (var pt in tendenciaIds) pt.Valor = maxPx * 0.5;
+                    }
+                    else
+                    {
+                        foreach (var pt in tendenciaIds)
+                        {
+                            double ratio = (pt.Valor - minVal) / (maxVal - minVal);
+                            pt.Valor = (ratio * maxPx * 0.8) + (maxPx * 0.2);
+                        }
+                    }
+                }
+
                 var tendenciaCorridas = metricasMensuales
                     .Where(m => DateTime.TryParse(m.Fecha, CultureInfo.InvariantCulture,
                                                   DateTimeStyles.None, out _))

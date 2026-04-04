@@ -523,6 +523,7 @@
                     <TextBlock Text="{Binding DuracionBarLabel}"
                                Grid.Row="2"
                                FontSize="12"
+                               TextWrapping="Wrap"
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
                                Margin="0,8,0,0">
                         <TextBlock.Style>
