@@ -2,6 +2,7 @@
 ## [7.4.1] - 2026-04-04
 
 ### Fixed
+- **MetricasView**: Scroll vertical habilitado + alturas optimizadas para resoluciones 1080p
 - **MetricasView**: Eliminados labels "seg" repetidos en gráfico de duración, ahora solo en título ("Duración en segundos (últimas 20)")
 - **MetricasView**: Manejo visual de outliers en barras de IDs procesados (truncado a P95, color amarillo, indicador ▲)
 
