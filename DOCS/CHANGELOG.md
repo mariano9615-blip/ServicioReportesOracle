@@ -1,4 +1,13 @@
 # 🗂️ Changelog
+## [7.5.0] - 2026-04-04
+
+### Added
+- **MetricasView**: Click en barras del gráfico de tendencia histórica navega a Registros SOAP con datos del día seleccionado (drill-down interactivo)
+- **MetricasView**: Cursor `Hand` en hover sobre barras de tendencia; loading overlay con texto "Cargando dd/MM/yyyy..." durante la consulta SOAP
+- **MetricasViewModel**: `VerDetalleDiaCommand` — llama SOAP para la fecha seleccionada, parsea registros (JSON y XML) y navega a `MlogisHistorialView` con datos precargados
+- **MlogisHistorialViewModel**: Modo precargado (`skipInitialLoad` + `CargarConDatosPrecargados`) — acepta `List<RegistroDisplayItem>` desde navegación externa; `RefreshCommand` resetea el modo y recarga datos normales
+- **MlogisHistorialView**: Trigger `IsHistorico` muestra etiqueta "📅 HISTÓRICO / dd/MM/yyyy / N IDs" en el panel izquierdo de corridas cuando se navega desde MetricasView
+
 ## [7.4.1] - 2026-04-04
 
 ### Fixed

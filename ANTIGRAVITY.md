@@ -1,7 +1,7 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.4.0)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.5.0)
 
 ## 🚀 Resumen del Proyecto
-**Nombre**: ServicioReportesOracle | **Versión**: v7.4.0 | **Tech**: .NET Framework 4.8 (C#)
+**Nombre**: ServicioReportesOracle | **Versión**: v7.5.0 | **Tech**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
 ## 📁 Arquitectura
@@ -53,6 +53,13 @@ if (dt.HasValue && dt.Value.Kind == DateTimeKind.Utc)
 - **Threading**: Siempre `Application.Current.Dispatcher.InvokeAsync()` para actualizar la UI.
 - **Logs**: Core loguea en `Logs/Log_<DiaSemana>.txt`. Rotación semanal automática.
 - **Export Excel**: ClosedXML con header indigo `#4F46E5`. Usar `SaveFileDialog`.
+
+## 🔗 Navegación entre vistas (v7.5.0+)
+
+- Para navegar programáticamente a una vista con datos precargados: crear la instancia del ViewModel, configurarla, luego asignar `MainViewModel.Instance.SelectedViewModel = vm`.
+- `MlogisHistorialViewModel` acepta `new MlogisHistorialViewModel(skipInitialLoad: true)` para evitar la carga inicial automática. Luego llamar `CargarConDatosPrecargados(fecha, registros)`.
+- El `RefreshCommand` de `MlogisHistorialViewModel` resetea el modo precargado (`_modoFiltradoPorFecha = false`) y recarga desde JSON local.
+- El `CargarAsync` verifica `_modoFiltradoPorFecha` y retorna inmediatamente si está en modo precargado (protege contra watchers y timers que disparen durante la sesión precargada).
 
 ## ⛔ Patrones Prohibidos
 - NUNCA usar `dotnet build` — siempre MSBuild.exe directo.
