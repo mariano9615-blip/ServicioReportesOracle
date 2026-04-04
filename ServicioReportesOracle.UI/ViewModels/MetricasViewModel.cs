@@ -30,15 +30,26 @@ namespace ServicioReportesOracle.UI.ViewModels
         public Brush Fill { get; set; }
     }
 
+    /// <summary>Punto en serie temporal para gráfico de línea.</summary>
+    public class LinePoint
+    {
+        public DateTime Fecha { get; set; }
+        public double Valor { get; set; }
+        public string Label { get; set; }
+        public string Tooltip { get; set; }
+    }
+
     public class MetricasViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly string _logsDir;
         private readonly string _historialPath;
         private readonly string _historialAyerPath;
         private readonly string _alertasPath;
+        private readonly string _historicoMensualPath;
         private readonly SemaphoreSlim _refreshLock = new SemaphoreSlim(1, 1);
         private FileSystemWatcher _watcherHistorial;
         private FileSystemWatcher _watcherAlertas;
+        private FileSystemWatcher _watcherMensual;
         private Timer _debounceTimer;
         private const int DebounceMs = 2000;
         private bool _disposed;
@@ -60,6 +71,18 @@ namespace ServicioReportesOracle.UI.ViewModels
         private string _duracionBarLabel = "Sin datos";
         private bool _tieneDatosCore;
         private bool _tieneDatosUI;
+
+        // Series temporales (últimos 30 días)
+        private ObservableCollection<LinePoint> _tendenciaIds      = new ObservableCollection<LinePoint>();
+        private ObservableCollection<LinePoint> _tendenciaCorridas = new ObservableCollection<LinePoint>();
+
+        // KPIs mensuales
+        private int _promedioDiarioIds;
+        private int _totalMesIds;
+        private int _maxDiaIds;
+        private int _diasConAlertas;
+        private double _promedioCorridasDia;
+        private string _tituloMetricas = "Métricas (48 horas)";
 
         public ICommand RefreshCommand { get; }
 
@@ -157,13 +180,62 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _tieneDatosUI = value; OnPropertyChanged(); }
         }
 
+        public ObservableCollection<LinePoint> TendenciaIds
+        {
+            get => _tendenciaIds;
+            set { _tendenciaIds = value; OnPropertyChanged(); }
+        }
+
+        public ObservableCollection<LinePoint> TendenciaCorridas
+        {
+            get => _tendenciaCorridas;
+            set { _tendenciaCorridas = value; OnPropertyChanged(); }
+        }
+
+        public int PromedioDiarioIds
+        {
+            get => _promedioDiarioIds;
+            set { _promedioDiarioIds = value; OnPropertyChanged(); }
+        }
+
+        public int TotalMesIds
+        {
+            get => _totalMesIds;
+            set { _totalMesIds = value; OnPropertyChanged(); }
+        }
+
+        public int MaxDiaIds
+        {
+            get => _maxDiaIds;
+            set { _maxDiaIds = value; OnPropertyChanged(); }
+        }
+
+        public int DiasConAlertas
+        {
+            get => _diasConAlertas;
+            set { _diasConAlertas = value; OnPropertyChanged(); }
+        }
+
+        public double PromedioCorridasDia
+        {
+            get => _promedioCorridasDia;
+            set { _promedioCorridasDia = value; OnPropertyChanged(); }
+        }
+
+        public string TituloMetricas
+        {
+            get => _tituloMetricas;
+            set { _tituloMetricas = value; OnPropertyChanged(); }
+        }
+
         public MetricasViewModel()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
             _logsDir = Path.GetFullPath(Path.Combine(basePath, @"..\ServicioReportesOracle\Logs\json"));
             _historialPath     = Path.Combine(_logsDir, "mlogis_historial.json");
             _historialAyerPath = Path.Combine(_logsDir, "mlogis_historial_ayer.json");
-            _alertasPath       = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
+            _alertasPath          = Path.Combine(_logsDir, "alertas_oracle_enviadas.json");
+            _historicoMensualPath = Path.Combine(_logsDir, "mlogis_historico_mensual.json");
 
             RefreshCommand = new RelayCommand(_ => _ = CargarAsync());
             ConfigurarWatcher();
@@ -196,6 +268,59 @@ namespace ServicioReportesOracle.UI.ViewModels
                 double deltaPct = 100.0 - fullPct;
 
                 int alertasHoy = await ContarAlertasHoyAsync();
+
+                // ── Cargar métricas mensuales ──────────────────────────────────────
+                var metricasMensuales = await LeerHistoricoMensualAsync();
+
+                var tendenciaIds = metricasMensuales
+                    .Select(m => new { m.Fecha, m.TotalRegistrosPico, m.TotalCorridas })
+                    .Where(m => DateTime.TryParse(m.Fecha, CultureInfo.InvariantCulture,
+                                                  DateTimeStyles.None, out _))
+                    .OrderBy(m => m.Fecha)
+                    .Select(m =>
+                    {
+                        DateTime.TryParse(m.Fecha, CultureInfo.InvariantCulture,
+                                          DateTimeStyles.None, out DateTime dt);
+                        return new LinePoint
+                        {
+                            Fecha   = dt,
+                            Valor   = m.TotalRegistrosPico,
+                            Label   = dt.ToString("dd/MM"),
+                            Tooltip = $"{m.TotalRegistrosPico} IDs pico - {dt:dd/MM/yyyy}"
+                        };
+                    })
+                    .ToList();
+
+                var tendenciaCorridas = metricasMensuales
+                    .Where(m => DateTime.TryParse(m.Fecha, CultureInfo.InvariantCulture,
+                                                  DateTimeStyles.None, out _))
+                    .OrderBy(m => m.Fecha)
+                    .Select(m =>
+                    {
+                        DateTime.TryParse(m.Fecha, CultureInfo.InvariantCulture,
+                                          DateTimeStyles.None, out DateTime dt);
+                        return new LinePoint
+                        {
+                            Fecha   = dt,
+                            Valor   = m.TotalCorridas,
+                            Label   = dt.ToString("dd/MM"),
+                            Tooltip = $"{m.TotalCorridas} corridas - {dt:dd/MM/yyyy}"
+                        };
+                    })
+                    .ToList();
+
+                int promedioDiarioIds    = metricasMensuales.Count > 0
+                    ? (int)metricasMensuales.Average(m => m.TotalRegistrosPico) : 0;
+                int totalMesIds          = metricasMensuales.Sum(m => m.TotalRegistrosPico);
+                int maxDiaIds            = metricasMensuales.Count > 0
+                    ? metricasMensuales.Max(m => m.TotalRegistrosPico) : 0;
+                int diasConAlertas       = metricasMensuales.Count(m => m.AlertasOracleEnviadas > 0);
+                double promedioCorridasDia = metricasMensuales.Count > 0
+                    ? metricasMensuales.Average(m => m.TotalCorridas) : 0;
+
+                string tituloMetricas = metricasMensuales.Count > 0
+                    ? $"Métricas ({metricasMensuales.Count} días)"
+                    : "Métricas (48 horas)";
 
                 // Resolver brushes (debe hacerse en UI thread)
                 Brush primaryBrush = null;
@@ -234,6 +359,16 @@ namespace ServicioReportesOracle.UI.ViewModels
                     DuracionBarLabel = duracionSerie.Count == 0
                         ? "Sin datos de duración"
                         : $"Min {duracionSerie.Min():0.1}s / Max {duracionSerie.Max():0.1}s";
+
+                    // Actualizar propiedades mensuales
+                    TendenciaIds       = new ObservableCollection<LinePoint>(tendenciaIds);
+                    TendenciaCorridas  = new ObservableCollection<LinePoint>(tendenciaCorridas);
+                    PromedioDiarioIds  = promedioDiarioIds;
+                    TotalMesIds        = totalMesIds;
+                    MaxDiaIds          = maxDiaIds;
+                    DiasConAlertas     = diasConAlertas;
+                    PromedioCorridasDia = Math.Round(promedioCorridasDia, 1);
+                    TituloMetricas     = tituloMetricas;
                 });
             }
             catch
@@ -292,6 +427,26 @@ namespace ServicioReportesOracle.UI.ViewModels
             catch
             {
                 return new List<MlogisCorrida>();
+            }
+        }
+
+        private async Task<List<MetricaDiaria>> LeerHistoricoMensualAsync()
+        {
+            if (!File.Exists(_historicoMensualPath)) return new List<MetricaDiaria>();
+            try
+            {
+                string json = await Task.Run(() =>
+                {
+                    using (var fs = new FileStream(_historicoMensualPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (var sr = new StreamReader(fs))
+                        return sr.ReadToEnd();
+                });
+                var parsed = JsonConvert.DeserializeObject<MlogisHistoricoMensual>(json);
+                return parsed?.Dias ?? new List<MetricaDiaria>();
+            }
+            catch
+            {
+                return new List<MetricaDiaria>();
             }
         }
 
@@ -356,9 +511,11 @@ namespace ServicioReportesOracle.UI.ViewModels
         {
             try { _watcherHistorial?.Dispose(); } catch { }
             try { _watcherAlertas?.Dispose(); } catch { }
+            try { _watcherMensual?.Dispose(); } catch { }
             _debounceTimer?.Dispose();
             _watcherHistorial = null;
             _watcherAlertas   = null;
+            _watcherMensual   = null;
             _debounceTimer    = null;
 
             if (string.IsNullOrWhiteSpace(_logsDir) || !Directory.Exists(_logsDir))
@@ -387,6 +544,15 @@ namespace ServicioReportesOracle.UI.ViewModels
             };
             _watcherAlertas.Changed += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
             _watcherAlertas.Created += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
+
+            _watcherMensual = new FileSystemWatcher(_logsDir)
+            {
+                Filter       = "mlogis_historico_mensual.json",
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
+                EnableRaisingEvents = true
+            };
+            _watcherMensual.Changed += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
+            _watcherMensual.Created += (s, e) => _debounceTimer?.Change(DebounceMs, Timeout.Infinite);
         }
 
         public void Dispose()
@@ -395,9 +561,11 @@ namespace ServicioReportesOracle.UI.ViewModels
             _disposed = true;
             try { _watcherHistorial?.Dispose(); } catch { }
             try { _watcherAlertas?.Dispose(); } catch { }
+            try { _watcherMensual?.Dispose(); } catch { }
             try { _debounceTimer?.Dispose(); } catch { }
             _watcherHistorial = null;
             _watcherAlertas   = null;
+            _watcherMensual   = null;
             _debounceTimer    = null;
         }
 
