@@ -66,15 +66,23 @@
                         </Style>
                     </Border.Style>
 
-                    <StackPanel>
-                        <!-- Botón -->
+                    <Grid>
+                        <!-- Botón (visible cuando NO está cargando) -->
                         <Button Command="{Binding CargarHistoricoCommand}"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Padding="0">
+                                Padding="0"
+                                Cursor="Hand">
                             <Button.Style>
                                 <Style TargetType="Button">
                                     <Setter Property="Visibility" Value="Visible"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <ContentPresenter/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding EstaCargandoHistorico}" Value="True">
                                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -93,7 +101,7 @@
                             </StackPanel>
                         </Button>
 
-                        <!-- Progreso -->
+                        <!-- Progreso (visible cuando SÍ está cargando) -->
                         <StackPanel>
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
@@ -117,7 +125,7 @@
                                          Foreground="{StaticResource PrimaryBrush}"
                                          Background="{StaticResource SurfaceContainerHighBrush}"/>
                         </StackPanel>
-                    </StackPanel>
+                    </Grid>
                 </Border>
 
                 <!-- Botón Actualizar -->
