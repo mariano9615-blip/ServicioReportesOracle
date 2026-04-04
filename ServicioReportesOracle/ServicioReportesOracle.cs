@@ -487,6 +487,9 @@ namespace ServicioOracleReportes
                     string historialAyerPath = Path.Combine(_rutaJson, "mlogis_historial_ayer.json");
                     var historialAyer = new MlogisHistorial { Corridas = corridasAyer };
                     File.WriteAllText(historialAyerPath, JsonConvert.SerializeObject(historialAyer, Formatting.Indented));
+
+                    // ── Actualizar métricas rolling 30 días con los datos de ayer ──
+                    ActualizarHistoricoMensual(corridasAyer, DateTime.Today.AddDays(-1));
                 }
 
                 EscribirLog($"🗑️ [Historial] Rotación diaria: {corridasHoy.Count} corridas hoy, {corridasAyer.Count} de ayer preservadas, {descartadas} descartadas.");
@@ -2846,6 +2849,98 @@ namespace ServicioOracleReportes
             {
                 try   { File.WriteAllText(path, JsonConvert.SerializeObject(estado, Formatting.Indented)); }
                 catch (Exception ex) { EscribirLog($"⚠️ Error guardando ws_estado.json: {ex.Message}"); }
+            }
+        }
+
+        // ── Métricas rolling 30 días ──────────────────────────────────────────
+        private void ActualizarHistoricoMensual(List<MlogisCorrida> corridasAyer, DateTime fecha)
+        {
+            try
+            {
+                string mensualPath = Path.Combine(_rutaJson, "mlogis_historico_mensual.json");
+
+                MlogisHistoricoMensual historico;
+                try
+                {
+                    historico = File.Exists(mensualPath)
+                        ? JsonConvert.DeserializeObject<MlogisHistoricoMensual>(File.ReadAllText(mensualPath)) ?? new MlogisHistoricoMensual()
+                        : new MlogisHistoricoMensual();
+                }
+                catch { historico = new MlogisHistoricoMensual(); }
+
+                string fechaStr        = fecha.ToString("yyyy-MM-dd");
+                int totalCorridas      = corridasAyer.Count;
+                int corridasFull       = corridasAyer.Count(c => string.Equals(c.Tipo, "full",  StringComparison.OrdinalIgnoreCase));
+                int corridasDelta      = corridasAyer.Count(c => string.Equals(c.Tipo, "delta", StringComparison.OrdinalIgnoreCase));
+                int picRegistros       = totalCorridas > 0 ? corridasAyer.Max(c => c.Registros.Count) : 0;
+                int cambiosSoap        = corridasAyer.Sum(c => c.Registros.Sum(r => r.CambiosDetectados?.Count ?? 0));
+                double duracionProm    = totalCorridas > 0 ? corridasAyer.Average(c => c.DuracionSegundos) : 0;
+                int alertasOracle      = ContarAlertasDelDia(fecha);
+
+                var metrica = new MetricaDiaria
+                {
+                    Fecha                    = fechaStr,
+                    TotalCorridas            = totalCorridas,
+                    CorridasFull             = corridasFull,
+                    CorridasDelta            = corridasDelta,
+                    TotalRegistrosPico       = picRegistros,
+                    CambiosSoapDetectados    = cambiosSoap,
+                    AlertasOracleEnviadas    = alertasOracle,
+                    DuracionPromedioSegundos = Math.Round(duracionProm, 2)
+                };
+
+                int idx = historico.Dias.FindIndex(d => d.Fecha == fechaStr);
+                if (idx >= 0)
+                    historico.Dias[idx] = metrica;
+                else
+                    historico.Dias.Add(metrica);
+
+                // Ventana rolling de 30 días
+                DateTime cutoff = DateTime.Today.AddDays(-30);
+                historico.Dias.RemoveAll(d =>
+                    DateTime.TryParse(d.Fecha, out DateTime dt) && dt.Date < cutoff);
+
+                historico.Dias.Sort((a, b) => string.Compare(a.Fecha, b.Fecha, StringComparison.Ordinal));
+                historico.Generado = DateTime.Now;
+
+                File.WriteAllText(mensualPath, JsonConvert.SerializeObject(historico, Formatting.Indented));
+
+                EscribirLog($"📊 [HistoricoMensual] Métricas de {fechaStr} guardadas. " +
+                            $"Corridas: {totalCorridas} (F:{corridasFull}/D:{corridasDelta}), " +
+                            $"Registros pico: {picRegistros}, Cambios SOAP: {cambiosSoap}, " +
+                            $"Alertas Oracle: {alertasOracle}. Días en ventana: {historico.Dias.Count}/30.");
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("⚠️ [HistoricoMensual] Error actualizando mlogis_historico_mensual.json: " + ex.Message);
+            }
+        }
+
+        private int ContarAlertasDelDia(DateTime fecha)
+        {
+            try
+            {
+                string alertasPath = Path.Combine(_rutaJson, "alertas_smtp_enviadas.json");
+                if (!File.Exists(alertasPath)) return 0;
+
+                var container = JObject.Parse(File.ReadAllText(alertasPath));
+                var alertas   = container["alertas"] as JArray;
+                if (alertas == null) return 0;
+
+                int count = 0;
+                foreach (var entry in alertas)
+                {
+                    string tipo = entry["tipo"]?.ToString() ?? "";
+                    if (!tipo.StartsWith("oracle_caso_", StringComparison.OrdinalIgnoreCase)) continue;
+                    DateTime? ts = entry.Value<DateTime?>("timestamp");
+                    if (ts.HasValue && ts.Value.Date == fecha.Date)
+                        count++;
+                }
+                return count;
+            }
+            catch
+            {
+                return 0;
             }
         }
 

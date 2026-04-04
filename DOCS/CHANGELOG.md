@@ -1,4 +1,18 @@
 # 🗂️ Changelog
+## v7.4.0 - Core: Métricas Históricas Mlogis Rolling 30 Días (2026-04-04)
+
+### ✨ Feature — Historial de métricas Mlogis con ventana rolling de 30 días
+- **Nuevos modelos**: `MlogisHistoricoMensual` y `MetricaDiaria` en `MlogisHistorial.cs`.
+- **Nuevo archivo**: `Logs/json/mlogis_historico_mensual.json` — acumula una `MetricaDiaria` por día con:
+  - `total_corridas`, `corridas_full`, `corridas_delta`
+  - `total_registros_pico` (máximo de registros en una sola corrida del día)
+  - `cambios_soap_detectados` (suma de cambios de CTG/NroComprobante detectados)
+  - `alertas_oracle_enviadas` (alertas Caso A + Caso B del día, leídas de `alertas_smtp_enviadas.json`)
+  - `duracion_promedio_segundos`
+- **Nuevo método**: `ActualizarHistoricoMensual()` — llamado automáticamente tras guardar `mlogis_historial_ayer.json` en la rotación diaria; mantiene la ventana de 30 días eliminando entradas anteriores.
+- **Nuevo helper**: `ContarAlertasDelDia(DateTime)` — cuenta alertas oracle (tipo `oracle_caso_*`) del día solicitado desde `alertas_smtp_enviadas.json`.
+- **ANTIGRAVITY.md**: actualizado con entrada para `mlogis_historico_mensual.json` y versión bumpeada a v7.4.0.
+
 ## v7.3.10 - UI: Dashboard Fix Estructura JSON Alertas (2026-04-03)
 
 ### 🐛 Bug Crítico — Dashboard: Error de parseo en alertas SMTP

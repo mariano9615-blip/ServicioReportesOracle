@@ -1,7 +1,7 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.3.6)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.4.0)
 
 ## 🚀 Resumen del Proyecto
-**Nombre**: ServicioReportesOracle | **Versión**: v7.3.6 | **Tech**: .NET Framework 4.8 (C#)
+**Nombre**: ServicioReportesOracle | **Versión**: v7.4.0 | **Tech**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
 ## 📁 Arquitectura
@@ -15,6 +15,7 @@
 |---------|-----------|
 | `config.json` | Configuración global (Oracle, SMTP, SOAP, flags). |
 | `consultas.json` | Definición de tareas/consultas SQL. |
+| `Logs/json/mlogis_historico_mensual.json` | Métricas Mlogis diarias en ventana rolling de 30 días. Estructura: `{"generado": ..., "dias": [...]}`. |
 | `DOCS/ARCHIVOS_JSON.md` | Detalle técnico de archivos JSON operativos y de configuración. |
 | `DOCS/HEALTH_CHECK.md` | Detalle del Health Check SOAP y Circuit Breaker Oracle. |
 | `DOCS/UI_VISTAS.md` | Detalle de las vistas y componentes de la UI WPF. |

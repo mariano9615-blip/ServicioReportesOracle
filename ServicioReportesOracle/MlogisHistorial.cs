@@ -69,4 +69,40 @@ namespace ServicioOracleReportes
         [JsonProperty("detectado")]
         public DateTime Detectado { get; set; }
     }
+
+    public class MlogisHistoricoMensual
+    {
+        [JsonProperty("generado")]
+        public DateTime Generado { get; set; }
+
+        [JsonProperty("dias")]
+        public List<MetricaDiaria> Dias { get; set; } = new List<MetricaDiaria>();
+    }
+
+    public class MetricaDiaria
+    {
+        [JsonProperty("fecha")]
+        public string Fecha { get; set; } = "";
+
+        [JsonProperty("total_corridas")]
+        public int TotalCorridas { get; set; }
+
+        [JsonProperty("corridas_full")]
+        public int CorridasFull { get; set; }
+
+        [JsonProperty("corridas_delta")]
+        public int CorridasDelta { get; set; }
+
+        [JsonProperty("total_registros_pico")]
+        public int TotalRegistrosPico { get; set; }
+
+        [JsonProperty("cambios_soap_detectados")]
+        public int CambiosSoapDetectados { get; set; }
+
+        [JsonProperty("alertas_oracle_enviadas")]
+        public int AlertasOracleEnviadas { get; set; }
+
+        [JsonProperty("duracion_promedio_segundos")]
+        public double DuracionPromedioSegundos { get; set; }
+    }
 }
