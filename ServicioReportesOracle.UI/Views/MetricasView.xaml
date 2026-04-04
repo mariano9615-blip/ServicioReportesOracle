@@ -27,42 +27,271 @@
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>   <!-- Título + botones -->
+            <RowDefinition Height="Auto"/>   <!-- KPIs mensuales -->
+            <RowDefinition Height="Auto"/>   <!-- Gráfico tendencia -->
+            <RowDefinition Height="Auto"/>   <!-- Barras últimas 20 -->
+            <RowDefinition Height="Auto"/>   <!-- KPIs hoy vs ayer -->
+            <RowDefinition Height="*"/>      <!-- Distribución FULL/DELTA -->
         </Grid.RowDefinitions>
 
-        <!-- ── Título + botón Actualizar ── -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- ROW 0: Título + Botón Cargar + Botón Actualizar -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
         <Grid Grid.Row="0" Margin="0,0,0,15">
-            <TextBlock Text="Métricas (48 horas)"
+            <TextBlock Text="{Binding TituloMetricas}"
                        FontSize="24"
                        FontWeight="Bold"
                        VerticalAlignment="Center"
                        Foreground="{StaticResource OnSurfaceBrush}"/>
 
-            <Button Command="{Binding RefreshCommand}"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Background="{StaticResource SurfaceContainerHighBrush}"
-                    Foreground="{StaticResource OnSurfaceBrush}"
-                    BorderBrush="{StaticResource OutlineBrush}"
-                    BorderThickness="1"
-                    Padding="15,8"
-                    Style="{x:Null}">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="🔄"
-                               FontFamily="Segoe UI Emoji"
-                               Margin="0,0,8,0"
-                               VerticalAlignment="Center"/>
-                    <TextBlock Text="Actualizar"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+
+                <!-- Botón Cargar Histórico -->
+                <Border Background="{StaticResource SurfaceContainerHighBrush}"
+                        CornerRadius="8"
+                        Padding="12,8"
+                        BorderBrush="{StaticResource OutlineBrush}"
+                        BorderThickness="1"
+                        Margin="0,0,10,0">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding MostrarBotonCargarHistorico}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel>
+                        <!-- Botón -->
+                        <Button Command="{Binding CargarHistoricoCommand}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding EstaCargandoHistorico}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📊"
+                                           FontFamily="Segoe UI Emoji"
+                                           Margin="0,0,8,0"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="Cargar 30 días"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource OnSurfaceBrush}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Progreso -->
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding EstaCargandoHistorico}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+
+                            <TextBlock Text="{Binding TextoProgresoHistorico}"
+                                       FontSize="11"
+                                       Foreground="{StaticResource OnSurfaceVariantBrush}"
+                                       Margin="0,0,0,4"/>
+
+                            <ProgressBar Value="{Binding ProgresoCargarHistorico}"
+                                         Height="4"
+                                         Width="180"
+                                         Foreground="{StaticResource PrimaryBrush}"
+                                         Background="{StaticResource SurfaceContainerHighBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Botón Actualizar -->
+                <Button Command="{Binding RefreshCommand}"
+                        Background="{StaticResource SurfaceContainerHighBrush}"
+                        Foreground="{StaticResource OnSurfaceBrush}"
+                        BorderBrush="{StaticResource OutlineBrush}"
+                        BorderThickness="1"
+                        Padding="15,8"
+                        Style="{x:Null}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🔄"
+                                   FontFamily="Segoe UI Emoji"
+                                   Margin="0,0,8,0"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="Actualizar"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
-        <!-- ── Fila 1: gráficos de barras ── -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- ROW 1: KPIs Mensuales -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
         <Grid Grid.Row="1" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8" Padding="16" Margin="0,0,4,0">
+                <StackPanel>
+                    <TextBlock Text="Promedio diario"
+                               FontSize="12"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                    <TextBlock Text="{Binding PromedioDiarioIds}"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource OnSurfaceBrush}"
+                               Margin="0,4,0,0"/>
+                    <TextBlock Text="IDs/día"
+                               FontSize="11"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8" Padding="16" Margin="4,0">
+                <StackPanel>
+                    <TextBlock Text="Total período"
+                               FontSize="12"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                    <TextBlock Text="{Binding TotalMesIds}"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource OnSurfaceBrush}"
+                               Margin="0,4,0,0"/>
+                    <TextBlock Text="IDs totales"
+                               FontSize="11"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8" Padding="16" Margin="4,0">
+                <StackPanel>
+                    <TextBlock Text="Pico máximo"
+                               FontSize="12"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                    <TextBlock Text="{Binding MaxDiaIds}"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource WarningBrush}"
+                               Margin="0,4,0,0"/>
+                    <TextBlock Text="IDs en un día"
+                               FontSize="11"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="3" Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="8" Padding="16" Margin="4,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="Promedio corridas/día"
+                               FontSize="12"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                    <TextBlock Text="{Binding PromedioCorridasDia}"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource OnSurfaceBrush}"
+                               Margin="0,4,0,0"/>
+                    <TextBlock Text="corridas/día"
+                               FontSize="11"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- ROW 2: Gráfico Tendencia (30 días) -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}"
+                CornerRadius="8" Padding="16" Margin="0,0,0,15">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="140"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Tendencia de IDs procesados (período histórico)"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource OnSurfaceVariantBrush}"
+                           Margin="0,0,0,10"/>
+
+                <Grid Grid.Row="1">
+                    <!-- Placeholder -->
+                    <TextBlock Text="Use 'Cargar 30 días' para visualizar tendencia histórica"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Foreground="{StaticResource OnSurfaceBrush}"
+                               Opacity="0.4">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding TendenciaIds.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <!-- Gráfico -->
+                    <ItemsControl ItemsSource="{Binding TendenciaIds}">
+                        <ItemsControl.Style>
+                            <Style TargetType="ItemsControl">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding TendenciaIds.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ItemsControl.Style>
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Rows="1"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ToolTip="{Binding Tooltip}">
+                                    <Border Background="{StaticResource PrimaryBrush}"
+                                            Width="3"
+                                            Height="120"
+                                            VerticalAlignment="Bottom"
+                                            CornerRadius="2,2,0,0"
+                                            Opacity="0.7"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ── Fila 3: gráficos de barras ── -->
+        <Grid Grid.Row="3" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="1*"/>
@@ -251,8 +480,8 @@
             </Border>
         </Grid>
 
-        <!-- ── Fila 2: KPIs numéricos ── -->
-        <Grid Grid.Row="2" Margin="0,0,0,15">
+        <!-- ── Fila 4: KPIs numéricos ── -->
+        <Grid Grid.Row="4" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="1*"/>
@@ -295,8 +524,8 @@
             </Border>
         </Grid>
 
-        <!-- ── Fila 3: Distribución FULL/DELTA ── -->
-        <Border Grid.Row="3"
+        <!-- ── Fila 5: Distribución FULL/DELTA ── -->
+        <Border Grid.Row="5"
                 Background="{StaticResource SurfaceBrush}"
                 CornerRadius="8"
                 Padding="16">
