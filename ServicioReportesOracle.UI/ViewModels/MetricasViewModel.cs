@@ -1011,8 +1011,8 @@ namespace ServicioReportesOracle.UI.ViewModels
                         {
                             foreach (var item in listLegal)
                             {
-                                string idMlogis = item.ID_MLOGIS?.ToString() ?? "";
-                                string ctg      = item.CTG?.ToString() ?? "";
+                                string idMlogis = item.MLOGISID?.ToString() ?? item.MlogisId?.ToString() ?? "";
+                                string ctg      = item.VALOR?.ToString()    ?? item.Valor?.ToString()    ?? "";
                                 if (!string.IsNullOrEmpty(idMlogis) && !ctgDict.ContainsKey(idMlogis))
                                     ctgDict[idMlogis] = ctg;
                             }
@@ -1021,13 +1021,13 @@ namespace ServicioReportesOracle.UI.ViewModels
                     else
                     {
                         int posL = 0;
-                        while ((posL = resultLegal.IndexOf("<ID_MLOGIS>", posL, StringComparison.OrdinalIgnoreCase)) != -1)
+                        while ((posL = resultLegal.IndexOf("<MLOGISID>", posL, StringComparison.OrdinalIgnoreCase)) != -1)
                         {
-                            int idStart = posL + 11;
-                            int idEnd   = resultLegal.IndexOf("</ID_MLOGIS>", idStart, StringComparison.OrdinalIgnoreCase);
+                            int idStart = posL + 10;
+                            int idEnd   = resultLegal.IndexOf("</MLOGISID>", idStart, StringComparison.OrdinalIgnoreCase);
                             if (idEnd < 0) break;
                             string idMlogis = resultLegal.Substring(idStart, idEnd - idStart).Trim();
-                            string ctg      = ExtractNearbyTag(resultLegal, idEnd, "CTG");
+                            string ctg      = ExtractNearbyTag(resultLegal, idEnd, "VALOR");
                             if (!string.IsNullOrEmpty(idMlogis) && !ctgDict.ContainsKey(idMlogis))
                                 ctgDict[idMlogis] = ctg;
                             posL = idEnd;

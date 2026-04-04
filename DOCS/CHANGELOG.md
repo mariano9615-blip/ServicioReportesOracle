@@ -2,7 +2,7 @@
 ## [7.5.1] - 2026-04-04
 
 ### Fixed
-- **MetricasView**: Drill-down en barras de tendencia ahora trae CTG completo (segunda llamada SOAP a MlogisLegal)
+- **MetricasView**: Drill-down ahora trae CTG correctamente (fix nombres campos: MLOGISID/VALOR en parseo JSON y XML de MlogisLegal)
 
 ## [7.5.0] - 2026-04-04
 
