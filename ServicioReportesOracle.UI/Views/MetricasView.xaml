@@ -38,7 +38,7 @@
         <!-- ══════════════════════════════════════════════════════════════ -->
         <!-- ROW 0: Título + Botón Cargar + Botón Actualizar -->
         <!-- ══════════════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Margin="0,0,0,15">
+        <Grid Grid.Row="0" Margin="0,15,0,10">
             <TextBlock Text="{Binding TituloMetricas}"
                        FontSize="24"
                        FontWeight="Bold"
@@ -49,10 +49,10 @@
                         HorizontalAlignment="Right">
 
                 <!-- Botón Cargar Histórico -->
-                <Border Background="{StaticResource SurfaceContainerHighBrush}"
+                <Border Background="{StaticResource PrimaryBrush}"
                         CornerRadius="8"
                         Padding="12,8"
-                        BorderBrush="{StaticResource OutlineBrush}"
+                        BorderBrush="{StaticResource PrimaryLightBrush}"
                         BorderThickness="1"
                         Margin="0,0,10,0">
                     <Border.Style>
@@ -232,7 +232,7 @@
         <!-- ROW 2: Gráfico Tendencia (30 días) -->
         <!-- ══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}"
-                CornerRadius="8" Padding="16" Margin="0,0,0,15">
+                CornerRadius="8" Padding="16" Margin="0,10,0,15">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -339,6 +339,13 @@
                         <Run Text=" IDs"/>
                     </TextBlock>
 
+                    <TextBlock Grid.Column="1"
+                               Text="← inicio período ... hoy →"
+                               FontSize="11"
+                               HorizontalAlignment="Center"
+                               Foreground="{StaticResource OnSurfaceVariantBrush}"
+                               Opacity="0.5"/>
+
                     <TextBlock Grid.Column="2"
                                FontSize="11"
                                Foreground="{StaticResource OnSurfaceVariantBrush}">
@@ -351,7 +358,7 @@
         </Border>
 
         <!-- ── Fila 3: gráficos de barras ── -->
-        <Grid Grid.Row="3" Margin="0,0,0,15">
+        <Grid Grid.Row="3" Margin="0,10,0,15">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="1*"/>
@@ -401,9 +408,15 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <!-- Contenedor que establece la altura total disponible -->
                                         <Grid>
                                             <Border Style="{StaticResource BarItemStyle}"/>
+                                            <!-- Indicador outlier (P95+) -->
+                                            <TextBlock Text="▲"
+                                                       FontSize="8"
+                                                       VerticalAlignment="Top"
+                                                       HorizontalAlignment="Center"
+                                                       Foreground="{StaticResource WarningBrush}"
+                                                       Visibility="{Binding IsOutlier, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                         </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -460,10 +473,9 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Duración por corrida en segundos (últimas 20)"
+                    <TextBlock Text="Duración en segundos (últimas 20)"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource OnSurfaceVariantBrush}"
@@ -519,24 +531,6 @@
                         </TextBlock>
                     </Grid>
 
-                    <!-- Label Min/Max Duración -->
-                    <TextBlock Text="{Binding DuracionBarLabel}"
-                               Grid.Row="2"
-                               FontSize="12"
-                               TextWrapping="Wrap"
-                               Foreground="{StaticResource OnSurfaceVariantBrush}"
-                               Margin="0,8,0,0">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding TieneDatosUI}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
                 </Grid>
             </Border>
         </Grid>

@@ -29,6 +29,9 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         /// <summary>Color de la barra (heredado del gráfico).</summary>
         public Brush Fill { get; set; }
+
+        /// <summary>True si el valor supera el percentil 95 (outlier truncado visualmente).</summary>
+        public bool IsOutlier { get; set; }
     }
 
     /// <summary>Punto en serie temporal para gráfico de línea.</summary>
@@ -423,8 +426,8 @@ namespace ServicioReportesOracle.UI.ViewModels
                     warningBrush = ResolveBrush("WarningBrush", "OnSurfaceBrush");
                 });
 
-                var idsBarItems      = BuildBarItems(idsSerie,      primaryBrush, v => $"{v:0} IDs");
-                var duracionBarItems = BuildBarItems(duracionSerie,  warningBrush, v => $"{v:0.0}s");
+                var idsBarItems      = BuildBarItems(idsSerie,     primaryBrush, v => $"{v:0} IDs", 82, warningBrush);
+                var duracionBarItems = BuildBarItems(duracionSerie, warningBrush, v => $"{v:0.0}s");
 
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
@@ -482,16 +485,20 @@ namespace ServicioReportesOracle.UI.ViewModels
             IReadOnlyList<double> valores,
             Brush fill,
             Func<double, string> tooltipFmt,
-            double maxHeightPx = 82)
+            double maxHeightPx = 82,
+            Brush outlierFill = null)
         {
             var result = new List<BarItem>();
             if (valores == null || valores.Count == 0) return result;
 
-            double max = valores.Max();
-            double min = valores.Min();
+            // Calcular P95 para detectar outliers
+            var sorted = valores.OrderBy(v => v).ToList();
+            int p95Idx = Math.Max(0, (int)Math.Ceiling(sorted.Count * 0.95) - 1);
+            double p95 = sorted[p95Idx];
+            double min = sorted[0];
 
-            // Si todos los valores son iguales, usar altura fija
-            if (Math.Abs(max - min) < 0.01)
+            // Si el rango P95-min es cero, usar altura fija
+            if (Math.Abs(p95 - min) < 0.01)
             {
                 foreach (double v in valores)
                 {
@@ -499,22 +506,26 @@ namespace ServicioReportesOracle.UI.ViewModels
                     {
                         BarHeightPx = maxHeightPx * 0.5,
                         Tooltip     = tooltipFmt(v),
-                        Fill        = fill
+                        Fill        = fill,
+                        IsOutlier   = false
                     });
                 }
                 return result;
             }
 
-            // Calcular alturas proporcionales con mínimo 20%
+            // Calcular alturas proporcionales con mínimo 20%; outliers truncados en P95
             foreach (double v in valores)
             {
-                double ratio  = (v - min) / (max - min);
+                bool isOutlier = v > p95;
+                double cap    = isOutlier ? p95 : v;
+                double ratio  = (cap - min) / (p95 - min);
                 double altura = (ratio * maxHeightPx * 0.8) + (maxHeightPx * 0.2);
                 result.Add(new BarItem
                 {
                     BarHeightPx = Math.Max(10, altura),
                     Tooltip     = tooltipFmt(v),
-                    Fill        = fill
+                    Fill        = isOutlier ? (outlierFill ?? fill) : fill,
+                    IsOutlier   = isOutlier
                 });
             }
 
