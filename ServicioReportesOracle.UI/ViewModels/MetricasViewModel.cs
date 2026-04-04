@@ -686,22 +686,24 @@ namespace ServicioReportesOracle.UI.ViewModels
                 // Preparar histórico
                 var historicoMensual = new MlogisHistoricoMensual { Dias = new List<MetricaDiaria>() };
 
-                // 15 batches (30 días / 2 días por batch)
-                int totalBatches = 15;
+                // 30 días individuales (consulta día por día)
+                int totalDias = 30;
 
-                for (int batch = 0; batch < totalBatches; batch++)
+                for (int dia = 0; dia < totalDias; dia++)
                 {
-                    int diasAtras = 30 - (batch * 2);
-                    DateTime desde = DateTime.Today.AddDays(-diasAtras);
-                    DateTime hasta = desde.AddDays(2);
+                    DateTime fecha = DateTime.Today.AddDays(-(totalDias - dia));
 
-                    if (desde >= DateTime.Today) continue;
+                    if (fecha >= DateTime.Today) continue;
 
-                    TextoProgresoHistorico = $"Cargando {desde:dd/MM} - {hasta:dd/MM}...";
-                    ProgresoCargarHistorico = (int)((batch / (double)totalBatches) * 100);
+                    TextoProgresoHistorico = $"Cargando {fecha:dd/MM/yyyy}...";
+                    ProgresoCargarHistorico = (int)((dia / (double)totalDias) * 100);
 
                     try
                     {
+                        // Filtro para UN solo día
+                        DateTime desde = fecha.Date;
+                        DateTime hasta = fecha.Date.AddDays(1).AddSeconds(-1);
+
                         // Construir filtro temporal
                         string fStr = $"FECUPD>='{desde:dd/MM/yyyy HH:mm:ss}' AND FECUPD<='{hasta:dd/MM/yyyy HH:mm:ss}'";
 
@@ -750,26 +752,20 @@ namespace ServicioReportesOracle.UI.ViewModels
                             }
                         }
 
-                        // Agregar métrica por día
-                        for (int d = 0; d < 2; d++)
+                        // Agregar métrica del día con cantidad REAL
+                        historicoMensual.Dias.Add(new MetricaDiaria
                         {
-                            DateTime fechaDia = desde.AddDays(d);
-                            if (fechaDia >= DateTime.Today) continue;
+                            Fecha = fecha.ToString("yyyy-MM-dd"),
+                            TotalCorridas = 1,
+                            TotalRegistrosPico = totalIds,
+                            AlertasOracleEnviadas = 0
+                        });
 
-                            historicoMensual.Dias.Add(new MetricaDiaria
-                            {
-                                Fecha = fechaDia.ToString("yyyy-MM-dd"),
-                                TotalCorridas = 1,
-                                TotalRegistrosPico = totalIds / 2,
-                                AlertasOracleEnviadas = 0
-                            });
-                        }
-
-                        await Task.Delay(500);
+                        await Task.Delay(300);  // Throttle (300ms × 30 días = 9 segundos)
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error batch {batch}: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Error día {fecha:dd/MM}: {ex.Message}");
                     }
                 }
 
