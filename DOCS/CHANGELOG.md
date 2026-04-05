@@ -1,4 +1,15 @@
 # 🗂️ Changelog
+
+## [7.6.0] - 2026-04-04 (UI v5.2)
+
+### Added
+- **Mlogis**: Nuevos campos **Planta** y **TipoComprobante** en el seguimiento de registros SOAP (Core y UI).
+- **MlogisHistorialView**: Columnas "Planta" y "TipoComp" agregadas al DataGrid de registros.
+- **MlogisHistorialViewModel**: Soporte para los nuevos campos en `RegistroDisplayItem` y `CorridaItem`.
+
+### Changed
+- **MlogisHistorialView**: Columna **FecUpd** ahora muestra segundos (`dd/MM/yyyy HH:mm:ss`) para mayor precisión en la trazabilidad.
+
 ## [7.5.1] - 2026-04-04
 
 ### Fixed
