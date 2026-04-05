@@ -4,16 +4,16 @@
 winexe
 C#
 .cs
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\
 ServicioReportesOracle.UI
 none
 false
 TRACE
-c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\App.xaml
+C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\App.xaml
 13-132489906
 
 41-2042062977
-18989510158
+181058604018
 Views\DashboardView.xaml;MainWindow.xaml;LoginWindow.xaml;Views\GeneralConfigView.xaml;Views\TasksView.xaml;Views\SqlEditorView.xaml;Views\LogsView.xaml;Views\MlogisHistorialView.xaml;Views\MetricasView.xaml;Views\ServiceControlView.xaml;Views\ChangePasswordView.xaml;Views\UiSettingsView.xaml;Views\AlertasView.xaml;
 
 False
