@@ -184,6 +184,14 @@ namespace ServicioReportesOracle.UI.ViewModels
             foreach (var r in _datosPrecargados)
                 _allRegistrosCorrida.Add(r);
 
+            // LOG TEMPORAL para debug de binding Planta/TipoComprobante
+            if (_allRegistrosCorrida.Count > 0)
+            {
+                var primer = _allRegistrosCorrida[0];
+                System.Diagnostics.Debug.WriteLine(
+                    $"[DEBUG MlogisHistorial] Primer registro — Planta='{primer.Planta}' Tipo='{primer.TipoComprobante}' Id='{primer.Id}'");
+            }
+
             // Seleccionar el único item sin disparar RebuildRegistrosCorrida de nuevo
             _selectedCorrida = Corridas[0];
             OnPropertyChanged(nameof(SelectedCorrida));
@@ -297,6 +305,15 @@ namespace ServicioReportesOracle.UI.ViewModels
                 foreach (var r in _selectedCorrida.Corrida.Registros)
                     _allRegistrosCorrida.Add(new RegistroDisplayItem(r));
             }
+
+            // LOG TEMPORAL para debug de binding Planta/TipoComprobante
+            if (_allRegistrosCorrida.Count > 0)
+            {
+                var primer = _allRegistrosCorrida[0];
+                System.Diagnostics.Debug.WriteLine(
+                    $"[DEBUG MlogisHistorial JSON] Primer registro — Planta='{primer.Planta}' Tipo='{primer.TipoComprobante}' Id='{primer.Id}'");
+            }
+
             AplicarFiltroCorrida();
             ActualizarLineInfo();
         }

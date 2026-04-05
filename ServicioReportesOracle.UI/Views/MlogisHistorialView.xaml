@@ -407,12 +407,12 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ID"             Binding="{Binding Id}"             Width="Auto" MinWidth="160" ElementStyle="{StaticResource DataCellStyle}"/>
                             <DataGridTextColumn Header="NroComprobante" Binding="{Binding NroComprobante}" Width="Auto" MinWidth="140" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="Planta"         Binding="{Binding Planta}"          Width="80" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="TipoComp"       Binding="{Binding TipoComprobante}" Width="90" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="CTG"            Binding="{Binding Ctg}"            Width="Auto" MinWidth="120" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="Primera vez"    Binding="{Binding PrimeraVezVisto}" Width="Auto" MinWidth="90" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="Última vez"     Binding="{Binding UltimaVezVisto}" Width="Auto" MinWidth="90" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="FecUpd"         Binding="{Binding FecUpd, StringFormat='dd/MM/yyyy HH:mm:ss'}" Width="Auto" MinWidth="90" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="Planta"         Binding="{Binding Planta}"          Width="70" MinWidth="70" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="Tipo"           Binding="{Binding TipoComprobante}" Width="70" MinWidth="70" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="CTG"            Binding="{Binding Ctg}"            Width="Auto" MinWidth="110" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="Primera vez"    Binding="{Binding PrimeraVezVisto}" Width="Auto" MinWidth="80" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="Última vez"     Binding="{Binding UltimaVezVisto}" Width="Auto" MinWidth="80" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="FecUpd"         Binding="{Binding FecUpd}" Width="Auto" MinWidth="90" ElementStyle="{StaticResource DataCellStyle}"/>
                             <DataGridTemplateColumn Header="Anulado" Width="Auto" MinWidth="70" SortMemberPath="Anulado">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -474,12 +474,12 @@
                             <DataGridTextColumn Header="Corridas"       Binding="{Binding CantidadCorridas}" Width="Auto" MinWidth="70" ElementStyle="{StaticResource DataCellStyle}"/>
                             <DataGridTextColumn Header="ID"             Binding="{Binding Id}"             Width="Auto" MinWidth="160" ElementStyle="{StaticResource DataCellStyle}"/>
                             <DataGridTextColumn Header="NroComprobante" Binding="{Binding NroComprobante}" Width="Auto" MinWidth="140" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="Planta"         Binding="{Binding Planta}"          Width="80" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="TipoComp"       Binding="{Binding TipoComprobante}" Width="90" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="CTG"            Binding="{Binding Ctg}"            Width="Auto" MinWidth="120" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="Primera vez"    Binding="{Binding PrimeraVezVisto}" Width="Auto" MinWidth="90" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="Última vez"     Binding="{Binding UltimaVezVisto}" Width="Auto" MinWidth="90" ElementStyle="{StaticResource DataCellStyle}"/>
-                            <DataGridTextColumn Header="FecUpd"         Binding="{Binding FecUpd, StringFormat='dd/MM/yyyy HH:mm:ss'}" Width="Auto" MinWidth="90" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="Planta"         Binding="{Binding Planta}"          Width="70" MinWidth="70" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="Tipo"           Binding="{Binding TipoComprobante}" Width="70" MinWidth="70" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="CTG"            Binding="{Binding Ctg}"            Width="Auto" MinWidth="110" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="Primera vez"    Binding="{Binding PrimeraVezVisto}" Width="Auto" MinWidth="80" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="Última vez"     Binding="{Binding UltimaVezVisto}" Width="Auto" MinWidth="80" ElementStyle="{StaticResource DataCellStyle}"/>
+                            <DataGridTextColumn Header="FecUpd"         Binding="{Binding FecUpd}" Width="Auto" MinWidth="90" ElementStyle="{StaticResource DataCellStyle}"/>
                             <DataGridTemplateColumn Header="Anulado" Width="Auto" MinWidth="70" SortMemberPath="Anulado">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
