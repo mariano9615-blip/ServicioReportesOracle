@@ -235,7 +235,7 @@ namespace ServicioOracleReportes
                 string resultInner = await soapClient.ObtenerRegistrosGenericoAsync(token, "Mlogis", fStr);
 
                 // ── Parsear registros MLOGIS (ID + NROCOMPROBANTE) ────────────
-                var mlogisRecords = new List<(string Id, string NroComprobante, string FecUpd)>();
+                var mlogisRecords = new List<(string Id, string NroComprobante, string FecUpd, string Planta, string TipoComprobante)>();
 
                 if (!string.IsNullOrWhiteSpace(resultInner))
                 {
@@ -249,7 +249,10 @@ namespace ServicioOracleReportes
                                 string id     = item.ID?.ToString()           ?? item.Id?.ToString()           ?? "";
                                 string nro    = item.NROCOMPROBANTE?.ToString() ?? item.NroComprobante?.ToString() ?? "";
                                 string fecupd = item.FECUPD?.ToString()        ?? item.FecUpd?.ToString()        ?? "";
-                                if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, nro, fecupd));
+                                string planta = item.Planta?.ToString()        ?? item.planta?.ToString()        ?? "";
+                                string tcomp  = item.TipoComprobante?.ToString() ?? item.tipocomprobante?.ToString() ?? "";
+                                
+                                if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, nro, fecupd, planta, tcomp));
                             }
                         }
                         catch (Exception ex) { EscribirLog("Error parseando JSON de Mlogis: " + ex.Message); }
@@ -265,14 +268,26 @@ namespace ServicioOracleReportes
                             if (end == -1) break;
                             string id = resultInner.Substring(start, end - start).Trim();
 
-                            // Intentar extraer FECUPD cercano al tag ID
+                            // Intentar extraer campos adicionales cercanos al tag ID
                             string fecupd = "";
                             int fecStart = resultInner.IndexOf("<FECUPD>", end, StringComparison.OrdinalIgnoreCase);
                             int fecEnd   = fecStart >= 0 ? resultInner.IndexOf("</FECUPD>", fecStart + 8, StringComparison.OrdinalIgnoreCase) : -1;
                             if (fecStart >= 0 && fecEnd >= 0)
                                 fecupd = resultInner.Substring(fecStart + 8, fecEnd - fecStart - 8).Trim();
 
-                            if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, "", fecupd));
+                            string planta = "";
+                            int pStart = resultInner.IndexOf("<PLANTA>", end, StringComparison.OrdinalIgnoreCase);
+                            int pEnd   = pStart >= 0 ? resultInner.IndexOf("</PLANTA>", pStart + 8, StringComparison.OrdinalIgnoreCase) : -1;
+                            if (pStart >= 0 && pEnd >= 0)
+                                planta = resultInner.Substring(pStart + 8, pEnd - pStart - 8).Trim();
+
+                            string tcomp = "";
+                            int tcStart = resultInner.IndexOf("<TIPOCOMPROBANTE>", end, StringComparison.OrdinalIgnoreCase);
+                            int tcEnd   = tcStart >= 0 ? resultInner.IndexOf("</TIPOCOMPROBANTE>", tcStart + 17, StringComparison.OrdinalIgnoreCase) : -1;
+                            if (tcStart >= 0 && tcEnd >= 0)
+                                tcomp = resultInner.Substring(tcStart + 17, tcEnd - tcStart - 17).Trim();
+
+                            if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, "", fecupd, planta, tcomp));
                             posId = end;
                         }
                     }
@@ -378,7 +393,7 @@ namespace ServicioOracleReportes
                 var registrosParaPendientes = new List<MlogisRegistro>();
                 int cntNuevos = 0, cntActualizados = 0, cntSinCambios = 0;
 
-                foreach (var (mlogisId, nroComprobante, fecUpd) in mlogisRecords)
+                foreach (var (mlogisId, nroComprobante, fecUpd, planta, tipoComp) in mlogisRecords)
                 {
                     ctgPorMlogisId.TryGetValue(mlogisId, out string ctg);
                     ctg = ctg ?? "";
@@ -393,12 +408,14 @@ namespace ServicioOracleReportes
 
                     var registro = new MlogisRegistro
                     {
-                        Id              = mlogisId,
-                        NroComprobante  = nroComprobante,
-                        Ctg             = ctg,
-                        FecUpd          = fecUpd,
-                        PrimeraVezVisto = previo?.PrimeraVezVisto ?? fechaEjecucion,
-                        UltimaVezVisto  = fechaEjecucion,
+                        Id               = mlogisId,
+                        NroComprobante   = nroComprobante,
+                        Ctg              = ctg,
+                        FecUpd           = fecUpd,
+                        Planta           = planta,
+                        TipoComprobante  = tipoComp,
+                        PrimeraVezVisto  = previo?.PrimeraVezVisto ?? fechaEjecucion,
+                        UltimaVezVisto   = fechaEjecucion,
                         CambiosDetectados = previo?.CambiosDetectados != null
                             ? new List<MlogisCambio>(previo.CambiosDetectados)
                             : new List<MlogisCambio>()

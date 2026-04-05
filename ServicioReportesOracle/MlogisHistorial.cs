@@ -45,6 +45,12 @@ namespace ServicioOracleReportes
         [JsonProperty("fecupd")]
         public string FecUpd { get; set; } = "";
 
+        [JsonProperty("planta")]
+        public string Planta { get; set; } = "";
+
+        [JsonProperty("tipocomprobante")]
+        public string TipoComprobante { get; set; } = "";
+
         [JsonProperty("anulado")]
         public bool Anulado { get; set; } = false;
 

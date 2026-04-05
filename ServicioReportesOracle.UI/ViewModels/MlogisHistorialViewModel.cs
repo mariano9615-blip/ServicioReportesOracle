@@ -170,7 +170,15 @@ namespace ServicioReportesOracle.UI.ViewModels
             _datosPrecargados = datos ?? new List<RegistroDisplayItem>();
 
             Corridas.Clear();
-            Corridas.Add(CorridaItem.CrearHistorico(fecha, _datosPrecargados.Count));
+
+            var histItem = CorridaItem.CrearHistorico(fecha, _datosPrecargados.Count);
+            var first = _datosPrecargados.FirstOrDefault();
+            if (first != null)
+            {
+                histItem.Planta = first.Planta;
+                histItem.TipoComprobante = first.TipoComprobante;
+            }
+            Corridas.Add(histItem);
 
             _allRegistrosCorrida.Clear();
             foreach (var r in _datosPrecargados)
@@ -528,6 +536,8 @@ namespace ServicioReportesOracle.UI.ViewModels
         public bool          IsDeAyer         { get; }
         public bool          IsHistorico      { get; }
         public string        EtiquetaHistorico{ get; }
+        public string        Planta           { get; set; } = "";
+        public string        TipoComprobante  { get; set; } = "";
 
         public CorridaItem(MlogisCorrida c, bool esDeAyer = false)
         {
@@ -567,9 +577,11 @@ namespace ServicioReportesOracle.UI.ViewModels
         public string Ctg             { get; set; } = "";
         public string PrimeraVezVisto { get; set; } = "";
         public string UltimaVezVisto  { get; set; } = "";
-        public string FecUpd          { get; set; } = "";
-        public bool   Anulado         { get; set; }
-        public string Cambios         { get; set; } = "";
+        public string FecUpd           { get; set; } = "";
+        public string Planta           { get; set; } = "";
+        public string TipoComprobante  { get; set; } = "";
+        public bool   Anulado          { get; set; }
+        public string Cambios          { get; set; } = "";
         public int?   CantidadCorridas { get; set; }
 
         public RegistroDisplayItem() { }
@@ -583,8 +595,10 @@ namespace ServicioReportesOracle.UI.ViewModels
             UltimaVezVisto  = r.UltimaVezVisto.ToString("HH:mm");
             FecUpd          = DateTime.TryParse(r.FecUpd, CultureInfo.InvariantCulture,
                                 DateTimeStyles.None, out var fecUpdDt)
-                                ? fecUpdDt.ToString("dd/MM/yyyy HH:mm")
+                                ? fecUpdDt.ToString("dd/MM/yyyy HH:mm:ss")
                                 : (r.FecUpd ?? "");
+            Planta          = r.Planta ?? "";
+            TipoComprobante = r.TipoComprobante ?? "";
             Anulado         = r.Anulado;
             Cambios         = r.CambiosDetectados?.Count > 0
                 ? string.Join(", ", r.CambiosDetectados.Select(c => c.Campo))

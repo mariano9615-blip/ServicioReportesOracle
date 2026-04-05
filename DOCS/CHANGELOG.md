@@ -3,6 +3,7 @@
 
 ### Fixed
 - **MetricasView**: Drill-down ahora trae CTG correctamente (fix nombres campos: MLOGISID/VALOR en parseo JSON y XML de MlogisLegal)
+- **MetricasView**: Filtro MlogisLegal ahora usa MLOGISID IN + TIPO='1' (igual que Core, evita datos incorrectos)
 
 ## [7.5.0] - 2026-04-04
 

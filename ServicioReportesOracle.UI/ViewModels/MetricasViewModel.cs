@@ -1069,19 +1069,23 @@ namespace ServicioReportesOracle.UI.ViewModels
                                 if (string.IsNullOrEmpty(id)) continue;
                                 string nro    = item.NROCOMPROBANTE?.ToString() ?? item.NroComprobante?.ToString() ?? "";
                                 string fecupd = item.FECUPD?.ToString()        ?? item.FecUpd?.ToString()          ?? "";
+                                string planta = item.Planta?.ToString()        ?? item.planta?.ToString()          ?? "";
+                                string tcomp  = item.TipoComprobante?.ToString() ?? item.tipocomprobante?.ToString() ?? "";
                                 string anuStr = item.ANULADO?.ToString()        ?? "";
                                 bool   anulado = anuStr == "1"
                                     || string.Equals(anuStr, "true", StringComparison.OrdinalIgnoreCase)
                                     || string.Equals(anuStr, "S",    StringComparison.OrdinalIgnoreCase);
                                 registros.Add(new RegistroDisplayItem
                                 {
-                                    Id             = id,
-                                    NroComprobante = nro,
-                                    FecUpd         = fecupd,
-                                    Anulado        = anulado,
+                                    Id              = id,
+                                    NroComprobante  = nro,
+                                    FecUpd          = fecupd,
+                                    Planta          = planta,
+                                    TipoComprobante = tcomp,
+                                    Anulado         = anulado,
                                     PrimeraVezVisto = "-",
                                     UltimaVezVisto  = "-",
-                                    Ctg            = ctgDict.ContainsKey(id) ? ctgDict[id] : ""
+                                    Ctg             = ctgDict.ContainsKey(id) ? ctgDict[id] : ""
                                 });
                             }
                         }
@@ -1099,6 +1103,8 @@ namespace ServicioReportesOracle.UI.ViewModels
 
                             string nro    = ExtractNearbyTag(result, idEnd, "NROCOMPROBANTE");
                             string fecupd = ExtractNearbyTag(result, idEnd, "FECUPD");
+                            string planta = ExtractNearbyTag(result, idEnd, "PLANTA");
+                            string tcomp  = ExtractNearbyTag(result, idEnd, "TIPOCOMPROBANTE");
                             string anuStr = ExtractNearbyTag(result, idEnd, "ANULADO");
                             bool   anulado = anuStr == "1"
                                 || string.Equals(anuStr, "true", StringComparison.OrdinalIgnoreCase)
@@ -1110,6 +1116,8 @@ namespace ServicioReportesOracle.UI.ViewModels
                                     Id              = id,
                                     NroComprobante  = nro,
                                     FecUpd          = fecupd,
+                                    Planta          = planta,
+                                    TipoComprobante = tcomp,
                                     Anulado         = anulado,
                                     PrimeraVezVisto = "-",
                                     UltimaVezVisto  = "-",
