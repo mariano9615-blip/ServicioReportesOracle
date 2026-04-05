@@ -1,5 +1,17 @@
 # 🗂️ Changelog
 
+## [7.7.0] - 2026-04-05 (UI v5.3)
+
+### Added
+- **Core**: Sistema de **Auto-reparación de esquema JSON**. Detecta automáticamente si archivos históricos (`mlogis_historial.json`) carecen de campos nuevos (`Planta`, `TipoComprobante`).
+- **Core**: Verificación de esquema al inicio del servicio (`OnStart`) con disparo automático de corrida migratoria si es necesario.
+- **UI**: Propiedad `MensajeEsquema` en `MlogisHistorialViewModel` para notificar al usuario sobre datos incompletos.
+- **UI**: Banner visual naranja en `MlogisHistorialView` que aparece solo cuando se detecta un esquema desactualizado.
+- **UI**: `StringToVisibilityConverter` para gestión dinámica de visibilidad de avisos.
+
+### Changed
+- **Core**: `InvocacionSoapMlogis` ahora fuerza una corrida `full` (reconciliación completa) si se detecta que el JSON local necesita migración de campos.
+
 ## [7.6.0] - 2026-04-04 (UI v5.2)
 
 ### Added

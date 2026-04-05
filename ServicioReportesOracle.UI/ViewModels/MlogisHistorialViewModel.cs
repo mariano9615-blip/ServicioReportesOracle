@@ -115,6 +115,13 @@ namespace ServicioReportesOracle.UI.ViewModels
             set { _lineInfo = value; OnPropertyChanged(); }
         }
 
+        private string _mensajeEsquema;
+        public string MensajeEsquema
+        {
+            get => _mensajeEsquema;
+            set { _mensajeEsquema = value; OnPropertyChanged(); }
+        }
+
         public RegistroDisplayItem SelectedRegistroUnico
         {
             get => _selectedRegistroUnico;
@@ -218,6 +225,20 @@ namespace ServicioReportesOracle.UI.ViewModels
                         RebuildAll();
                         LineInfo = "Archivo mlogis_historial.json no encontrado";
                         return;
+                    }
+
+                    // NUEVO: Detección de esquema desactualizado
+                    var todosRegistros = _historial.Concat(_historialAyer)
+                                                 .SelectMany(c => c.Registros ?? new List<MlogisRegistro>())
+                                                 .ToList();
+                    
+                    if (!JsonTieneEsquemaCompleto(todosRegistros))
+                    {
+                        MensajeEsquema = "⚠️ Datos incompletos - Se actualizarán en próxima corrida SOAP";
+                    }
+                    else
+                    {
+                        MensajeEsquema = "";
                     }
 
                     RebuildAll();
@@ -538,6 +559,20 @@ namespace ServicioReportesOracle.UI.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        private bool JsonTieneEsquemaCompleto(List<MlogisRegistro> registros)
+        {
+            if (registros == null || !registros.Any()) return true;
+
+            // Verificar que al menos algunos registros tienen los campos nuevos (Planta o TipoComprobante)
+            int conDatos = registros.Count(r =>
+                !string.IsNullOrEmpty(r.Planta) ||
+                !string.IsNullOrEmpty(r.TipoComprobante));
+
+            // Si menos del 10% tiene datos en un historial con registros, lo consideramos desactualizado
+            double porcentaje = (double)conDatos / registros.Count;
+            return porcentaje > 0.1;
+        }
     }
 
     // ─── Modelos de presentación ──────────────────────────────────────────────

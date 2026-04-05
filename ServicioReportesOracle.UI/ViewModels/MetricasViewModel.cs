@@ -1065,13 +1065,17 @@ namespace ServicioReportesOracle.UI.ViewModels
                         {
                             foreach (var item in list)
                             {
-                                string id  = item.ID?.ToString() ?? item.Id?.ToString() ?? "";
+                                string id     = item.ID?.ToString() ?? item.Id?.ToString() ?? item.IdMlogis?.ToString() ?? "";
                                 if (string.IsNullOrEmpty(id)) continue;
-                                string nro    = item.NROCOMPROBANTE?.ToString() ?? item.NroComprobante?.ToString() ?? "";
-                                string fecupd = item.FECUPD?.ToString()        ?? item.FecUpd?.ToString()          ?? "";
-                                string planta = item.Planta?.ToString()        ?? item.planta?.ToString()          ?? "";
-                                string tcomp  = item.TipoComprobante?.ToString() ?? item.tipocomprobante?.ToString() ?? "";
-                                string anuStr = item.ANULADO?.ToString()        ?? "";
+                                
+                                string nro    = item.NROCOMPROBANTE?.ToString() ?? item.NroComprobante?.ToString() ?? item.nrocomprobante?.ToString() ?? "";
+                                string fecupd = item.FECUPD?.ToString()         ?? item.FecUpd?.ToString()         ?? item.fecupd?.ToString()         ?? "";
+                                
+                                // Robustez: Probar todas las variantes de casing para Planta y TipoComprobante
+                                string planta = item.PLANTA?.ToString()          ?? item.Planta?.ToString()          ?? item.planta?.ToString()          ?? "";
+                                string tcomp  = item.TIPOCOMPROBANTE?.ToString() ?? item.TipoComprobante?.ToString() ?? item.tipocomprobante?.ToString() ?? "";
+                                
+                                string anuStr = item.ANULADO?.ToString()         ?? item.Anulado?.ToString()         ?? "";
                                 bool   anulado = anuStr == "1"
                                     || string.Equals(anuStr, "true", StringComparison.OrdinalIgnoreCase)
                                     || string.Equals(anuStr, "S",    StringComparison.OrdinalIgnoreCase);
@@ -1102,9 +1106,17 @@ namespace ServicioReportesOracle.UI.ViewModels
                             string id = result.Substring(idStart, idEnd - idStart).Trim();
 
                             string nro    = ExtractNearbyTag(result, idEnd, "NROCOMPROBANTE");
+                            if (string.IsNullOrEmpty(nro)) nro = ExtractNearbyTag(result, idEnd, "NroComprobante");
+
                             string fecupd = ExtractNearbyTag(result, idEnd, "FECUPD");
+                            if (string.IsNullOrEmpty(fecupd)) fecupd = ExtractNearbyTag(result, idEnd, "FecUpd");
+
                             string planta = ExtractNearbyTag(result, idEnd, "PLANTA");
+                            if (string.IsNullOrEmpty(planta)) planta = ExtractNearbyTag(result, idEnd, "Planta");
+
                             string tcomp  = ExtractNearbyTag(result, idEnd, "TIPOCOMPROBANTE");
+                            if (string.IsNullOrEmpty(tcomp))  tcomp  = ExtractNearbyTag(result, idEnd, "TipoComprobante");
+
                             string anuStr = ExtractNearbyTag(result, idEnd, "ANULADO");
                             bool   anulado = anuStr == "1"
                                 || string.Equals(anuStr, "true", StringComparison.OrdinalIgnoreCase)

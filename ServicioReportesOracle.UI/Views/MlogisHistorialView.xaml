@@ -3,9 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:ServicioReportesOracle.UI.Converters"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="900">
     <UserControl.Resources>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        
         <!-- Estilo para celdas de texto del DataGrid: Consolas, color suave -->
         <Style x:Key="DataCellStyle" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Consolas"/>
@@ -148,9 +151,18 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+
+                <!-- Aviso de esquema desactualizado -->
+                <TextBlock Grid.Row="1" 
+                           Text="{Binding MensajeEsquema}"
+                           Foreground="Orange"
+                           FontSize="12"
+                           Margin="10,5"
+                           Visibility="{Binding MensajeEsquema, Converter={StaticResource StringToVisibilityConverter}}"/>
 
                 <!-- Barra de búsqueda (Ctrl+F) -->
                 <Border Grid.Row="0"
@@ -196,7 +208,7 @@
                 </Border>
 
                 <!-- Panel con lista de corridas (izquierda) + DataGrid (derecha) -->
-                <Grid Grid.Row="1">
+                <Grid Grid.Row="2">
                     <Grid.ColumnDefinitions>
                         <!-- Auto: se colapsa a 0 cuando el panel izquierdo es Collapsed -->
                         <ColumnDefinition Width="Auto"/>
@@ -506,7 +518,7 @@
                 </Grid>
 
                 <!-- LineInfo -->
-                <TextBlock Grid.Row="2"
+                <TextBlock Grid.Row="3"
                            Text="{Binding LineInfo}"
                            Foreground="{StaticResource OnSurfaceVariantBrush}"
                            FontSize="11"

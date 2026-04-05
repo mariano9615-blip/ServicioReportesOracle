@@ -92,10 +92,70 @@ namespace ServicioOracleReportes
                 timer.Start();
 
                 EscribirLog("Servicio iniciado correctamente.");
+
+                // NUEVO: Verificación de esquema de historial al inicio
+                VerificarYMigrarEsquemaAlInicio();
             }
             catch (Exception ex)
             {
                 EscribirLog("Error al iniciar el servicio: " + ex.Message);
+            }
+        }
+
+        private void VerificarYMigrarEsquemaAlInicio()
+        {
+            try
+            {
+                EscribirLog("🔍 Verificando esquema de JSON mlogis_historial...");
+                if (VerificarSiJsonNecesitaMigracion())
+                {
+                    EscribirLog("⚠️ Esquema desactualizado detectado - Programando corrida SOAP inmediata para migración");
+                    Task.Run(() => InvocacionSoapMlogis());
+                }
+                else
+                {
+                    EscribirLog("✅ Esquema de JSON mlogis_historial OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                EscribirLog("⚠️ Error en verificación de esquema inicial: " + ex.Message);
+            }
+        }
+
+        private bool VerificarSiJsonNecesitaMigracion()
+        {
+            string pathJson = Path.Combine(_rutaJson, "mlogis_historial.json");
+            if (!File.Exists(pathJson)) return false;
+
+            try
+            {
+                string contenido = File.ReadAllText(pathJson);
+                var historial = JsonConvert.DeserializeObject<MlogisHistorial>(contenido);
+                
+                if (historial?.Corridas == null || !historial.Corridas.Any())
+                    return false;
+
+                // Analizar una muestra de los últimos registros
+                var muestra = historial.Corridas
+                    .OrderByDescending(c => c.FechaEjecucion)
+                    .Take(3)
+                    .SelectMany(c => c.Registros ?? new List<MlogisRegistro>())
+                    .Take(20)
+                    .ToList();
+
+                if (!muestra.Any()) return false;
+
+                // Si todos en la muestra tienen Planta y TipoComprobante vacíos, necesita migración
+                int sinDatos = muestra.Count(r => 
+                    string.IsNullOrEmpty(r.Planta) && 
+                    string.IsNullOrEmpty(r.TipoComprobante));
+
+                return sinDatos == muestra.Count;
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -173,11 +233,19 @@ namespace ServicioOracleReportes
                 if (!File.Exists(filtersPath)) return;
 
                 // ── Determinar tipo de corrida: full (cada 1h) o delta ────────
+                bool jsonDesactualizado = VerificarSiJsonNecesitaMigracion(); // NUEVO
+
                 int intervaloHoras = configuracion.IntervaloReconciliacionHoras > 0
                     ? configuracion.IntervaloReconciliacionHoras
                     : 2;
                 bool esFull = !configuracion.UltimaReconciliacion.HasValue ||
-                              (DateTime.Now - configuracion.UltimaReconciliacion.Value).TotalHours >= intervaloHoras;
+                              (DateTime.Now - configuracion.UltimaReconciliacion.Value).TotalHours >= intervaloHoras ||
+                              jsonDesactualizado; // MODIFICADO
+
+                if (jsonDesactualizado)
+                {
+                    EscribirLog("⚠️ JSON desactualizado detectado - Forzando corrida FULL para migración de campos Planta/TipoComprobante");
+                }
                 string tipo = esFull ? "full" : "delta";
 
                 DateTime desde = esFull
