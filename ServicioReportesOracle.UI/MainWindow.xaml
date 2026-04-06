@@ -358,10 +358,23 @@
                         </RadioButton>
                     </StackPanel>
 
-                    <!-- Row 2: Botón UI Settings + Versión -->
+                    <!-- Row 2: Botón Analítica + UI Settings + Versión -->
                     <StackPanel Grid.Row="2" Margin="0,0,0,0">
                         <Border Height="1" Background="{StaticResource OutlineBrush}"
                                 Opacity="0.3" Margin="12,4,12,4"/>
+                        <Button x:Name="NavBtnAnalitica"
+                                Style="{StaticResource NavBottomButtonStyle}"
+                                Click="AnaliticaButton_Click"
+                                ToolTip="Abrir panel de analítica">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Grid Margin="0" VerticalAlignment="Center" MinWidth="14">
+                                    <TextBlock Text="📊" FontFamily="Segoe UI Emoji" FontSize="14"
+                                               VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavTextAnalitica" Text="Analítica"
+                                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </Button>
                         <Button x:Name="NavBtnSettings"
                                 Style="{StaticResource NavBottomButtonStyle}"
                                 Command="{Binding NavUiSettingsCommand}"

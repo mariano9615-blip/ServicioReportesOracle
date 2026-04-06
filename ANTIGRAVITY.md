@@ -1,7 +1,7 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.7.3)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.8.0)
 
 ## 🚀 Resumen del Proyecto
-**Nombre**: ServicioReportesOracle | **Versión**: v7.7.0 | **UI**: v5.3 | **Tech**: .NET Framework 4.8 (C#)
+**Nombre**: ServicioReportesOracle | **Versión**: v7.8.0 | **UI**: v5.4 | **Tech**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
 ## 📁 Arquitectura
@@ -20,6 +20,20 @@
 | `DOCS/HEALTH_CHECK.md` | Detalle del Health Check SOAP y Circuit Breaker Oracle. |
 | `DOCS/UI_VISTAS.md` | Detalle de las vistas y componentes de la UI WPF. |
 | `DOCS/CHANGELOG.md` | Historial completo de cambios y versiones. |
+
+## 🆕 Features destacadas
+
+| Feature | Archivos | Notas |
+|---------|----------|-------|
+| Ventana Analítica (Power BI style) | `AnaliticaWindow.xaml` / `.xaml.cs` | Tema light independiente; gráficos WPF nativos sin NuGet. Datos mock; estructura lista para DataEngine. |
+| Botón sidebar "Analítica" | `MainWindow.xaml` / `.xaml.cs` | Abre `AnaliticaWindow` como ventana secundaria (`Owner = this`). Soporta colapso sidebar. |
+
+### 📐 Arquitectura de AnaliticaWindow
+- **Tema**: Power BI light (`#F5F7FA` / `#FFFFFF`). Colores definidos como recursos en `Window.Resources`, no en App.xaml.
+- **Gráficos**: todos dibujados en `Canvas` con `PathGeometry`, `Polyline`, `Polygon` (WPF puro). Se dibujan en `SizeChanged` (canvases stretch) o en `Loaded` (canvases con tamaño fijo).
+- **Gauge**: `AddGaugeRing()` usa recursión para dividir arcos > 50% del gauge y evitar el bug WPF con arcos de exactamente 180°.
+- **Donut**: `AddPieSlice()` con convención "0° = cima, sentido horario" (`SweepDirection.Clockwise`). Hueco interior = `Ellipse` blanca superpuesta.
+- **DataGrid local**: override completo del estilo dark global para presentación light.
 
 ## ⚠️ ERRORES COMUNES Y TRAMPAS
 

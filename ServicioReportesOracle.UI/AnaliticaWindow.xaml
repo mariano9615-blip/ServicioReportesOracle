@@ -1,0 +1,608 @@
+<Window x:Class="ServicioReportesOracle.UI.AnaliticaWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SRO Analytics — Panel de Analítica"
+        Width="1400" Height="900"
+        MinWidth="1000" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Icon="Assets/app.ico">
+
+    <Window.Resources>
+
+        <!-- ── Paleta de colores (Power BI light theme) ── -->
+        <SolidColorBrush x:Key="APageBg"        Color="#F5F7FA"/>
+        <SolidColorBrush x:Key="ACardBg"        Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="ACardBorder"    Color="#E5E7EB"/>
+        <SolidColorBrush x:Key="ATextPrimary"   Color="#1F2937"/>
+        <SolidColorBrush x:Key="ATextSecondary" Color="#6B7280"/>
+        <SolidColorBrush x:Key="ABlue"          Color="#3B82F6"/>
+        <SolidColorBrush x:Key="ABlueLight"     Color="#EFF6FF"/>
+        <SolidColorBrush x:Key="AGreen"         Color="#10B981"/>
+        <SolidColorBrush x:Key="AGreenLight"    Color="#ECFDF5"/>
+        <SolidColorBrush x:Key="AOrange"        Color="#F59E0B"/>
+        <SolidColorBrush x:Key="AOrangeLight"   Color="#FEF3C7"/>
+        <SolidColorBrush x:Key="ARed"           Color="#EF4444"/>
+        <SolidColorBrush x:Key="APurple"        Color="#A855F7"/>
+        <SolidColorBrush x:Key="AProgressBg"    Color="#E5E7EB"/>
+
+        <!-- ── Estilo card ── -->
+        <Style x:Key="AnalyticCard" TargetType="Border">
+            <Setter Property="Background"      Value="{StaticResource ACardBg}"/>
+            <Setter Property="CornerRadius"    Value="12"/>
+            <Setter Property="Padding"         Value="20"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource ACardBorder}"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.07" Direction="270"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Override TextBox → light theme ── -->
+        <Style TargetType="TextBox" BasedOn="{x:Null}">
+            <Setter Property="Background"              Value="#FFFFFF"/>
+            <Setter Property="Foreground"              Value="#1F2937"/>
+            <Setter Property="CaretBrush"              Value="#1F2937"/>
+            <Setter Property="BorderBrush"             Value="#D1D5DB"/>
+            <Setter Property="BorderThickness"         Value="1"/>
+            <Setter Property="Padding"                 Value="10,8"/>
+            <Setter Property="FontSize"                Value="13"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#3B82F6"/>
+                                <Setter TargetName="bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#93C5FD"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Override DataGrid → light theme ── -->
+        <Style TargetType="DataGrid" BasedOn="{x:Null}">
+            <Setter Property="Background"               Value="Transparent"/>
+            <Setter Property="Foreground"               Value="#1F2937"/>
+            <Setter Property="BorderThickness"          Value="0"/>
+            <Setter Property="RowBackground"            Value="Transparent"/>
+            <Setter Property="AlternatingRowBackground" Value="#F9FAFB"/>
+            <Setter Property="GridLinesVisibility"      Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#F3F4F6"/>
+            <Setter Property="RowHeaderWidth"           Value="0"/>
+            <Setter Property="FontSize"                 Value="13"/>
+            <Setter Property="CanUserResizeRows"        Value="False"/>
+            <Setter Property="AutoGenerateColumns"      Value="False"/>
+            <Setter Property="SelectionMode"            Value="Single"/>
+            <Setter Property="HeadersVisibility"        Value="Column"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader" BasedOn="{x:Null}">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="Foreground"      Value="#6B7280"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Padding"         Value="10,9"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush"     Value="#E5E7EB"/>
+        </Style>
+
+        <Style TargetType="DataGridCell" BasedOn="{x:Null}">
+            <Setter Property="Padding"         Value="10,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderThickness="0">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#EFF6FF"/>
+                    <Setter Property="Foreground"  Value="#1D4ED8"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridRow" BasedOn="{x:Null}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#EFF6FF"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F9FAFB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ── Botón primario ── -->
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Background"      Value="#3B82F6"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"         Value="16,9"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#2563EB"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#1D4ED8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Botón secundario ── -->
+        <Style x:Key="SecondaryBtn" TargetType="Button">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="Foreground"      Value="#374151"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush"     Value="#D1D5DB"/>
+            <Setter Property="Padding"         Value="12,8"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#F3F4F6"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#E5E7EB"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Override ComboBox → light ── -->
+        <Style TargetType="ComboBox" BasedOn="{x:Null}">
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="Foreground"      Value="#374151"/>
+            <Setter Property="BorderBrush"     Value="#D1D5DB"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"         Value="8,5"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Height"          Value="32"/>
+        </Style>
+
+        <!-- ── Override ScrollBar → light ── -->
+        <Style TargetType="ScrollBar" BasedOn="{x:Null}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width"      Value="6"/>
+            <Setter Property="MinWidth"   Value="6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent" SnapsToDevicePixels="true">
+                            <Track x:Name="PART_Track" IsDirectionReversed="true">
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="#CBD5E1" CornerRadius="3" Margin="1,0"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+    </Window.Resources>
+
+    <Grid Background="{StaticResource APageBg}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24,20,24,28">
+
+                <!-- ══════════════════════════════════════
+                     HEADER
+                ══════════════════════════════════════ -->
+                <Grid Margin="0,0,0,22">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Títulos -->
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="SRO Analytics"
+                                   FontSize="26" FontWeight="Bold"
+                                   Foreground="{StaticResource ATextPrimary}"/>
+                        <TextBlock Text="Panel de análisis en tiempo real"
+                                   FontSize="13" Margin="1,3,0,0"
+                                   Foreground="{StaticResource ATextSecondary}"/>
+                    </StackPanel>
+
+                    <!-- Search + botones -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Grid>
+                            <TextBox x:Name="QueryBox" Width="300" Height="38"
+                                     VerticalContentAlignment="Center"/>
+                            <!-- Placeholder overlay -->
+                            <TextBlock IsHitTestVisible="False"
+                                       Text="Buscar o escribir consulta..."
+                                       Foreground="#9CA3AF" FontSize="13"
+                                       VerticalAlignment="Center" Margin="12,0,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=QueryBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                        <Button Style="{StaticResource PrimaryBtn}" Margin="8,0,0,0" Height="38"
+                                Click="AnalizarButton_Click">
+                            Analizar
+                        </Button>
+                        <Button Style="{StaticResource SecondaryBtn}" Margin="8,0,0,0"
+                                Height="38" Width="38" ToolTip="Configuración de analytics">
+                            <TextBlock Text="⚙" FontSize="16" Foreground="{StaticResource ATextSecondary}"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ══════════════════════════════════════
+                     ROW 1 — 4 WIDGETS KPI
+                ══════════════════════════════════════ -->
+                <UniformGrid Columns="4" Margin="0,0,0,16">
+
+                    <!-- ── Widget 1: Gauge ── -->
+                    <Border Style="{StaticResource AnalyticCard}" Margin="0,0,8,0" MinHeight="220">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📊" FontFamily="Segoe UI Emoji" FontSize="14"
+                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Tasa de éxito" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource ATextSecondary}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Canvas x:Name="GaugeCanvas" Grid.Row="1"
+                                    Width="200" Height="115"
+                                    HorizontalAlignment="Center" Margin="0,10,0,6"/>
+
+                            <TextBlock Grid.Row="2" Text="Hoy" FontSize="11"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{StaticResource ATextSecondary}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── Widget 2: Total ejecutadas ── -->
+                    <Border Style="{StaticResource AnalyticCard}" Margin="4,0,4,0" MinHeight="220">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🗂️" FontFamily="Segoe UI Emoji" FontSize="14"
+                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Total ejecutadas" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource ATextSecondary}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,14,0,10">
+                                <TextBlock Text="1,847" FontSize="42" FontWeight="Bold"
+                                           Foreground="{StaticResource ATextPrimary}" LineHeight="46"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                    <Border Background="{StaticResource AGreenLight}" CornerRadius="12" Padding="8,3">
+                                        <TextBlock Text="↗ +12%" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource AGreen}"/>
+                                    </Border>
+                                    <TextBlock Text="vs mes ant." FontSize="11"
+                                               Foreground="{StaticResource ATextSecondary}"
+                                               VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Progress bar proporcional -->
+                            <Grid Grid.Row="2" Height="6" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="73*"/>
+                                    <ColumnDefinition Width="27*"/>
+                                </Grid.ColumnDefinitions>
+                                <Rectangle Grid.Column="0" Fill="{StaticResource ABlue}" RadiusX="3" RadiusY="3"/>
+                                <Rectangle Grid.Column="1" Fill="{StaticResource AProgressBg}" RadiusX="3" RadiusY="3"/>
+                            </Grid>
+
+                            <TextBlock Grid.Row="3" Text="Últimos 30 días" FontSize="11"
+                                       Foreground="{StaticResource ATextSecondary}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── Widget 3: Duración promedio ── -->
+                    <Border Style="{StaticResource AnalyticCard}" Margin="4,0,4,0" MinHeight="220">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⏱️" FontFamily="Segoe UI Emoji" FontSize="14"
+                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Duración promedio" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource ATextSecondary}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Margin="0,14,0,10">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <TextBlock Text="2.3" FontSize="42" FontWeight="Bold"
+                                               Foreground="{StaticResource ATextPrimary}" LineHeight="46"/>
+                                    <TextBlock Text="s" FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{StaticResource ATextSecondary}"
+                                               VerticalAlignment="Bottom" Margin="3,0,0,7"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                    <Border Background="{StaticResource AOrangeLight}" CornerRadius="12" Padding="8,3">
+                                        <TextBlock Text="↘ -5%" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource AOrange}"/>
+                                    </Border>
+                                    <TextBlock Text="mejora reciente" FontSize="11"
+                                               Foreground="{StaticResource ATextSecondary}"
+                                               VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Sparkline -->
+                            <Canvas x:Name="SparklineCanvas" Grid.Row="2"
+                                    HorizontalAlignment="Stretch" Height="50" Margin="0,4,0,8"/>
+
+                            <TextBlock Grid.Row="3" Text="Últimas 4 semanas" FontSize="11"
+                                       Foreground="{StaticResource ATextSecondary}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── Widget 4: Donut ── -->
+                    <Border Style="{StaticResource AnalyticCard}" Margin="8,0,0,0" MinHeight="220">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🗄️" FontFamily="Segoe UI Emoji" FontSize="14"
+                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Distribución por motor" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource ATextSecondary}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Grid Grid.Row="1" Margin="0,8,0,0" VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Canvas x:Name="DonutCanvas" Width="140" Height="140"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                <!-- Leyenda -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,0,0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Border Width="10" Height="10" CornerRadius="2"
+                                                Background="{StaticResource ABlue}"
+                                                VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="Oracle" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource ATextPrimary}"/>
+                                            <TextBlock Text="68%" FontSize="11"
+                                                       Foreground="{StaticResource ATextSecondary}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="10" Height="10" CornerRadius="2"
+                                                Background="{StaticResource APurple}"
+                                                VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="SQL Server" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource ATextPrimary}"/>
+                                            <TextBlock Text="32%" FontSize="11"
+                                                       Foreground="{StaticResource ATextSecondary}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                </UniformGrid>
+
+                <!-- ══════════════════════════════════════
+                     ROW 2 — LINE CHART + BAR CHART
+                ══════════════════════════════════════ -->
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ── Widget 5: Line Chart ── -->
+                    <Border Style="{StaticResource AnalyticCard}" Margin="0,0,8,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Tendencia de ejecuciones"
+                                               FontSize="15" FontWeight="SemiBold"
+                                               Foreground="{StaticResource ATextPrimary}"/>
+                                    <TextBlock Text="Cantidad de tareas ejecutadas por día"
+                                               FontSize="12" Margin="0,2,0,0"
+                                               Foreground="{StaticResource ATextSecondary}"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" VerticalAlignment="Center"
+                                          x:Name="PeriodoCombo"
+                                          SelectionChanged="PeriodoCombo_SelectionChanged">
+                                    <ComboBoxItem Content="Últimos 7 días" IsSelected="True"/>
+                                    <ComboBoxItem Content="Últimos 30 días"/>
+                                    <ComboBoxItem Content="Últimos 90 días"/>
+                                </ComboBox>
+                            </Grid>
+
+                            <Canvas x:Name="LineChartCanvas" Grid.Row="1"
+                                    Height="270" HorizontalAlignment="Stretch" Margin="0,16,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── Widget 6: Bar Chart ── -->
+                    <Border Style="{StaticResource AnalyticCard}" Margin="8,0,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel>
+                                <TextBlock Text="Comparación por motor"
+                                           FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{StaticResource ATextPrimary}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                                        <Border Width="10" Height="10" CornerRadius="2"
+                                                Background="{StaticResource ABlue}"
+                                                VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <TextBlock Text="Oracle" FontSize="12"
+                                                   Foreground="{StaticResource ATextSecondary}"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="10" Height="10" CornerRadius="2"
+                                                Background="{StaticResource APurple}"
+                                                VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <TextBlock Text="SQL Server" FontSize="12"
+                                                   Foreground="{StaticResource ATextSecondary}"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Canvas x:Name="BarChartCanvas" Grid.Row="1"
+                                    Height="270" HorizontalAlignment="Stretch" Margin="0,16,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ══════════════════════════════════════
+                     ROW 3 — TABLA DE DATOS
+                ══════════════════════════════════════ -->
+                <Border Style="{StaticResource AnalyticCard}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Detalle de ejecuciones"
+                                           FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{StaticResource ATextPrimary}"/>
+                                <TextBlock Text="Últimas 20 ejecuciones registradas"
+                                           FontSize="12" Margin="0,2,0,0"
+                                           Foreground="{StaticResource ATextSecondary}"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryBtn}"
+                                    VerticalAlignment="Center"
+                                    Click="ExportExcel_Click">
+                                📥  Exportar Excel
+                            </Button>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1" x:Name="EjecucionesGrid"
+                                  MaxHeight="230" IsReadOnly="True"
+                                  CanUserSortColumns="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Fecha / Hora"  Binding="{Binding FechaHora}" Width="160"/>
+                                <DataGridTextColumn Header="Tarea"          Binding="{Binding Tarea}"    Width="*"/>
+                                <DataGridTextColumn Header="Motor"          Binding="{Binding Motor}"    Width="110"/>
+                                <DataGridTextColumn Header="Duración"       Binding="{Binding Duracion}" Width="90"/>
+                                <DataGridTextColumn Header="Filas"          Binding="{Binding Filas}"    Width="75"/>
+                                <DataGridTextColumn Header="Estado"         Binding="{Binding Estado}"   Width="100"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

@@ -107,8 +107,9 @@ namespace ServicioReportesOracle.UI
             NavText9.Visibility        = vis;
             NavText6.Visibility        = vis;
             NavText7.Visibility        = vis;
-            NavText8.Visibility        = vis;
-            NavTextSettings.Visibility = vis;
+            NavText8.Visibility         = vis;
+            NavTextAnalitica.Visibility = vis;
+            NavTextSettings.Visibility  = vis;
             VersionText.Visibility     = vis;
 
             // Íconos: ajustar padding del RadioButton para centrarlos en 56px
@@ -121,8 +122,9 @@ namespace ServicioReportesOracle.UI
             NavBtn9.Padding = padding;
             NavBtn6.Padding = padding;
             NavBtn7.Padding = padding;
-            NavBtn8.Padding = padding;
-            NavBtnSettings.Padding   = padding;
+            NavBtn8.Padding         = padding;
+            NavBtnAnalitica.Padding = padding;
+            NavBtnSettings.Padding  = padding;
 
             // Botón hamburguesa: centrar cuando colapsado, alinear a la derecha cuando expandido
             if (_sidebarExpanded)
@@ -135,6 +137,12 @@ namespace ServicioReportesOracle.UI
                 HamburgerBtn.HorizontalAlignment = HorizontalAlignment.Center;
                 HamburgerBtn.Margin = new Thickness(0, 0, 0, 0);
             }
+        }
+        private void AnaliticaButton_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new AnaliticaWindow();
+            win.Owner = this;
+            win.Show();
         }
     }
 }

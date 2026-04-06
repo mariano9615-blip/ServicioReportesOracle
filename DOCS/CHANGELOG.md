@@ -1,5 +1,26 @@
 # 🗂️ Changelog
 
+## [7.8.0] - 2026-04-06 (UI v5.4)
+
+### Added (UI)
+- **Ventana Analítica** (`AnaliticaWindow`): nuevo panel de análisis estilo Power BI, accesible desde el botón **📊 Analítica** en el sidebar inferior.
+  - **Header**: título "SRO Analytics", subtítulo, barra de búsqueda/query natural, botón "Analizar" y botón de configuración.
+  - **Row 1 — 4 KPI widgets**:
+    - *Gauge semicircular* (Tasa de éxito): arco de anillo dibujado con WPF nativo (`PathGeometry`/`ArcSegment`), valor 94.2%, color verde/azul/rojo según umbral.
+    - *KPI Card* (Total ejecutadas): número grande, badge de tendencia (+12%), barra de progreso proporcional con Grid `*`.
+    - *KPI Card* (Duración promedio): número con unidad, badge de tendencia (-5%), sparkline (mini gráfico de línea + área sombreada).
+    - *Donut Chart* (Distribución Oracle/SQL Server): sectores circulares con hueco interior, leyenda con colores.
+  - **Row 2 — 2 widgets**:
+    - *Line Chart* (Tendencia): selector dropdown 7/30/90 días, línea con área sombreada, grid horizontal, etiquetas de ejes.
+    - *Bar Chart* (Comparación): barras agrupadas Oracle vs SQL Server, 4 semanas, gridlines.
+  - **Row 3 — DataGrid**: tabla de últimas 20 ejecuciones (mock), botón "Exportar Excel" (stub listo para ClosedXML).
+  - Todos los gráficos dibujados con **WPF nativo** (`Canvas`, `PathGeometry`, `Polyline`, `Polygon`) — sin dependencias NuGet externas.
+  - Tema **Power BI light** (`#F5F7FA` fondo, `#FFFFFF` cards) con colores definidos como recursos locales en `Window.Resources`. Override completo de estilos globales oscuros (DataGrid, TextBox, ScrollBar, ComboBox) para coexistir con el tema dark de la app principal.
+  - Datos mock listos; estructura preparada para conectar con `Logs\json\` via DataEngine en iteración futura.
+
+### Changed (UI)
+- **Sidebar MainWindow**: agregado botón **📊 Analítica** en la sección inferior (entre separador y "Config. de Interfaz"). Soporta colapso/expansión del sidebar (`ToggleSidebar_Click`).
+
 ## [7.7.3] - 2026-04-06 (UI v5.3)
 
 ### Fixed
