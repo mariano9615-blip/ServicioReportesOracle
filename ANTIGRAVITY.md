@@ -1,4 +1,4 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.7.0)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.7.2)
 
 ## 🚀 Resumen del Proyecto
 **Nombre**: ServicioReportesOracle | **Versión**: v7.7.0 | **UI**: v5.3 | **Tech**: .NET Framework 4.8 (C#)
@@ -43,6 +43,12 @@ if (dt.HasValue && dt.Value.Kind == DateTimeKind.Utc)
 ### 3. FileSystemWatcher - Nombres actualizados
 **Problema:** Watcher busca nombre viejo cuando archivo cambia de nombre.
 **Regla:** Actualizar `_path` en constructor y filtro en `WatcherTrigger()` al cambiar rutas.
+
+### 5. Dashboard "Alertas enviadas hoy" — tipos de alerta cubiertos
+**Problema:** El panel mostraba "Sin alertas enviadas hoy" aunque `alertas_smtp_enviadas.json` contenía alertas del día.
+**Causa:** `CargarAlertas()` en `DashboardViewModel` solo contaba `oracle_caso_a` y `oracle_caso_b`. Los envíos de reportes SQL (`tarea_sql`) no se contaban.
+**Fix (v7.7.2):** Se agregan: campo `ct` para contar `tarea_sql`, propiedad `AlertasTareas`/`BarraTareasWidth`, fila "Tareas SQL" en el XAML, y `HasAlertasToday` incluye `AlertasTareas > 0`.
+**Regla:** Al agregar nuevos tipos de alerta al servicio (`RegistrarAlertaEnviada(tipo: "...")`), revisar `CargarAlertas()` en `DashboardViewModel` para incluirlos en el conteo del dashboard.
 
 ### 4. Delay de comparación Oracle
 **Problema:** `CompararConOracle()` ignora `DelayComparacionMinutos` si parseo de fechas falla.

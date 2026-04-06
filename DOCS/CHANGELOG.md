@@ -1,5 +1,13 @@
 # 🗂️ Changelog
 
+## [7.7.2] - 2026-04-06 (UI v5.3)
+
+### Fixed
+- **Dashboard - Alertas enviadas hoy**: La sección no mostraba alertas aunque `alertas_smtp_enviadas.json` contenía entradas del día. Causa raíz: `CargarAlertas()` solo contaba tipos `oracle_caso_a` y `oracle_caso_b`, ignorando alertas de tipo `tarea_sql` (reportes SQL enviados). Fix: se agrega conteo de `tarea_sql` en la variable `ct` y se actualiza `HasAlertasToday` para incluir `AlertasTareas > 0`.
+
+### Added (UI)
+- **Dashboard**: Nueva fila **"Tareas SQL"** (barra azul `#3B82F6`) en la sección "Alertas enviadas hoy", mostrando la cantidad de reportes SQL enviados hoy. El panel deja de mostrar "Sin alertas enviadas hoy" cuando hay alertas de tipo `tarea_sql`.
+
 ## [7.7.1] - 2026-04-05 (UI v5.3)
 
 ### Fixed

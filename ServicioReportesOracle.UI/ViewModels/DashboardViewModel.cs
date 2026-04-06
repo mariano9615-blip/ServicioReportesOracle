@@ -72,9 +72,11 @@ namespace ServicioReportesOracle.UI.ViewModels
         private int _alertasCasoA;
         private int _alertasCasoB;
         private int _alertasAnulados;
+        private int _alertasTareas;
         private double _barraCasoAWidth;
         private double _barraCasoBWidth;
         private double _barraAnuladosWidth;
+        private double _barraTareasWidth;
         private bool _hasAlertasToday;
         private string _alertasCasoALastText;
         private string _alertasCasoBLastText;
@@ -154,9 +156,11 @@ namespace ServicioReportesOracle.UI.ViewModels
         public int AlertasCasoA { get => _alertasCasoA; set { _alertasCasoA = value; OnPropertyChanged(); } }
         public int AlertasCasoB { get => _alertasCasoB; set { _alertasCasoB = value; OnPropertyChanged(); } }
         public int AlertasAnulados { get => _alertasAnulados; set { _alertasAnulados = value; OnPropertyChanged(); } }
+        public int AlertasTareas { get => _alertasTareas; set { _alertasTareas = value; OnPropertyChanged(); } }
         public double BarraCasoAWidth { get => _barraCasoAWidth; set { _barraCasoAWidth = value; OnPropertyChanged(); } }
         public double BarraCasoBWidth { get => _barraCasoBWidth; set { _barraCasoBWidth = value; OnPropertyChanged(); } }
         public double BarraAnuladosWidth { get => _barraAnuladosWidth; set { _barraAnuladosWidth = value; OnPropertyChanged(); } }
+        public double BarraTareasWidth { get => _barraTareasWidth; set { _barraTareasWidth = value; OnPropertyChanged(); } }
         public bool HasAlertasToday { get => _hasAlertasToday; set { _hasAlertasToday = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasNoAlertasToday)); } }
         public bool HasNoAlertasToday => !HasAlertasToday;
         
@@ -481,7 +485,8 @@ namespace ServicioReportesOracle.UI.ViewModels
             {
                 int ca = 0;
                 int cb = 0;
-                
+                int ct = 0;
+
                 DateTime? lastCasoA = null;
                 DateTime? lastCasoB = null;
                 string idCasoA = null;
@@ -492,7 +497,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     string json = LeerArchivoSeguro(_alertasEnviadasPath);
                     var obj = JObject.Parse(json);
                     var arr = obj["alertas"] as JArray;
-                    
+
                     if (arr != null)
                     {
                         foreach (var token in arr)
@@ -509,7 +514,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                                 {
                                     string tipo = token["tipo"]?.ToString()?.ToLowerInvariant();
                                     string id = token["id_referencia"]?.ToString();
-                                    
+
                                     if (tipo == "oracle_caso_a") {
                                         ca++;
                                         if (lastCasoA == null || dt > lastCasoA) { lastCasoA = dt; idCasoA = id; }
@@ -517,6 +522,9 @@ namespace ServicioReportesOracle.UI.ViewModels
                                     else if (tipo == "oracle_caso_b") {
                                         cb++;
                                         if (lastCasoB == null || dt > lastCasoB) { lastCasoB = dt; idCasoB = id; }
+                                    }
+                                    else if (tipo == "tarea_sql") {
+                                        ct++;
                                     }
                                 }
                             }
@@ -528,10 +536,11 @@ namespace ServicioReportesOracle.UI.ViewModels
                 {
                     AlertasCasoA = ca;
                     AlertasCasoB = cb;
-                    
+                    AlertasTareas = ct;
+
                     if (lastCasoA.HasValue) AlertasCasoALastText = $"Último: {idCasoA} — {lastCasoA.Value:HH:mm}";
                     else AlertasCasoALastText = "";
-                    
+
                     if (lastCasoB.HasValue) AlertasCasoBLastText = $"Último: {idCasoB} — {lastCasoB.Value:HH:mm}";
                     else AlertasCasoBLastText = "";
                 });
@@ -542,6 +551,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                 {
                     AlertasCasoA = 0;
                     AlertasCasoB = 0;
+                    AlertasTareas = 0;
                     AlertasCasoALastText = "";
                     AlertasCasoBLastText = "";
                 });
@@ -550,18 +560,20 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         private void ActualizarWidthsBarras()
         {
-            HasAlertasToday = AlertasCasoA > 0 || AlertasCasoB > 0 || AlertasAnulados > 0;
+            HasAlertasToday = AlertasCasoA > 0 || AlertasCasoB > 0 || AlertasAnulados > 0 || AlertasTareas > 0;
             if (!HasAlertasToday)
             {
                 BarraCasoAWidth = 0;
                 BarraCasoBWidth = 0;
                 BarraAnuladosWidth = 0;
+                BarraTareasWidth = 0;
                 return;
             }
 
             BarraCasoAWidth = AlertasCasoA == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasCasoA * 40.0));
             BarraCasoBWidth = AlertasCasoB == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasCasoB * 40.0));
             BarraAnuladosWidth = AlertasAnulados == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasAnulados * 40.0));
+            BarraTareasWidth = AlertasTareas == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasTareas * 40.0));
         }
 
         private void ActualizarTimeAgoTimer()
