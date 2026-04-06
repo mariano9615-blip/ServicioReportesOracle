@@ -1,5 +1,10 @@
 # 🗂️ Changelog
 
+## [7.7.1] - 2026-04-05 (UI v5.3)
+
+### Fixed
+- **MlogisHistorialView**: Columna **FecUpd** ahora muestra formato `dd/MM/yyyy HH:mm:ss` (argentino) en lugar de `M/d/yyyy h:mm:ss tt` (inglés). Causa: `FecUpd` era `DateTime?` y WPF usaba cultura `en-US` al renderizar. Solución: cambiado a `string` en `RegistroDisplayItem`, formateado explícitamente en el constructor (aplica para datos desde JSON local y desde drill-down de métricas). Se agrega conversión UTC→LocalTime si el valor viene en UTC.
+
 ## [7.7.0] - 2026-04-05 (UI v5.3)
 
 ### Added
