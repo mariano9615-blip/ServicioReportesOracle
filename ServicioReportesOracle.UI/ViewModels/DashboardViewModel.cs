@@ -73,10 +73,12 @@ namespace ServicioReportesOracle.UI.ViewModels
         private int _alertasCasoB;
         private int _alertasAnulados;
         private int _alertasTareas;
+        private int _alertasHealthCheck;
         private double _barraCasoAWidth;
         private double _barraCasoBWidth;
         private double _barraAnuladosWidth;
         private double _barraTareasWidth;
+        private double _barraHealthCheckWidth;
         private bool _hasAlertasToday;
         private string _alertasCasoALastText;
         private string _alertasCasoBLastText;
@@ -157,10 +159,12 @@ namespace ServicioReportesOracle.UI.ViewModels
         public int AlertasCasoB { get => _alertasCasoB; set { _alertasCasoB = value; OnPropertyChanged(); } }
         public int AlertasAnulados { get => _alertasAnulados; set { _alertasAnulados = value; OnPropertyChanged(); } }
         public int AlertasTareas { get => _alertasTareas; set { _alertasTareas = value; OnPropertyChanged(); } }
+        public int AlertasHealthCheck { get => _alertasHealthCheck; set { _alertasHealthCheck = value; OnPropertyChanged(); } }
         public double BarraCasoAWidth { get => _barraCasoAWidth; set { _barraCasoAWidth = value; OnPropertyChanged(); } }
         public double BarraCasoBWidth { get => _barraCasoBWidth; set { _barraCasoBWidth = value; OnPropertyChanged(); } }
         public double BarraAnuladosWidth { get => _barraAnuladosWidth; set { _barraAnuladosWidth = value; OnPropertyChanged(); } }
         public double BarraTareasWidth { get => _barraTareasWidth; set { _barraTareasWidth = value; OnPropertyChanged(); } }
+        public double BarraHealthCheckWidth { get => _barraHealthCheckWidth; set { _barraHealthCheckWidth = value; OnPropertyChanged(); } }
         public bool HasAlertasToday { get => _hasAlertasToday; set { _hasAlertasToday = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasNoAlertasToday)); } }
         public bool HasNoAlertasToday => !HasAlertasToday;
         
@@ -486,6 +490,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                 int ca = 0;
                 int cb = 0;
                 int ct = 0;
+                int ch = 0;
 
                 DateTime? lastCasoA = null;
                 DateTime? lastCasoB = null;
@@ -526,6 +531,9 @@ namespace ServicioReportesOracle.UI.ViewModels
                                     else if (tipo == "tarea_sql") {
                                         ct++;
                                     }
+                                    else if (tipo == "ws_caido" || tipo == "ws_recuperado") {
+                                        ch++;
+                                    }
                                 }
                             }
                         }
@@ -537,6 +545,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     AlertasCasoA = ca;
                     AlertasCasoB = cb;
                     AlertasTareas = ct;
+                    AlertasHealthCheck = ch;
 
                     if (lastCasoA.HasValue) AlertasCasoALastText = $"Último: {idCasoA} — {lastCasoA.Value:HH:mm}";
                     else AlertasCasoALastText = "";
@@ -552,6 +561,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     AlertasCasoA = 0;
                     AlertasCasoB = 0;
                     AlertasTareas = 0;
+                    AlertasHealthCheck = 0;
                     AlertasCasoALastText = "";
                     AlertasCasoBLastText = "";
                 });
@@ -560,13 +570,14 @@ namespace ServicioReportesOracle.UI.ViewModels
 
         private void ActualizarWidthsBarras()
         {
-            HasAlertasToday = AlertasCasoA > 0 || AlertasCasoB > 0 || AlertasAnulados > 0 || AlertasTareas > 0;
+            HasAlertasToday = AlertasCasoA > 0 || AlertasCasoB > 0 || AlertasAnulados > 0 || AlertasTareas > 0 || AlertasHealthCheck > 0;
             if (!HasAlertasToday)
             {
                 BarraCasoAWidth = 0;
                 BarraCasoBWidth = 0;
                 BarraAnuladosWidth = 0;
                 BarraTareasWidth = 0;
+                BarraHealthCheckWidth = 0;
                 return;
             }
 
@@ -574,6 +585,7 @@ namespace ServicioReportesOracle.UI.ViewModels
             BarraCasoBWidth = AlertasCasoB == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasCasoB * 40.0));
             BarraAnuladosWidth = AlertasAnulados == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasAnulados * 40.0));
             BarraTareasWidth = AlertasTareas == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasTareas * 40.0));
+            BarraHealthCheckWidth = AlertasHealthCheck == 0 ? 0 : Math.Min(200.0, Math.Max(8.0, AlertasHealthCheck * 40.0));
         }
 
         private void ActualizarTimeAgoTimer()

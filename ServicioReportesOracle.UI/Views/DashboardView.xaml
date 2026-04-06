@@ -305,6 +305,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- Caso B -->
@@ -353,7 +354,7 @@
                     </Grid>
 
                     <!-- Tareas SQL -->
-                    <Grid Grid.Row="3">
+                    <Grid Grid.Row="3" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
                             <ColumnDefinition Width="220"/>
@@ -363,6 +364,20 @@
                         <Grid Grid.Column="1" VerticalAlignment="Center" Height="20">
                             <Rectangle Fill="#3B82F6" Height="20" Width="{Binding BarraTareasWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding AlertasTareas}" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,0,0,0"/>
+                        </Grid>
+                    </Grid>
+
+                    <!-- Health Check SOAP -->
+                    <Grid Grid.Row="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="220"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Health Check" VerticalAlignment="Center" Foreground="{StaticResource OnSurfaceBrush}"/>
+                        <Grid Grid.Column="1" VerticalAlignment="Center" Height="20">
+                            <Rectangle Fill="#EF4444" Height="20" Width="{Binding BarraHealthCheckWidth}" MaxWidth="200" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding AlertasHealthCheck}" Foreground="{StaticResource OnSurfaceBrush}" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,0,0,0"/>
                         </Grid>
                     </Grid>
                 </Grid>

@@ -1,4 +1,4 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.7.2)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.7.3)
 
 ## 🚀 Resumen del Proyecto
 **Nombre**: ServicioReportesOracle | **Versión**: v7.7.0 | **UI**: v5.3 | **Tech**: .NET Framework 4.8 (C#)
@@ -46,9 +46,19 @@ if (dt.HasValue && dt.Value.Kind == DateTimeKind.Utc)
 
 ### 5. Dashboard "Alertas enviadas hoy" — tipos de alerta cubiertos
 **Problema:** El panel mostraba "Sin alertas enviadas hoy" aunque `alertas_smtp_enviadas.json` contenía alertas del día.
-**Causa:** `CargarAlertas()` en `DashboardViewModel` solo contaba `oracle_caso_a` y `oracle_caso_b`. Los envíos de reportes SQL (`tarea_sql`) no se contaban.
-**Fix (v7.7.2):** Se agregan: campo `ct` para contar `tarea_sql`, propiedad `AlertasTareas`/`BarraTareasWidth`, fila "Tareas SQL" en el XAML, y `HasAlertasToday` incluye `AlertasTareas > 0`.
-**Regla:** Al agregar nuevos tipos de alerta al servicio (`RegistrarAlertaEnviada(tipo: "...")`), revisar `CargarAlertas()` en `DashboardViewModel` para incluirlos en el conteo del dashboard.
+**Causa:** `CargarAlertas()` en `DashboardViewModel` no contaba todos los tipos. Historial de fixes:
+- v7.7.2: se agregaron `tarea_sql` → `AlertasTareas` / fila "Tareas SQL" (azul).
+- v7.7.3: se agregaron `ws_caido` y `ws_recuperado` → `AlertasHealthCheck` / fila "Health Check" (rojo `#EF4444`).
+
+**Tipos cubiertos actualmente en el dashboard:**
+| Tipo en JSON | Contador | Fila en UI |
+|---|---|---|
+| `oracle_caso_a` | `AlertasCasoA` | Caso A (amarillo) |
+| `oracle_caso_b` | `AlertasCasoB` | Caso B (rojo) |
+| `tarea_sql` | `AlertasTareas` | Tareas SQL (azul) |
+| `ws_caido`, `ws_recuperado` | `AlertasHealthCheck` | Health Check (rojo) |
+
+**Regla:** Al agregar nuevos tipos de alerta al servicio (`RegistrarAlertaEnviada(tipo: "...")`), agregar el tipo a `CargarAlertas()`, una propiedad y barra en el ViewModel, y una fila en el XAML.
 
 ### 4. Delay de comparación Oracle
 **Problema:** `CompararConOracle()` ignora `DelayComparacionMinutos` si parseo de fechas falla.

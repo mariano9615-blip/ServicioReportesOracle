@@ -1,5 +1,13 @@
 # 🗂️ Changelog
 
+## [7.7.3] - 2026-04-06 (UI v5.3)
+
+### Fixed
+- **Dashboard - Alertas enviadas hoy**: El panel seguía mostrando "Sin alertas enviadas hoy" cuando había alertas de tipo `ws_caido` o `ws_recuperado`. Causa: `CargarAlertas()` no contaba los tipos de health check SOAP. Fix: se agrega contador `ch` para `ws_caido`/`ws_recuperado`, propiedad `AlertasHealthCheck`/`BarraHealthCheckWidth`, y `HasAlertasToday` incluye `AlertasHealthCheck > 0`.
+
+### Added (UI)
+- **Dashboard**: Nueva fila **"Health Check"** (barra roja `#EF4444`) en la sección "Alertas enviadas hoy", mostrando la cantidad de alertas de disponibilidad SOAP (`ws_caido` + `ws_recuperado`) del día.
+
 ## [7.7.2] - 2026-04-06 (UI v5.3)
 
 ### Fixed
