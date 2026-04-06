@@ -317,8 +317,9 @@ namespace ServicioOracleReportes
                                 string id     = item.ID?.ToString()           ?? item.Id?.ToString()           ?? "";
                                 string nro    = item.NROCOMPROBANTE?.ToString() ?? item.NroComprobante?.ToString() ?? "";
                                 string fecupd = item.FECUPD?.ToString()        ?? item.FecUpd?.ToString()        ?? "";
-                                string planta = item.Planta?.ToString()        ?? item.planta?.ToString()        ?? "";
-                                string tcomp  = item.TipoComprobante?.ToString() ?? item.tipocomprobante?.ToString() ?? "";
+                                // SOAP devuelve nombres en mayúsculas; probar PLANTA/TIPOCOMPROBANTE primero
+                                string planta = item.PLANTA?.ToString()          ?? item.Planta?.ToString()          ?? item.planta?.ToString()          ?? "";
+                                string tcomp  = item.TIPOCOMPROBANTE?.ToString() ?? item.TipoComprobante?.ToString() ?? item.tipocomprobante?.ToString() ?? "";
                                 
                                 if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, nro, fecupd, planta, tcomp));
                             }
@@ -336,24 +337,36 @@ namespace ServicioOracleReportes
                             if (end == -1) break;
                             string id = resultInner.Substring(start, end - start).Trim();
 
-                            // Intentar extraer campos adicionales cercanos al tag ID
+                            // Acotar búsqueda al próximo registro para evitar contaminación cruzada
+                            int nextIdPos2 = resultInner.IndexOf("<ID>", end + 5, StringComparison.OrdinalIgnoreCase);
+                            int xmlLimit   = nextIdPos2 >= 0 ? nextIdPos2 : resultInner.Length;
+
                             string fecupd = "";
                             int fecStart = resultInner.IndexOf("<FECUPD>", end, StringComparison.OrdinalIgnoreCase);
-                            int fecEnd   = fecStart >= 0 ? resultInner.IndexOf("</FECUPD>", fecStart + 8, StringComparison.OrdinalIgnoreCase) : -1;
-                            if (fecStart >= 0 && fecEnd >= 0)
-                                fecupd = resultInner.Substring(fecStart + 8, fecEnd - fecStart - 8).Trim();
+                            if (fecStart >= 0 && fecStart < xmlLimit)
+                            {
+                                int fecEnd = resultInner.IndexOf("</FECUPD>", fecStart + 8, StringComparison.OrdinalIgnoreCase);
+                                if (fecEnd >= 0 && fecEnd < xmlLimit)
+                                    fecupd = resultInner.Substring(fecStart + 8, fecEnd - fecStart - 8).Trim();
+                            }
 
                             string planta = "";
                             int pStart = resultInner.IndexOf("<PLANTA>", end, StringComparison.OrdinalIgnoreCase);
-                            int pEnd   = pStart >= 0 ? resultInner.IndexOf("</PLANTA>", pStart + 8, StringComparison.OrdinalIgnoreCase) : -1;
-                            if (pStart >= 0 && pEnd >= 0)
-                                planta = resultInner.Substring(pStart + 8, pEnd - pStart - 8).Trim();
+                            if (pStart >= 0 && pStart < xmlLimit)
+                            {
+                                int pEnd = resultInner.IndexOf("</PLANTA>", pStart + 8, StringComparison.OrdinalIgnoreCase);
+                                if (pEnd >= 0 && pEnd < xmlLimit)
+                                    planta = resultInner.Substring(pStart + 8, pEnd - pStart - 8).Trim();
+                            }
 
                             string tcomp = "";
                             int tcStart = resultInner.IndexOf("<TIPOCOMPROBANTE>", end, StringComparison.OrdinalIgnoreCase);
-                            int tcEnd   = tcStart >= 0 ? resultInner.IndexOf("</TIPOCOMPROBANTE>", tcStart + 17, StringComparison.OrdinalIgnoreCase) : -1;
-                            if (tcStart >= 0 && tcEnd >= 0)
-                                tcomp = resultInner.Substring(tcStart + 17, tcEnd - tcStart - 17).Trim();
+                            if (tcStart >= 0 && tcStart < xmlLimit)
+                            {
+                                int tcEnd = resultInner.IndexOf("</TIPOCOMPROBANTE>", tcStart + 17, StringComparison.OrdinalIgnoreCase);
+                                if (tcEnd >= 0 && tcEnd < xmlLimit)
+                                    tcomp = resultInner.Substring(tcStart + 17, tcEnd - tcStart - 17).Trim();
+                            }
 
                             if (!string.IsNullOrEmpty(id)) mlogisRecords.Add((id, "", fecupd, planta, tcomp));
                             posId = end;
