@@ -645,10 +645,15 @@ namespace ServicioReportesOracle.UI.ViewModels
             Ctg             = r.Ctg            ?? "";
             PrimeraVezVisto = r.PrimeraVezVisto.ToString("HH:mm");
             UltimaVezVisto  = r.UltimaVezVisto.ToString("HH:mm");
-            FecUpd          = DateTime.TryParse(r.FecUpd, CultureInfo.InvariantCulture,
-                                DateTimeStyles.None, out var fecUpdDt)
-                                ? fecUpdDt.ToString("dd/MM/yyyy HH:mm:ss")
-                                : (r.FecUpd ?? "");
+
+            if (DateTime.TryParse(r.FecUpd, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecUpdDt))
+            {
+                if (fecUpdDt.Kind == DateTimeKind.Utc)
+                    fecUpdDt = fecUpdDt.ToLocalTime();
+                FecUpd = fecUpdDt.ToString("dd/MM/yyyy HH:mm:ss");
+            }
+            else
+                FecUpd = r.FecUpd ?? "";
             Planta          = r.Planta ?? "";
             TipoComprobante = r.TipoComprobante ?? "";
             Anulado         = r.Anulado;

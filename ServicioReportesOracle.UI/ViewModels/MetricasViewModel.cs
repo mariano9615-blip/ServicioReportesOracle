@@ -1079,11 +1079,19 @@ namespace ServicioReportesOracle.UI.ViewModels
                                 bool   anulado = anuStr == "1"
                                     || string.Equals(anuStr, "true", StringComparison.OrdinalIgnoreCase)
                                     || string.Equals(anuStr, "S",    StringComparison.OrdinalIgnoreCase);
+                                string strFecUpd = "";
+                                if (DateTime.TryParse(fecupd, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d))
+                                {
+                                    if (d.Kind == DateTimeKind.Utc) d = d.ToLocalTime();
+                                    strFecUpd = d.ToString("dd/MM/yyyy HH:mm:ss");
+                                }
+                                else strFecUpd = fecupd ?? "";
+
                                 registros.Add(new RegistroDisplayItem
                                 {
                                     Id              = id,
                                     NroComprobante  = nro,
-                                    FecUpd          = fecupd,
+                                    FecUpd          = strFecUpd,
                                     Planta          = planta,
                                     TipoComprobante = tcomp,
                                     Anulado         = anulado,
@@ -1122,19 +1130,27 @@ namespace ServicioReportesOracle.UI.ViewModels
                                 || string.Equals(anuStr, "true", StringComparison.OrdinalIgnoreCase)
                                 || string.Equals(anuStr, "S",    StringComparison.OrdinalIgnoreCase);
 
-                            if (!string.IsNullOrEmpty(id))
-                                registros.Add(new RegistroDisplayItem
+                                string strFecUpd2 = "";
+                                if (DateTime.TryParse(fecupd, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d2))
                                 {
-                                    Id              = id,
-                                    NroComprobante  = nro,
-                                    FecUpd          = fecupd,
-                                    Planta          = planta,
-                                    TipoComprobante = tcomp,
-                                    Anulado         = anulado,
-                                    PrimeraVezVisto = "-",
-                                    UltimaVezVisto  = "-",
-                                    Ctg             = ctgDict.ContainsKey(id) ? ctgDict[id] : ""
-                                });
+                                    if (d2.Kind == DateTimeKind.Utc) d2 = d2.ToLocalTime();
+                                    strFecUpd2 = d2.ToString("dd/MM/yyyy HH:mm:ss");
+                                }
+                                else strFecUpd2 = fecupd ?? "";
+
+                                if (!string.IsNullOrEmpty(id))
+                                    registros.Add(new RegistroDisplayItem
+                                    {
+                                        Id              = id,
+                                        NroComprobante  = nro,
+                                        FecUpd          = strFecUpd2,
+                                        Planta          = planta,
+                                        TipoComprobante = tcomp,
+                                        Anulado         = anulado,
+                                        PrimeraVezVisto = "-",
+                                        UltimaVezVisto  = "-",
+                                        Ctg             = ctgDict.ContainsKey(id) ? ctgDict[id] : ""
+                                    });
                             pos = idEnd;
                         }
                     }
