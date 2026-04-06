@@ -8,6 +8,10 @@
 ### UI
 - **MlogisHistorialView**: Panel lateral de corridas reducido de 220 → 180px, liberando más espacio horizontal para la grilla de registros. Texto legible sin truncamiento (items históricos usan `TextWrapping`).
 
+### Fixed (Core)
+- **SOAP Mlogis**: Campos `Planta` y `TipoComprobante` quedaban siempre vacíos porque el parseo JSON probaba `item.Planta`/`item.planta` pero la respuesta SOAP devuelve nombres en mayúsculas (`PLANTA`, `TIPOCOMPROBANTE`). Fix: agregar `item.PLANTA` e `item.TIPOCOMPROBANTE` como primera opción en la cadena null-coalescing, alineando con el resto de campos (`ID`, `NROCOMPROBANTE`, `FECUPD`). Consecuencia: el warning "⚠ Datos incompletos" ya no aparece incorrectamente.
+- **SOAP Mlogis (XML fallback)**: La búsqueda de `<PLANTA>`/`<TIPOCOMPROBANTE>` en el path XML era ilimitada y podía capturar datos del registro siguiente. Fix: se acota la búsqueda al próximo `<ID>` como límite del registro actual.
+
 ## [7.7.0] - 2026-04-05 (UI v5.3)
 
 ### Added
