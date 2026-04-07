@@ -23,6 +23,8 @@ namespace ServicioOracleReportes
         private List<ConsultaSQL> consultas;
         private static readonly object lockObj        = new object();
         private static readonly object _wsEstadoLock  = new object();
+        private static DateTime? _primerFalloHealthCheck = null;
+        private const int DELAY_GRACIA_HEALTH_CHECK_SEGUNDOS = 120;
         private bool enEjecucion = false;
         private DateTime ultimoWriteTimeConsultas = DateTime.MinValue;
         private string _rutaLogs;
@@ -2638,6 +2640,22 @@ namespace ServicioOracleReportes
 
             if (!wsDisponible)
             {
+                // v7.8.1 — Delay de gracia: esperar 120s antes de confirmar caída real (evita alertas por microcortes)
+                if (_primerFalloHealthCheck == null)
+                {
+                    _primerFalloHealthCheck = ahora;
+                    EscribirLog($"[HealthCheckSoap] Fallo detectado, iniciando período de gracia de {DELAY_GRACIA_HEALTH_CHECK_SEGUNDOS}s...");
+                    return false;
+                }
+                var tiempoTranscurrido = (ahora - _primerFalloHealthCheck.Value).TotalSeconds;
+                if (tiempoTranscurrido < DELAY_GRACIA_HEALTH_CHECK_SEGUNDOS)
+                {
+                    EscribirLog($"[HealthCheckSoap] Fallo persistente ({tiempoTranscurrido:F0}s), esperando gracia...");
+                    return false;
+                }
+                EscribirLog($"[HealthCheckSoap] Fallo confirmado tras {DELAY_GRACIA_HEALTH_CHECK_SEGUNDOS}s de gracia.");
+                _primerFalloHealthCheck = null;
+
                 // v7.3.1 — Solo resetear flag y preservar UltimaVezCaido al transicionar DESDE "ok".
                 // No resetear al oscilar entre estados de falla (caido ↔ auth_error) para evitar spam.
                 bool esTransicionDesdeOk = string.Equals(estado.UltimoEstado, "ok", StringComparison.OrdinalIgnoreCase)
@@ -2681,6 +2699,22 @@ namespace ServicioOracleReportes
             var (authOk, authDetalle, authXml) = await VerificarAutenticacionSoapAsync();
             if (!authOk)
             {
+                // v7.8.1 — Delay de gracia: esperar 120s antes de confirmar caída real (evita alertas por microcortes)
+                if (_primerFalloHealthCheck == null)
+                {
+                    _primerFalloHealthCheck = ahora;
+                    EscribirLog($"[HealthCheckSoap] Fallo detectado, iniciando período de gracia de {DELAY_GRACIA_HEALTH_CHECK_SEGUNDOS}s...");
+                    return false;
+                }
+                var tiempoTranscurrido = (ahora - _primerFalloHealthCheck.Value).TotalSeconds;
+                if (tiempoTranscurrido < DELAY_GRACIA_HEALTH_CHECK_SEGUNDOS)
+                {
+                    EscribirLog($"[HealthCheckSoap] Fallo persistente ({tiempoTranscurrido:F0}s), esperando gracia...");
+                    return false;
+                }
+                EscribirLog($"[HealthCheckSoap] Fallo confirmado tras {DELAY_GRACIA_HEALTH_CHECK_SEGUNDOS}s de gracia.");
+                _primerFalloHealthCheck = null;
+
                 // v7.3.1 — Solo resetear flag y preservar UltimaVezCaido al transicionar DESDE "ok".
                 // No resetear al oscilar entre estados de falla (caido ↔ auth_error) para evitar spam.
                 bool esTransicionDesdeOkAuth = string.Equals(estado.UltimoEstado, "ok", StringComparison.OrdinalIgnoreCase)
@@ -2722,6 +2756,15 @@ namespace ServicioOracleReportes
             }
 
             // WS disponible y autenticación OK
+            // v7.8.1 — Si había fallo en período de gracia, se recuperó antes de confirmarse: sin alerta
+            if (_primerFalloHealthCheck != null)
+            {
+                var tiempoEnGracia = (ahora - _primerFalloHealthCheck.Value).TotalSeconds;
+                EscribirLog($"[HealthCheckSoap] WS recuperado dentro del período de gracia ({tiempoEnGracia:F0}s) - sin alerta");
+                _primerFalloHealthCheck = null;
+                return true;
+            }
+
             bool estadoPrevioEraFalla = string.Equals(estado.UltimoEstado, "caido", StringComparison.OrdinalIgnoreCase)
                                      || string.Equals(estado.UltimoEstado, "auth_error", StringComparison.OrdinalIgnoreCase);
             if (estadoPrevioEraFalla)
