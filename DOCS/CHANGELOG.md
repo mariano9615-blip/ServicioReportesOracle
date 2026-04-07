@@ -1,5 +1,10 @@
 # 🗂️ Changelog
 
+## [7.8.5] - 2026-04-07
+
+### Added (Core)
+- **Documentación inline estilo roadmap en ServicioReportesOracle.cs**: banners de sección (`═══ ███`) para Cabecera, Campos Estáticos, Ciclo de Vida, Cronogramas, SOAP Mlogis, Comparación Oracle, Alertas Oracle, Ejecución SQL, SMTP y Health Check. XML doc `<summary>` en métodos críticos (`InvocacionSoapMlogis`, `CompararConOracle`, `VerificarWebService`, `EjecutarConsultasSegunFrecuencia`).
+
 ## [7.8.4] - 2026-04-07 (UI v5.6)
 
 ### Fixed (UI)
