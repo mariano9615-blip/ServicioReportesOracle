@@ -57,3 +57,5 @@ C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\Servicio.19C75552.Up2Date
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\ServicioReportesOracle.UI.exe
 C:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\ServicioReportesOracle.UI.pdb
+c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\AnaliticaWindow.baml
+c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\obj\Release\AnaliticaWindow.g.cs

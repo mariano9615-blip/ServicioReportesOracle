@@ -1,5 +1,10 @@
 # 🗂️ Changelog
 
+## [7.8.2] - 2026-04-07 (UI)
+
+### Fixed (UI)
+- **AnaliticaWindow — Colores hardcodeados en triggers XAML**: 6 valores hex directos en `ControlTemplate.Triggers` y `Style.Triggers` reemplazados por referencias `{StaticResource}`. Se agregaron 3 nuevos recursos a `Window.Resources`: `ABlueHover` (`#93C5FD`), `ABlueDark` (`#1D4ED8`), `ARowHover` (`#F9FAFB`). Los recursos `ABlue` y `ABlueLight` ya existían y ahora se referencian correctamente en los triggers de TextBox, DataGridCell y DataGridRow. Cumple con la regla de ANTIGRAVITY "NUNCA hardcodear colores en vistas".
+
 ## [7.8.1] - 2026-04-07
 
 ### Added

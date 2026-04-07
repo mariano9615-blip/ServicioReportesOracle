@@ -24,6 +24,9 @@
         <SolidColorBrush x:Key="ARed"           Color="#EF4444"/>
         <SolidColorBrush x:Key="APurple"        Color="#A855F7"/>
         <SolidColorBrush x:Key="AProgressBg"    Color="#E5E7EB"/>
+        <SolidColorBrush x:Key="ABlueHover"     Color="#93C5FD"/>
+        <SolidColorBrush x:Key="ABlueDark"      Color="#1D4ED8"/>
+        <SolidColorBrush x:Key="ARowHover"      Color="#F9FAFB"/>
 
         <!-- ── Estilo card ── -->
         <Style x:Key="AnalyticCard" TargetType="Border">
@@ -62,11 +65,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="bd" Property="BorderBrush" Value="#3B82F6"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource ABlue}"/>
                                 <Setter TargetName="bd" Property="BorderThickness" Value="2"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="BorderBrush" Value="#93C5FD"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource ABlueHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -117,8 +120,8 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#EFF6FF"/>
-                    <Setter Property="Foreground"  Value="#1D4ED8"/>
+                    <Setter Property="Background" Value="{StaticResource ABlueLight}"/>
+                    <Setter Property="Foreground"  Value="{StaticResource ABlueDark}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -127,10 +130,10 @@
             <Setter Property="Background" Value="Transparent"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#EFF6FF"/>
+                    <Setter Property="Background" Value="{StaticResource ABlueLight}"/>
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F9FAFB"/>
+                    <Setter Property="Background" Value="{StaticResource ARowHover}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>

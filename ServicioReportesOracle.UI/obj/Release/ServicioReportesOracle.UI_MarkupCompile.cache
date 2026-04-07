@@ -10,11 +10,11 @@ none
 false
 TRACE
 c:\Users\mdemichelis\source\repos\ServicioReportesOracle\ServicioReportesOracle.UI\App.xaml
-13-132489906
+14-488885522
 
-421146269682
+431532704864
 18989510158
-Views\DashboardView.xaml;MainWindow.xaml;LoginWindow.xaml;Views\GeneralConfigView.xaml;Views\TasksView.xaml;Views\SqlEditorView.xaml;Views\LogsView.xaml;Views\MlogisHistorialView.xaml;Views\MetricasView.xaml;Views\ServiceControlView.xaml;Views\ChangePasswordView.xaml;Views\UiSettingsView.xaml;Views\AlertasView.xaml;
+Views\DashboardView.xaml;AnaliticaWindow.xaml;MainWindow.xaml;LoginWindow.xaml;Views\GeneralConfigView.xaml;Views\TasksView.xaml;Views\SqlEditorView.xaml;Views\LogsView.xaml;Views\MlogisHistorialView.xaml;Views\MetricasView.xaml;Views\ServiceControlView.xaml;Views\ChangePasswordView.xaml;Views\UiSettingsView.xaml;Views\AlertasView.xaml;
 
 False
 
