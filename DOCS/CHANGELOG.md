@@ -1,5 +1,10 @@
 # 🗂️ Changelog
 
+## [7.8.3] - 2026-04-07 (UI v5.6)
+
+### Fixed (UI)
+- **Dashboard - Alertas enviadas hoy**: El panel no contabilizaba las alertas del Circuit Breaker Oracle (`oracle_caido`, `oracle_recuperado`). Causa: `CargarAlertas()` no tenía rama para esos tipos. Fix: se agrega contador `ccb` para `oracle_caido`/`oracle_recuperado`, propiedad `AlertasCircuitBreaker`/`BarraCircuitBreakerWidth`, `HasAlertasToday` incluye `AlertasCircuitBreaker > 0`, y nueva fila "Circuit Breaker" (rojo `#DC2626`) en `DashboardView.xaml`.
+
 ## [7.8.2] - 2026-04-07 (UI v5.5)
 
 ### Fixed (UI)

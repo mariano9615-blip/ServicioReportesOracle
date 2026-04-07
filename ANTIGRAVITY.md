@@ -63,6 +63,7 @@ if (dt.HasValue && dt.Value.Kind == DateTimeKind.Utc)
 **Causa:** `CargarAlertas()` en `DashboardViewModel` no contaba todos los tipos. Historial de fixes:
 - v7.7.2: se agregaron `tarea_sql` → `AlertasTareas` / fila "Tareas SQL" (azul).
 - v7.7.3: se agregaron `ws_caido` y `ws_recuperado` → `AlertasHealthCheck` / fila "Health Check" (rojo `#EF4444`).
+- v7.8.3: se agregaron `oracle_caido` y `oracle_recuperado` → `AlertasCircuitBreaker` / fila "Circuit Breaker" (rojo `#DC2626`).
 
 **Tipos cubiertos actualmente en el dashboard:**
 | Tipo en JSON | Contador | Fila en UI |
@@ -70,7 +71,8 @@ if (dt.HasValue && dt.Value.Kind == DateTimeKind.Utc)
 | `oracle_caso_a` | `AlertasCasoA` | Caso A (amarillo) |
 | `oracle_caso_b` | `AlertasCasoB` | Caso B (rojo) |
 | `tarea_sql` | `AlertasTareas` | Tareas SQL (azul) |
-| `ws_caido`, `ws_recuperado` | `AlertasHealthCheck` | Health Check (rojo) |
+| `ws_caido`, `ws_recuperado` | `AlertasHealthCheck` | Health Check (rojo `#EF4444`) |
+| `oracle_caido`, `oracle_recuperado` | `AlertasCircuitBreaker` | Circuit Breaker (rojo `#DC2626`) |
 
 **Regla:** Al agregar nuevos tipos de alerta al servicio (`RegistrarAlertaEnviada(tipo: "...")`), agregar el tipo a `CargarAlertas()`, una propiedad y barra en el ViewModel, y una fila en el XAML.
 
