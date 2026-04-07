@@ -1,7 +1,7 @@
 # ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.8.1)
 
 ## 🚀 Resumen del Proyecto
-**Nombre**: ServicioReportesOracle | **Versión**: v7.8.1 | **UI**: v5.4 | **Tech**: .NET Framework 4.8 (C#)
+**Nombre**: ServicioReportesOracle | **Versión**: v7.8.2 | **UI**: v5.5 | **Tech**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
 ## 📁 Arquitectura

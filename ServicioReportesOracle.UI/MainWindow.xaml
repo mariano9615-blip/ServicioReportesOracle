@@ -389,7 +389,7 @@
                             </StackPanel>
                         </Button>
                         <TextBlock x:Name="VersionText"
-                                   Text="v5.1"
+                                   Text="v5.5"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,10"
                                    Foreground="{StaticResource OnSurfaceVariantBrush}"
