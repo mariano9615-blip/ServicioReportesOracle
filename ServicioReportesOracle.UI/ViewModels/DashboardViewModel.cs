@@ -223,7 +223,7 @@ namespace ServicioReportesOracle.UI.ViewModels
                     var ws = JObject.Parse(json);
                     string estado = ws["ultimo_estado"]?.ToString();
                     int caidasHoy = ws["caidas_hoy"]?.ToObject<int>() ?? 0;
-                    string ultimaVezCaido = ws["ultima_vez_caido"]?.ToString();
+                    DateTime? ultimaVezCaido = ws.Value<DateTime?>("ultima_vez_caido");
                     string detalleError = ws["detalle_error"]?.ToString();
                     
                     Application.Current?.Dispatcher.InvokeAsync(() =>
@@ -272,10 +272,17 @@ namespace ServicioReportesOracle.UI.ViewModels
                         }
                         else
                         {
-                            if (DateTime.TryParse(ultimaVezCaido, out var dt))
+                            if (ultimaVezCaido.HasValue)
+                            {
+                                var dt = ultimaVezCaido.Value;
+                                if (dt.Kind == DateTimeKind.Utc)
+                                    dt = dt.ToLocalTime();
                                 WsSubtext = $"Última caída: {dt:HH:mm}";
+                            }
                             else
+                            {
                                 WsSubtext = "Última caída: desconocida";
+                            }
                         }
                     });
                 }

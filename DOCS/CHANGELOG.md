@@ -1,5 +1,10 @@
 # 🗂️ Changelog
 
+## [7.8.4] - 2026-04-07 (UI v5.6)
+
+### Fixed (UI)
+- **Dashboard — Fix parseo de fecha `ultima_vez_caido` resistente a cultura del sistema**: reemplazado `.ToString()` + `DateTime.TryParse()` por `ws.Value<DateTime?>("ultima_vez_caido")` directo del JToken. Elimina el fallo silencioso en entornos con cultura argentina (dd/MM vs MM/dd). Agrega conversión UTC → local si `Kind == DateTimeKind.Utc`.
+
 ## [7.8.3] - 2026-04-07 (UI v5.6)
 
 ### Fixed (UI)
