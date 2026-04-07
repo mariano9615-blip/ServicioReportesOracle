@@ -1,7 +1,7 @@
-# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.8.0)
+# ANTIGRAVITY.md - Guía de Arquitectura del Proyecto (v7.8.1)
 
 ## 🚀 Resumen del Proyecto
-**Nombre**: ServicioReportesOracle | **Versión**: v7.8.0 | **UI**: v5.4 | **Tech**: .NET Framework 4.8 (C#)
+**Nombre**: ServicioReportesOracle | **Versión**: v7.8.1 | **UI**: v5.4 | **Tech**: .NET Framework 4.8 (C#)
 **Propósito**: Ecosistema para ejecución de reportes Oracle, envío de correos SMTP e integración SOAP con Mlogis.
 
 ## 📁 Arquitectura
@@ -77,6 +77,15 @@ if (dt.HasValue && dt.Value.Kind == DateTimeKind.Utc)
 ### 4. Delay de comparación Oracle
 **Problema:** `CompararConOracle()` ignora `DelayComparacionMinutos` si parseo de fechas falla.
 **Fix:** Usar `entry.Value<DateTime?>()` y referenciar `fechaEjecucion` (no `DateTime.Now`).
+
+### 6. Health Check SOAP — Delay de gracia (v7.8.1)
+**Contexto:** Microcortes (<2 min) disparaban alertas innecesarias que se autoresolvían.
+**Solución:** `VerificarWebService()` aplica un período de gracia de 120s antes de confirmar cualquier caída:
+- Primer fallo detectado → `_primerFalloHealthCheck = DateTime.Now`, log informativo, `return false` (sin tocar estado ni enviar mail).
+- Fallos sucesivos dentro de 120s → log "esperando gracia...", `return false`.
+- Fallo persistente ≥ 120s → log "Fallo confirmado", reset `_primerFalloHealthCheck = null`, continúa con lógica habitual de registro/alerta.
+- Recuperación dentro de gracia → log "recuperado dentro de gracia (Xs)", reset, `return true` (sin registrar en `ws_estado.json` ni enviar mail).
+**Aplica a:** `!wsDisponible` (timeout HTTP) y `!authOk` (error de autenticación SOAP).
 
 ## 📋 Reglas Esenciales
 - **UI**: Usar colores de `App.xaml`. `MainViewModel.Instance.ShowNotification()` para avisos.

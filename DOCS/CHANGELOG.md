@@ -1,5 +1,13 @@
 # 🗂️ Changelog
 
+## [7.8.1] - 2026-04-07
+
+### Added
+- **Health Check SOAP — Delay de gracia**: Antes de registrar una caída como real y enviar alerta, el servicio espera un período de gracia de 120 segundos. Si el WS se recupera dentro de esa ventana, no se registra ni se notifica nada (microcorte silencioso). Si persiste más de 120s, se confirma la caída y continúa el flujo habitual de alerta/estado.
+  - Nuevo campo estático `_primerFalloHealthCheck` (DateTime?) para tracking del primer fallo.
+  - Constante `DELAY_GRACIA_HEALTH_CHECK_SEGUNDOS = 120`.
+  - Aplica tanto a fallos de conectividad HTTP (`!wsDisponible`) como a errores de autenticación SOAP (`!authOk`).
+
 ## [7.8.0] - 2026-04-06 (UI v5.4)
 
 ### Added (UI)
