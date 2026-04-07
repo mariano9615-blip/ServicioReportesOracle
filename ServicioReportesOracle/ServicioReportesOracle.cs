@@ -14,10 +14,23 @@ using System.Globalization;
 using System.Timers;
 using System.Threading.Tasks;
 
+// ═══════════════════════════════════════════════════════════════
+// ███ SERVICIO REPORTES ORACLE — Core del sistema SRO
+// ═══════════════════════════════════════════════════════════════
+// Responsabilidades:
+// • Cronogramas: Ejecución de tareas SQL según consultas.json
+// • SOAP Mlogis: Invocación delta/full con filtros, comparación Oracle, alertas Caso A/B
+// • Health Check: Monitoreo SOAP con Circuit Breaker
+// • SMTP: Envío de reportes Excel y alertas consolidadas
+// • FileSystemWatcher: Detección de cambios en configuración
+// ═══════════════════════════════════════════════════════════════
 namespace ServicioOracleReportes
 {
     public class ServicioOracleReportes : ServiceBase
     {
+        // ═══════════════════════════════════════════════════════════════
+        // ███ CAMPOS ESTÁTICOS — Estado global del servicio
+        // ═══════════════════════════════════════════════════════════════
         private Timer timer;
         private Configuracion configuracion;
         private List<ConsultaSQL> consultas;
@@ -39,6 +52,9 @@ namespace ServicioOracleReportes
         private OracleCircuitBreaker _oracleCircuitBreaker;
 
 
+        // ═══════════════════════════════════════════════════════════════
+        // ███ CICLO DE VIDA — Inicio/Parada del servicio Windows
+        // ═══════════════════════════════════════════════════════════════
         protected override void OnStart(string[] args)
         {
             try
@@ -161,6 +177,9 @@ namespace ServicioOracleReportes
             }
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // ███ CRONOGRAMAS — Timers de ejecución periódica
+        // ═══════════════════════════════════════════════════════════════
         private void TimerElapsed(object sender, ElapsedEventArgs e)
         {
             try
@@ -219,6 +238,15 @@ namespace ServicioOracleReportes
             }
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // ███ SOAP MLOGIS — Integración con webservice SmartFarm
+        // ═══════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Ejecuta corrida SOAP contra Mlogis (delta o full según hora actual)
+        /// Entrada: filtros desde filters.json, credenciales desde config.json
+        /// Salida: JSON en Logs\json\, actualiza historial mensual, dispara comparación Oracle
+        /// Flujo: 1. Determina tipo corrida | 2. Autentica SOAP | 3. Aplica filtros | 4. Procesa respuesta | 5. Persiste y compara
+        /// </summary>
         private async Task InvocacionSoapMlogis()
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -735,7 +763,15 @@ namespace ServicioOracleReportes
                 EscribirLog($"❌ Error enviando alerta SOAP (ID={registro.Id}): " + ex.Message);
             }
         }
-        // ── Comparación Oracle vs buffer de comparaciones pendientes ─────────
+        // ═══════════════════════════════════════════════════════════════
+        // ███ COMPARACIÓN ORACLE — Detección de discrepancias Mlogis vs ERP
+        // ═══════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Compara IDs Mlogis contra Oracle para detectar discrepancias (Caso A: falta en Oracle, Caso B: anulado)
+        /// Entrada: comparaciones_pendientes.json con delay de DelayComparacionMinutos
+        /// Salida: Alertas SMTP consolidadas, limpia buffer de pendientes
+        /// Flujo: 1. Filtra por delay | 2. Query Oracle batch | 3. Clasifica A/B | 4. Consolida y envía | 5. Actualiza buffer
+        /// </summary>
         private int CompararConOracle(
             string pendientesPath,
             string soapConfigPath,
@@ -1279,7 +1315,9 @@ namespace ServicioOracleReportes
             }
         }
 
-        // ── Fix 2+3: Alerta Oracle consolidada con deduplicación ─────────────
+        // ═══════════════════════════════════════════════════════════════
+        // ███ ALERTAS ORACLE — Notificación de Casos A y B con dedup
+        // ═══════════════════════════════════════════════════════════════
         private void EnviarAlertaOracleConsolidada(
             List<AlertaOracleItem> alertas,
             string soapConfigPath,
@@ -1579,6 +1617,15 @@ namespace ServicioOracleReportes
 
 
 
+        // ═══════════════════════════════════════════════════════════════
+        // ███ EJECUCIÓN SQL — Consultas Oracle + generación Excel
+        // ═══════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Ejecuta consulta SQL Oracle según definición en consultas.json
+        /// Entrada: nombre tarea, query, destinatarios SMTP
+        /// Salida: Excel con resultados, correo enviado, log de ejecución
+        /// Flujo: 1. Valida tarea activa | 2. Conecta Oracle | 3. Ejecuta query | 4. Genera Excel | 5. Envía SMTP | 6. Loguea resultado
+        /// </summary>
         private void EjecutarConsultasSegunFrecuencia()
         {
             EscribirLog("Verificando consultas por frecuencia...");
@@ -2120,6 +2167,9 @@ namespace ServicioOracleReportes
             }
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // ███ SMTP — Envío de correos con Excel adjunto
+        // ═══════════════════════════════════════════════════════════════
         private void EnviarCorreoIndividual(string archivo, ConsultaSQL consulta)
         {
             try
@@ -2568,7 +2618,15 @@ namespace ServicioOracleReportes
             }
         }
 
-        // ── Health check del WebService SOAP ─────────────────────────────────
+        // ═══════════════════════════════════════════════════════════════
+        // ███ HEALTH CHECK — Monitoreo proactivo del WS con Circuit Breaker
+        // ═══════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Verifica disponibilidad del WS Mlogis cada 60s con Circuit Breaker
+        /// Entrada: credenciales SOAP, estado previo en health_check_estado.json
+        /// Salida: Alertas caída/recuperación con delay de gracia de 120s, actualiza historial
+        /// Flujo: 1. Intenta autenticación | 2. Valida respuesta | 3. Aplica delay gracia | 4. Registra evento | 5. Envía alerta si corresponde
+        /// </summary>
         private async Task<bool> VerificarWebService()
         {
             string wsEstadoPath = Path.Combine(_rutaJson, "ws_estado.json");
